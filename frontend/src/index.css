@@ -1,0 +1,57 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg-color: #F0EEFF;
+    --card-bg: #FFFFFF;
+    --text-main: #1F1F2E;
+    --text-muted: #6B7280;
+    --border-color: rgba(124, 92, 191, 0.12);
+    
+    --primary-main: #7C5CBF;
+    --primary-light: #A78BFA;
+    --primary-glow: #C4B5FD;
+  }
+
+  body.dark {
+    --bg-color: #121212;
+    --card-bg: #1E1E1E;
+    --text-main: #F3F4F6;
+    --text-muted: #9CA3AF;
+    --border-color: rgba(255, 255, 255, 0.1);
+  }
+
+  body[data-accent="blue"] {
+    --primary-main: #1D4ED8;
+    --primary-light: #3B82F6;
+    --primary-glow: #DBEAFE;
+  }
+
+  body[data-accent="green"] {
+    --primary-main: #15803D;
+    --primary-light: #22C55E;
+    --primary-glow: #DCFCE7;
+  }
+
+  body[data-accent="purple"] {
+    --primary-main: #7C5CBF;
+    --primary-light: #A78BFA;
+    --primary-glow: #C4B5FD;
+  }
+
+  body {
+    @apply bg-background text-neutral-text antialiased font-sans;
+  }
+}
+
+@layer utilities {
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+  
+  .glass-card {
+    @apply bg-white/80 backdrop-blur-xl border border-white/20 shadow-card;
+  }
+}
