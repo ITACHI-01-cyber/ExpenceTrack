@@ -1,12 +1,12 @@
 import React from 'react';
 import { formatCurrency } from '../../utils/formatCurrency';
-import { Target, Plus } from 'lucide-react';
+import { Check, Plus, Target, X } from 'lucide-react';
 
-const SavingsGoalsGrid = ({ goals, onAddClick }) => {
+const SavingsGoalsGrid = ({ goals, onAddClick, onStatusChange }) => {
   return (
     <div className="h-full">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="font-semibold text-neutral-text flex items-center gap-2">
+      <div className="flex flex-wrap justify-between items-center gap-3 mb-4">
+        <h3 className="font-semibold text-neutral-text flex items-center gap-2 text-sm sm:text-base">
           <Target size={18} className="text-primary" /> 
           Savings & Investment Targets
         </h3>
@@ -25,11 +25,13 @@ const SavingsGoalsGrid = ({ goals, onAddClick }) => {
           <p className="text-xs text-neutral-muted mt-1">Set a goal to start saving or investing!</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
           {goals.map((goal, idx) => (
             <div 
               key={goal.id} 
-              className="bg-white border-l-4 border-l-primary rounded-r-xl p-4 flex flex-col shadow-sm hover:shadow-md transition-all animate-[fade-in_0.5s_ease-out_both]"
+              className={`bg-white border-l-4 rounded-r-xl p-4 flex flex-col shadow-sm hover:shadow-md transition-all animate-[fade-in_0.5s_ease-out_both] ${
+                goal.completed ? 'border-l-success' : 'border-l-primary'
+              }`}
               style={{ animationDelay: `${idx * 80}ms` }}
             >
               <div className="flex justify-between items-start mb-2">
@@ -38,10 +40,40 @@ const SavingsGoalsGrid = ({ goals, onAddClick }) => {
                   {formatCurrency(goal.amount)}
                 </p>
               </div>
-              <div className="mt-auto flex items-center">
+              <div className="mt-auto flex flex-wrap items-center justify-between gap-2">
                 <span className="text-[10px] font-medium bg-neutral-100 text-neutral-muted px-2 py-0.5 rounded uppercase tracking-wide">
                   Via: {goal.medium}
                 </span>
+                <div className="grid w-full grid-cols-2 overflow-hidden rounded-md border border-border bg-background sm:w-auto">
+                  <button
+                    type="button"
+                    onClick={() => onStatusChange?.(goal, true)}
+                    className={`flex h-8 items-center justify-center gap-1 px-2 text-[10px] font-bold uppercase tracking-wide transition-colors ${
+                      goal.completed
+                        ? 'bg-success text-white shadow-sm'
+                        : 'text-neutral-muted hover:bg-success/10 hover:text-success'
+                    }`}
+                    title="Mark done"
+                    aria-label="Mark investment done"
+                  >
+                    <Check size={14} />
+                    Done
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onStatusChange?.(goal, false)}
+                    className={`flex h-8 items-center justify-center gap-1 border-l border-border px-2 text-[10px] font-bold uppercase tracking-wide transition-colors ${
+                      goal.completed
+                        ? 'text-neutral-muted hover:bg-danger/10 hover:text-danger'
+                        : 'bg-danger text-white shadow-sm'
+                    }`}
+                    title="Mark not done"
+                    aria-label="Mark investment not done"
+                  >
+                    <X size={14} />
+                    Not Done
+                  </button>
+                </div>
               </div>
             </div>
           ))}

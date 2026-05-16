@@ -40,6 +40,18 @@ public class WalletController {
         return ResponseEntity.ok(ApiResponse.success(created, "Wallet added"));
     }
 
+    @PatchMapping("/{id}/add-money")
+    public ResponseEntity<ApiResponse<Wallet>> addMoney(@PathVariable String id, @RequestParam Double amount) {
+        Wallet updated = walletService.addMoney(id, getUserId(), amount);
+        return ResponseEntity.ok(ApiResponse.success(updated, "Money added to wallet"));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<ApiResponse<Wallet>> updateWallet(@PathVariable String id, @RequestBody Wallet wallet) {
+        Wallet updated = walletService.updateWallet(id, getUserId(), wallet);
+        return ResponseEntity.ok(ApiResponse.success(updated, "Wallet updated"));
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteWallet(@PathVariable String id) {
         walletService.deleteWallet(id, getUserId());

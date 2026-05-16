@@ -46,6 +46,11 @@ public class AuthService {
                 .token(jwtToken)
                 .email(user.getEmail())
                 .name(user.getName())
+                .profilePicture(user.getProfilePicture())
+                .theme(user.getTheme())
+                .currency(user.getCurrency())
+                .gmailConnected(user.getGmailConnected())
+                .accentColor(user.getAccentColor())
                 .build();
     }
 
@@ -69,6 +74,11 @@ public class AuthService {
                 .token(jwtToken)
                 .email(user.getEmail())
                 .name(user.getName())
+                .profilePicture(user.getProfilePicture())
+                .theme(user.getTheme())
+                .currency(user.getCurrency())
+                .gmailConnected(user.getGmailConnected())
+                .accentColor(user.getAccentColor())
                 .build();
     }
 

@@ -28,8 +28,8 @@ const LoginPage = () => {
       const response = await api.post(endpoint, payload);
       
       if (response.data.success) {
-        const { token, email, name } = response.data.data;
-        login({ email, name }, token);
+        const { token, ...userData } = response.data.data;
+        login(userData, token);
         navigate('/dashboard');
       }
     } catch (err) {
@@ -45,7 +45,7 @@ const LoginPage = () => {
         <div className="flex flex-col items-center mb-8">
           <div className="flex items-center gap-2 text-primary mb-2">
             <Star fill="currentColor" size={32} />
-            <span className="text-3xl font-bold">Zealz</span>
+            <span className="text-3xl font-bold">Expence rack</span>
           </div>
           <p className="text-neutral-muted">Manage your expenses effortlessly</p>
         </div>

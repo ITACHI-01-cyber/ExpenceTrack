@@ -3,9 +3,9 @@ import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'rec
 
 const ExpenseStatsChart = ({ data }) => {
   return (
-    <div className="bg-white rounded-card shadow-sm border border-border p-6 h-full flex flex-col">
-      <div className="flex justify-between items-center mb-6">
-        <h3 className="font-semibold text-neutral-text text-lg">Expenses Statistics</h3>
+    <div className="bg-white rounded-card shadow-sm border border-border p-4 h-full flex flex-col sm:p-6">
+      <div className="flex justify-between items-center mb-4 sm:mb-6">
+        <h3 className="font-semibold text-neutral-text text-base sm:text-lg">Expenses Statistics</h3>
         <select className="text-sm bg-transparent border-none text-neutral-muted focus:ring-0 cursor-pointer outline-none">
           <option>Day</option>
           <option>Week</option>

@@ -20,30 +20,30 @@ const Sidebar = () => {
   ];
 
   return (
-    <aside className="w-full md:w-[220px] bg-white md:h-[calc(100vh-32px)] md:rounded-2xl shadow-card flex flex-row md:flex-col justify-between p-4 md:py-8 md:px-4 fixed bottom-0 md:relative md:ml-4 z-50">
+    <aside className="fixed bottom-0 left-0 right-0 z-50 w-full border-t border-border bg-white/95 p-2 shadow-card backdrop-blur md:relative md:left-auto md:right-auto md:w-[220px] md:h-[calc(100vh-32px)] md:rounded-2xl md:border-t-0 md:ml-4 md:flex md:flex-col md:justify-between md:p-4 md:py-8">
       <div className="hidden md:flex flex-col gap-8">
         <div className="flex items-center gap-2 px-2 text-primary">
           <Star fill="currentColor" size={24} />
-          <span className="text-xl font-bold">Zealz</span>
+          <span className="text-xl font-bold">Expence rack</span>
         </div>
 
         {user && (
           <div className="flex flex-col items-center gap-2 mb-4">
             <div className="w-16 h-16 rounded-full bg-primary-glow flex items-center justify-center text-primary font-bold text-xl overflow-hidden">
-               {user.profilePicture ? <img src={user.profilePicture} alt="User" /> : user.name.charAt(0)}
+               {user.profilePicture ? <img src={user.profilePicture} alt="User" className="h-full w-full object-cover" /> : user.name.charAt(0)}
             </div>
             <span className="font-semibold text-primary text-sm text-center">{user.name}</span>
           </div>
         )}
       </div>
 
-      <nav className="flex md:flex-col w-full gap-2 justify-around md:justify-start">
+      <nav className="grid w-full grid-cols-5 gap-1 md:flex md:flex-col md:gap-2 md:justify-start">
         {navItems.map((item) => (
           <NavLink
             key={item.name}
             to={item.path}
             className={({ isActive }) =>
-              `flex items-center gap-3 px-4 py-3 rounded-chip transition-all duration-300 font-medium ${
+              `flex min-h-12 items-center justify-center gap-3 rounded-chip px-2 py-2 transition-all duration-300 font-medium md:justify-start md:px-4 md:py-3 ${
                 isActive 
                   ? 'bg-primary text-white shadow-md' 
                   : 'text-neutral-muted hover:bg-background hover:text-primary'
@@ -57,7 +57,7 @@ const Sidebar = () => {
         
         <button 
           onClick={handleLogout}
-          className="flex items-center gap-3 px-4 py-3 rounded-chip text-neutral-muted hover:bg-danger/10 hover:text-danger transition-all duration-300 md:mt-auto"
+          className="flex min-h-12 items-center justify-center gap-3 rounded-chip px-2 py-2 text-neutral-muted transition-all duration-300 hover:bg-danger/10 hover:text-danger md:mt-auto md:justify-start md:px-4 md:py-3"
         >
           <LogOut size={20} />
           <span className="hidden md:block text-sm font-medium">Sign Out</span>

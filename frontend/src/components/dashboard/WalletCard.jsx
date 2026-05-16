@@ -54,7 +54,7 @@ const WalletCard = ({ wallet, onSwipe }) => {
 
   return (
     <div 
-      className={`relative w-full max-w-[340px] min-w-[300px] sm:min-w-[340px] h-[210px] rounded-2xl p-6 text-white overflow-hidden shadow-lg transition-transform duration-300 hover:-translate-y-2 snap-center cursor-pointer ${bgClass}`}
+      className={`relative h-[200px] w-full max-w-[340px] min-w-0 rounded-2xl p-5 text-white overflow-hidden shadow-lg transition-transform duration-300 hover:-translate-y-2 snap-center cursor-pointer sm:h-[210px] sm:min-w-[340px] sm:p-6 ${bgClass}`}
       onClick={() => setShowDetails(!showDetails)}
     >
       {/* Abstract background shapes */}
@@ -88,7 +88,7 @@ const WalletCard = ({ wallet, onSwipe }) => {
       {/* Bottom info */}
       <div className="relative z-10 flex justify-between items-end mt-auto">
         <div>
-          <p className="font-mono text-lg tracking-widest text-white/90 drop-shadow-sm mb-2">{displayId || '**** **** **** ****'}</p>
+          <p className="font-mono text-base tracking-widest text-white/90 drop-shadow-sm mb-2 sm:text-lg">{displayId || '**** **** **** ****'}</p>
           <div className="flex justify-between items-center w-full max-w-[200px] text-xs text-white/70">
             <div className="uppercase tracking-wider font-medium truncate max-w-[120px]">{cardHolderName}</div>
             {!isUpi && <div className="font-medium">{expiryDate}</div>}

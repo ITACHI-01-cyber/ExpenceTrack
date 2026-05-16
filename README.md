@@ -1,4 +1,4 @@
-# Zealz - Expense Tracker & Budget Planner
+# Expence rack - Expense Tracker & Budget Planner
 
 A full-stack web application designed for personal finance management, featuring a beautifully designed dashboard, intuitive budget planning, and seamless transaction tracking.
 
@@ -12,7 +12,7 @@ A full-stack web application designed for personal finance management, featuring
 ### Prerequisites
 - Java 21 & Maven 3.9+
 - Node.js 18+ & npm 9+
-- MongoDB instance running on `localhost:27017`
+- MongoDB local or Atlas connection string
 
 ### Backend
 1. Open a terminal and navigate to the backend directory:
@@ -24,7 +24,16 @@ A full-stack web application designed for personal finance management, featuring
    mvn spring-boot:run
    ```
 3. The server will start on `http://localhost:8080`.
-*(Note: A Database Seeder will automatically run on startup if the database is empty, injecting a demo user and sample data).*
+
+Backend environment variables:
+
+```bash
+MONGODB_URI=mongodb+srv://USER:PASSWORD@HOST/expense_tracker?appName=Portfolio
+MONGODB_DATABASE=expense_tracker
+JWT_SECRET=replace-with-a-long-secret
+CORS_ALLOWED_ORIGINS=http://localhost:5173,https://your-vercel-app.vercel.app
+SEED_DEMO_DATA=false
+```
 
 ### Frontend
 1. Open a new terminal and navigate to the frontend directory:
@@ -40,6 +49,20 @@ A full-stack web application designed for personal finance management, featuring
    npm run dev
    ```
 4. Access the application at `http://localhost:5173`.
+
+Frontend environment variables:
+
+```bash
+VITE_API_BASE_URL=http://localhost:8080/api
+```
+
+For Vercel, set `VITE_API_BASE_URL` to your Render backend URL plus `/api`.
+
+### Deployment
+
+- **Render backend**: use `render.yaml` or create a Docker web service with root directory `backend`. Set the backend environment variables above in Render.
+- **Vercel frontend**: create a Vercel project with root directory `frontend`, build command `npm run build`, and output directory `dist`.
+- After Vercel deploys, add the Vercel URL to Render's `CORS_ALLOWED_ORIGINS`.
 
 ## Features
 - **Authentication**: Secure JWT-based login and registration.

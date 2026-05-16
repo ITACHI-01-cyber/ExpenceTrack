@@ -10,6 +10,7 @@ import com.expensetracker.repository.UserRepository;
 import com.expensetracker.repository.WalletRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
@@ -26,8 +27,15 @@ public class DataSeeder implements CommandLineRunner {
     private final WalletRepository walletRepository;
     private final PasswordEncoder passwordEncoder;
 
+    @Value("${app.seed.enabled:false}")
+    private boolean seedEnabled;
+
     @Override
     public void run(String... args) throws Exception {
+        if (!seedEnabled) {
+            return;
+        }
+
         if (userRepository.count() == 0) {
             System.out.println("Seeding database...");
 

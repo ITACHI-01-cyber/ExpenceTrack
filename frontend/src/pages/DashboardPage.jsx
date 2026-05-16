@@ -96,6 +96,32 @@ const DashboardPage = () => {
     return mapped.length > 0 ? mapped : [{ name: 'No Expenses Yet', amount: 0 }];
   }, [allTransactions]);
 
+  const handleGoalStatusChange = async (goal, completed) => {
+    if (goal.completed === completed) return;
+
+    const updatedGoal = { ...goal, completed };
+
+    setGoals((currentGoals) =>
+      currentGoals.map((item) => item.id === goal.id ? updatedGoal : item)
+    );
+
+    try {
+      const res = await api.patch(`/goals/${goal.id}/status`, null, {
+        params: { completed }
+      });
+      if (res.data.success) {
+        setGoals((currentGoals) =>
+          currentGoals.map((item) => item.id === goal.id ? res.data.data : item)
+        );
+      }
+    } catch (err) {
+      console.error('Failed to update goal status', err);
+      setGoals((currentGoals) =>
+        currentGoals.map((item) => item.id === goal.id ? goal : item)
+      );
+    }
+  };
+
   if (loading) {
     return (
       <Layout>
@@ -109,14 +135,14 @@ const DashboardPage = () => {
     <Layout>
       <TopBar />
       
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-8">
         
         {/* LEFT COLUMN */}
         <div className="lg:col-span-4 flex flex-col w-full overflow-hidden">
           {/* Samsung Wallet Style Carousel */}
           <CardCarousel wallets={wallets} onAddCard={() => navigate('/wallet')} />
           
-          <div className="mt-4 flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-border group relative">
+          <div className="mt-4 flex justify-between items-center rounded-xl border border-border bg-white p-4 shadow-sm group relative md:mt-6">
             <span className="text-neutral-muted text-sm font-medium">Monthly Income</span>
             <span className="text-success font-semibold tabular-nums">{formatCurrency(summary?.monthlyIncome)}</span>
             <button 
@@ -146,18 +172,22 @@ const DashboardPage = () => {
         </div>
 
         {/* RIGHT COLUMN */}
-        <div className="lg:col-span-8 flex flex-col gap-8 w-full overflow-hidden">
+        <div className="lg:col-span-8 flex flex-col gap-6 w-full overflow-hidden lg:gap-8">
           
-          <div className="h-[300px]">
+          <div className="h-[260px] sm:h-[300px]">
             <ExpenseStatsChart data={chartData} />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-4">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:gap-8 lg:mt-4">
             <div className="flex-1">
               <MonthlyExpenseGrid categories={expenseCategories} />
             </div>
             <div className="flex-1">
-              <SavingsGoalsGrid goals={goals} onAddClick={() => setIsAddGoalModalOpen(true)} />
+              <SavingsGoalsGrid
+                goals={goals}
+                onAddClick={() => setIsAddGoalModalOpen(true)}
+                onStatusChange={handleGoalStatusChange}
+              />
             </div>
           </div>
 

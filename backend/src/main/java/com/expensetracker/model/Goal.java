@@ -21,6 +21,7 @@ public class Goal {
     private String title;
     private Double amount;
     private String medium;
+    private Boolean completed;
     private Integer month;
     private Integer year;
     private LocalDateTime createdAt;

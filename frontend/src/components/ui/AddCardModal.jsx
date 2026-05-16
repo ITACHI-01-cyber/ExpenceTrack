@@ -1,17 +1,41 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Button from './Button';
 
-const AddCardModal = ({ isOpen, onClose, onSave }) => {
-  const [formData, setFormData] = useState({
+const getDefaultFormData = () => ({
     cardType: 'debit',
     bankName: '',
     cardHolderName: '',
     cardNumber: '',
     expiryDate: '',
-    cvv: ''
-  });
+    cvv: '',
+    balance: ''
+});
+
+const AddCardModal = ({ isOpen, onClose, onSave, initialData = null }) => {
+  const [formData, setFormData] = useState(getDefaultFormData);
   
   const [showWarning, setShowWarning] = useState(false);
+  const isEditing = Boolean(initialData);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    if (initialData) {
+      setFormData({
+        cardType: initialData.cardType || 'debit',
+        bankName: initialData.bankName || '',
+        cardHolderName: initialData.cardHolderName || '',
+        cardNumber: initialData.cardNumber || '',
+        expiryDate: initialData.expiryDate || '',
+        cvv: initialData.cvv || '',
+        balance: initialData.balance ?? ''
+      });
+    } else {
+      setFormData(getDefaultFormData());
+    }
+
+    setShowWarning(false);
+  }, [isOpen, initialData]);
 
   if (!isOpen) return null;
 
@@ -24,25 +48,27 @@ const AddCardModal = ({ isOpen, onClose, onSave }) => {
     if (formData.cvv) {
       setShowWarning(true);
     } else {
-      onSave(formData);
+      onSave({ ...formData, balance: Number(formData.balance || 0) });
       onClose();
     }
   };
 
   const handleConfirmWarning = () => {
     setShowWarning(false);
-    onSave(formData);
+    onSave({ ...formData, balance: Number(formData.balance || 0) });
     onClose();
   };
 
   const isUpi = formData.cardType === 'upi';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="bg-background rounded-2xl max-w-md w-full shadow-2xl overflow-hidden relative">
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4">
+      <div className="bg-background rounded-t-2xl max-h-[92vh] max-w-md w-full shadow-2xl overflow-y-auto relative sm:rounded-2xl">
         <div className="p-6 border-b border-border">
-          <h2 className="text-xl font-bold text-primary">Add New Card</h2>
-          <p className="text-sm text-neutral-muted mt-1">Fill in the details to add a new card to your wallet.</p>
+          <h2 className="text-xl font-bold text-primary">{isEditing ? 'Edit Card' : 'Add New Card'}</h2>
+          <p className="text-sm text-neutral-muted mt-1">
+            {isEditing ? 'Update the saved details for this card.' : 'Fill in the details to add a new card to your wallet.'}
+          </p>
         </div>
         
         {showWarning ? (
@@ -148,11 +174,25 @@ const AddCardModal = ({ isOpen, onClose, onSave }) => {
                   </div>
                 </div>
               )}
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Current Money in Card</label>
+                <input
+                  type="number"
+                  name="balance"
+                  value={formData.balance}
+                  onChange={handleChange}
+                  placeholder="0.00"
+                  min="0"
+                  step="0.01"
+                  className="w-full bg-white border border-border rounded-lg px-4 py-2 text-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                />
+              </div>
             </div>
 
             <div className="mt-8 flex gap-4 justify-end">
               <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
-              <Button type="submit">Save Card</Button>
+              <Button type="submit">{isEditing ? 'Update Card' : 'Save Card'}</Button>
             </div>
           </form>
         )}

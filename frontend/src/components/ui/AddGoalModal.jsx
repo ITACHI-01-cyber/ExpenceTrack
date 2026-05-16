@@ -7,7 +7,8 @@ const AddGoalModal = ({ isOpen, onClose, onSaveSuccess }) => {
   const [formData, setFormData] = useState({
     title: '',
     amount: '',
-    medium: ''
+    medium: '',
+    completed: 'false'
   });
   const [loading, setLoading] = useState(false);
 
@@ -23,13 +24,14 @@ const AddGoalModal = ({ isOpen, onClose, onSaveSuccess }) => {
       const payload = {
         ...formData,
         amount: parseFloat(formData.amount),
+        completed: formData.completed === 'true',
         month: now.getMonth() + 1,
         year: now.getFullYear()
       };
 
       const res = await api.post('/goals', payload);
       if (res.data.success) {
-        setFormData({ title: '', amount: '', medium: '' });
+        setFormData({ title: '', amount: '', medium: '', completed: 'false' });
         onSaveSuccess();
         onClose();
       }
@@ -81,6 +83,34 @@ const AddGoalModal = ({ isOpen, onClose, onSaveSuccess }) => {
             value={formData.medium} 
             onChange={handleChange} 
           />
+        </div>
+
+        <div>
+          <label className="block text-sm mb-2 text-neutral-muted">Status</label>
+          <div className="grid grid-cols-2 gap-3">
+            <label className={`cursor-pointer rounded-input border p-3 text-center text-sm font-medium transition-colors ${formData.completed === 'false' ? 'border-primary bg-primary/5 text-primary' : 'border-border bg-white text-neutral-muted'}`}>
+              <input
+                type="radio"
+                name="completed"
+                value="false"
+                checked={formData.completed === 'false'}
+                onChange={handleChange}
+                className="sr-only"
+              />
+              Not done
+            </label>
+            <label className={`cursor-pointer rounded-input border p-3 text-center text-sm font-medium transition-colors ${formData.completed === 'true' ? 'border-success bg-success/10 text-success' : 'border-border bg-white text-neutral-muted'}`}>
+              <input
+                type="radio"
+                name="completed"
+                value="true"
+                checked={formData.completed === 'true'}
+                onChange={handleChange}
+                className="sr-only"
+              />
+              Done
+            </label>
+          </div>
         </div>
 
         <Button type="submit" className="w-full mt-4" disabled={loading}>

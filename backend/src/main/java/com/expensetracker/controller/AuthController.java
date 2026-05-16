@@ -12,12 +12,19 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
 public class AuthController {
 
     private final AuthService authService;
+
+    @GetMapping("/health")
+    public ResponseEntity<Map<String, String>> health() {
+        return ResponseEntity.ok(Map.of("status", "ok"));
+    }
 
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<AuthResponse>> register(@RequestBody RegisterRequest request) {
@@ -33,6 +40,7 @@ public class AuthController {
     public ResponseEntity<ApiResponse<User>> getMe() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         User user = authService.getMe(authentication.getName());
+        user.setPasswordHash(null);
         return ResponseEntity.ok(ApiResponse.success(user, "User details fetched"));
     }
 }

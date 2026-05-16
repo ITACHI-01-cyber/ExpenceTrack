@@ -11,6 +11,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 
 @RestController
@@ -30,11 +32,28 @@ public class TransactionController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<Transaction>>> getTransactions(
-            @RequestParam Integer month,
-            @RequestParam Integer year,
+            @RequestParam(required = false) Integer month,
+            @RequestParam(required = false) Integer year,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate,
             @RequestParam(required = false) String type
     ) {
-        List<Transaction> transactions = transactionService.getTransactions(getUserId(), month, year, type);
+        List<Transaction> transactions;
+
+        if (startDate != null && endDate != null) {
+            transactions = transactionService.getTransactionsBetween(
+                    getUserId(),
+                    LocalDate.parse(startDate).atStartOfDay(),
+                    LocalDate.parse(endDate).atTime(LocalTime.MAX),
+                    type
+            );
+        } else if (month != null && year != null) {
+            transactions = transactionService.getTransactions(getUserId(), month, year, type);
+        } else {
+            LocalDate now = LocalDate.now();
+            transactions = transactionService.getTransactions(getUserId(), now.getMonthValue(), now.getYear(), type);
+        }
+
         return ResponseEntity.ok(ApiResponse.success(transactions, "Transactions fetched"));
     }
 

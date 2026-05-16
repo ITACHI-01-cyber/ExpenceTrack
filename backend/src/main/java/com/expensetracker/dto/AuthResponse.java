@@ -13,4 +13,9 @@ public class AuthResponse {
     private String token;
     private String email;
     private String name;
+    private String profilePicture;
+    private String theme;
+    private String currency;
+    private Boolean gmailConnected;
+    private String accentColor;
 }

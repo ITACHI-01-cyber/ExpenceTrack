@@ -5,8 +5,8 @@ const TopBar = ({ title }) => {
   const { user } = useAuthStore();
   
   return (
-    <header className="flex justify-between items-center mb-8">
-      <h1 className="text-2xl font-semibold text-neutral-text">
+    <header className="mb-6 flex items-center justify-between md:mb-8">
+      <h1 className="text-xl font-semibold leading-tight text-neutral-text sm:text-2xl">
         {title || (user ? `Welcome back, ${user.name.split(' ')[0]}!` : 'Welcome!')}
       </h1>
       <div className="flex items-center gap-4">

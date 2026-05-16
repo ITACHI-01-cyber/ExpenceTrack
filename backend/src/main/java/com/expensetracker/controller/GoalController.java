@@ -43,9 +43,18 @@ public class GoalController {
         return ResponseEntity.ok(ApiResponse.success(goals, "Goals fetched successfully"));
     }
 
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<ApiResponse<Goal>> updateGoalStatus(
+            @PathVariable String id,
+            @RequestParam Boolean completed
+    ) {
+        Goal updated = goalService.updateGoalStatus(id, getUserId(), completed);
+        return ResponseEntity.ok(ApiResponse.success(updated, "Goal status updated successfully"));
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteGoal(@PathVariable String id) {
-        goalService.deleteGoal(id);
+        goalService.deleteGoal(id, getUserId());
         return ResponseEntity.ok(ApiResponse.success(null, "Goal deleted successfully"));
     }
 }

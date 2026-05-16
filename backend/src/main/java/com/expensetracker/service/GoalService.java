@@ -16,6 +16,9 @@ public class GoalService {
 
     public Goal createGoal(String userId, Goal goal) {
         goal.setUserId(userId);
+        if (goal.getCompleted() == null) {
+            goal.setCompleted(false);
+        }
         goal.setCreatedAt(LocalDateTime.now());
         return goalRepository.save(goal);
     }
@@ -24,7 +27,26 @@ public class GoalService {
         return goalRepository.findByUserIdAndMonthAndYear(userId, month, year);
     }
 
-    public void deleteGoal(String goalId) {
-        goalRepository.deleteById(goalId);
+    public Goal updateGoalStatus(String goalId, String userId, Boolean completed) {
+        Goal goal = goalRepository.findById(goalId)
+                .orElseThrow(() -> new RuntimeException("Goal not found"));
+
+        if (!goal.getUserId().equals(userId)) {
+            throw new RuntimeException("Unauthorized");
+        }
+
+        goal.setCompleted(Boolean.TRUE.equals(completed));
+        return goalRepository.save(goal);
+    }
+
+    public void deleteGoal(String goalId, String userId) {
+        Goal goal = goalRepository.findById(goalId)
+                .orElseThrow(() -> new RuntimeException("Goal not found"));
+
+        if (!goal.getUserId().equals(userId)) {
+            throw new RuntimeException("Unauthorized");
+        }
+
+        goalRepository.delete(goal);
     }
 }

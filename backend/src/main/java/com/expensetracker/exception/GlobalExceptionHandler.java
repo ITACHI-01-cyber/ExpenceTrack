@@ -17,11 +17,12 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<ApiResponse<Void>> handleRuntimeException(RuntimeException ex) {
-        if (ex.getMessage().contains("Unauthorized")) {
+        String message = ex.getMessage() == null ? "Unexpected error" : ex.getMessage();
+        if (message.contains("Unauthorized")) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(ApiResponse.error(ex.getMessage()));
+                    .body(ApiResponse.error(message));
         }
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(ApiResponse.error(ex.getMessage()));
+                .body(ApiResponse.error(message));
     }
 }
