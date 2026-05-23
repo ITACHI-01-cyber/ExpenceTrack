@@ -20,7 +20,7 @@ const Sidebar = () => {
   ];
 
   return (
-    <aside className="fixed bottom-0 left-0 right-0 z-50 w-full border-t border-border bg-white/95 p-2 shadow-card backdrop-blur md:relative md:left-auto md:right-auto md:w-[220px] md:h-[calc(100vh-32px)] md:rounded-2xl md:border-t-0 md:ml-4 md:flex md:flex-col md:justify-between md:p-4 md:py-8">
+    <aside className="fixed bottom-4 left-4 right-4 z-50 rounded-[2rem] bg-white/90 p-2 shadow-[0_8px_30px_rgb(0,0,0,0.12)] backdrop-blur-md md:relative md:bottom-auto md:left-auto md:right-auto md:w-[220px] md:h-[calc(100vh-32px)] md:rounded-2xl md:bg-white/95 md:p-4 md:py-8 md:shadow-card md:ml-4 md:flex md:flex-col md:justify-between">
       <div className="hidden md:flex flex-col gap-8">
         <div className="flex items-center gap-2 px-2 text-primary">
           <Star fill="currentColor" size={24} />
@@ -37,30 +37,34 @@ const Sidebar = () => {
         )}
       </div>
 
-      <nav className="grid w-full grid-cols-5 gap-1 md:flex md:flex-col md:gap-2 md:justify-start">
+      <nav className="flex w-full items-center justify-between px-1 md:flex md:flex-col md:gap-2 md:justify-start md:px-0">
         {navItems.map((item) => (
           <NavLink
             key={item.name}
             to={item.path}
             className={({ isActive }) =>
-              `flex min-h-12 items-center justify-center gap-3 rounded-chip px-2 py-2 transition-all duration-300 font-medium md:justify-start md:px-4 md:py-3 ${
+              `group flex flex-col md:flex-row flex-1 md:flex-none h-[60px] md:min-h-12 items-center justify-center md:justify-start gap-1 md:gap-3 rounded-[1.25rem] md:rounded-chip mx-0.5 md:mx-0 px-1 md:px-4 py-1.5 md:py-3 transition-all duration-300 font-medium ${
                 isActive 
-                  ? 'bg-primary text-white shadow-md' 
-                  : 'text-neutral-muted hover:bg-background hover:text-primary'
+                  ? 'bg-primary/15 text-primary md:bg-primary md:text-white md:shadow-md' 
+                  : 'text-neutral-muted hover:bg-primary/5 hover:text-primary md:hover:bg-background'
               }`
             }
           >
-            {item.icon}
-            <span className="hidden md:block text-sm">{item.name}</span>
+            <div className="flex flex-col items-center justify-center md:flex-row md:gap-3 transition-transform duration-300 group-hover:scale-110 md:group-hover:scale-100">
+               {React.cloneElement(item.icon, { className: "w-[22px] h-[22px] md:w-5 md:h-5 mb-0.5 md:mb-0" })}
+               <span className="text-[10px] md:text-sm leading-tight block">{item.name}</span>
+            </div>
           </NavLink>
         ))}
         
         <button 
           onClick={handleLogout}
-          className="flex min-h-12 items-center justify-center gap-3 rounded-chip px-2 py-2 text-neutral-muted transition-all duration-300 hover:bg-danger/10 hover:text-danger md:mt-auto md:justify-start md:px-4 md:py-3"
+          className="group flex flex-col md:flex-row flex-1 md:flex-none h-[60px] md:min-h-12 items-center justify-center md:justify-start gap-1 md:gap-3 rounded-[1.25rem] md:rounded-chip mx-0.5 md:mx-0 px-1 md:px-4 py-1.5 md:py-3 text-neutral-muted transition-all duration-300 hover:bg-danger/10 hover:text-danger md:mt-auto"
         >
-          <LogOut size={20} />
-          <span className="hidden md:block text-sm font-medium">Sign Out</span>
+          <div className="flex flex-col items-center justify-center md:flex-row md:gap-3 transition-transform duration-300 group-hover:scale-110 md:group-hover:scale-100">
+            <LogOut className="w-[22px] h-[22px] md:w-5 md:h-5 mb-0.5 md:mb-0" />
+            <span className="text-[10px] md:text-sm leading-tight block">Logout</span>
+          </div>
         </button>
       </nav>
     </aside>

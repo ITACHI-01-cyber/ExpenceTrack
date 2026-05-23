@@ -2,6 +2,8 @@ import React, { useEffect } from 'react';
 import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import useAuthStore from './store/authStore';
 import LoginPage from './pages/LoginPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ForgotUsernamePage from './pages/ForgotUsernamePage';
 import DashboardPage from './pages/DashboardPage';
 import BudgetPlannerPage from './pages/BudgetPlannerPage';
 import TransactionsPage from './pages/TransactionsPage';
@@ -37,6 +39,8 @@ const App = () => {
     <Router>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/forgot-username" element={<ForgotUsernamePage />} />
         
         {/* Protected Routes */}
         <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />

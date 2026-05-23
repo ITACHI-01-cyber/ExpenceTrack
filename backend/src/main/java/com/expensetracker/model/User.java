@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
@@ -17,7 +18,10 @@ import java.time.LocalDateTime;
 public class User {
     @Id
     private String id;
+    @Indexed(unique = true, sparse = true)
+    private String username;
     private String name;
+    @Indexed(unique = true)
     private String email;
     private String passwordHash;
     private String profilePicture;
@@ -32,4 +36,12 @@ public class User {
     private Boolean gmailConnected = false;
     @Builder.Default
     private String accentColor = "purple";
+    
+    @Builder.Default
+    private AccountStatus status = AccountStatus.ACTIVE;
+
+    public enum AccountStatus {
+        PENDING,
+        ACTIVE
+    }
 }
