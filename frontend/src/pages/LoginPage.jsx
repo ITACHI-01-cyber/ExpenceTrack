@@ -23,13 +23,20 @@ const LoginPage = () => {
     setLoading(true);
     
     try {
-      const endpoint = isLogin ? '/auth/login/send-otp' : '/auth/register/send-otp';
-      const payload = isLogin 
-        ? { identifier: formData.identifier, password: formData.password }
-        : { name: formData.name, username: formData.username, email: formData.identifier, password: formData.password };
-        
-      await api.post(endpoint, payload);
-      setAuthStep('otp');
+      if (isLogin) {
+        const payload = { identifier: formData.identifier, password: formData.password };
+        const response = await api.post('/auth/login', payload);
+        if (response.data.success) {
+          const { token, ...userData } = response.data.data;
+          login(userData, token);
+          navigate('/dashboard');
+        }
+      } else {
+        const endpoint = '/auth/register/send-otp';
+        const payload = { name: formData.name, username: formData.username, email: formData.identifier, password: formData.password };
+        await api.post(endpoint, payload);
+        setAuthStep('otp');
+      }
     } catch (err) {
       setError(err.response?.data?.message || 'Authentication failed');
     } finally {
@@ -47,10 +54,8 @@ const LoginPage = () => {
     setLoading(true);
     
     try {
-      const endpoint = isLogin ? '/auth/login/verify-otp' : '/auth/register/verify-otp';
-      const payload = isLogin 
-        ? { identifier: formData.identifier, code: otp }
-        : { email: formData.identifier, code: otp };
+      const endpoint = '/auth/register/verify-otp';
+      const payload = { email: formData.identifier, code: otp };
         
       const response = await api.post(endpoint, payload);
       

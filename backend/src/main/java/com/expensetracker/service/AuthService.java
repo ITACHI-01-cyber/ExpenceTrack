@@ -100,7 +100,7 @@ public class AuthService {
         return buildAuthResponse(user, jwtToken);
     }
 
-    public void sendLoginOtp(LoginRequest request) {
+    public AuthResponse login(LoginRequest request) {
         User user = userRepository.findByEmailOrUsername(request.getIdentifier(), request.getIdentifier())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -114,48 +114,6 @@ public class AuthService {
         if (user.getStatus() != User.AccountStatus.ACTIVE) {
             throw new RuntimeException("Account is not active");
         }
-
-        // Check rate limiting
-        otpRepository.findTopByEmailAndPurposeOrderByCreatedAtDesc(user.getEmail(), Otp.Purpose.LOGIN)
-                .ifPresent(otp -> {
-                    if (otp.getCreatedAt().plusMinutes(1).isAfter(LocalDateTime.now())) {
-                        throw new RuntimeException("Please wait 1 minute before requesting another OTP");
-                    }
-                });
-
-        otpRepository.deleteByEmailAndPurpose(user.getEmail(), Otp.Purpose.LOGIN);
-
-        String code = generateOtpCode();
-        Otp otp = Otp.builder()
-                .email(user.getEmail())
-                .code(code)
-                .purpose(Otp.Purpose.LOGIN)
-                .createdAt(LocalDateTime.now())
-                .build();
-        otpRepository.save(otp);
-
-        emailService.sendOtpEmail(user.getEmail(), code, "Login Verification");
-    }
-
-    public AuthResponse verifyLoginOtp(String identifier, String code) {
-        User user = userRepository.findByEmailOrUsername(identifier, identifier)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        Otp otp = otpRepository.findTopByEmailAndPurposeOrderByCreatedAtDesc(user.getEmail(), Otp.Purpose.LOGIN)
-                .orElseThrow(() -> new RuntimeException("OTP not found or expired"));
-
-        if (otp.getAttempts() >= 5) {
-            otpRepository.delete(otp);
-            throw new RuntimeException("Max attempts reached. Please request a new OTP.");
-        }
-
-        if (!otp.getCode().equals(code)) {
-            otp.setAttempts(otp.getAttempts() + 1);
-            otpRepository.save(otp);
-            throw new RuntimeException("Invalid OTP");
-        }
-
-        otpRepository.delete(otp);
 
         var userDetails = new org.springframework.security.core.userdetails.User(
                 user.getEmail(), user.getPasswordHash(), new java.util.ArrayList<>()

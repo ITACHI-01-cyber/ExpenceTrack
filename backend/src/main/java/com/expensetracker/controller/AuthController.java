@@ -37,15 +37,9 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success(authService.verifyRegisterOtp(request.get("email"), request.get("code")), "User registered successfully"));
     }
 
-    @PostMapping("/login/send-otp")
-    public ResponseEntity<ApiResponse<Void>> loginSendOtp(@RequestBody LoginRequest request) {
-        authService.sendLoginOtp(request);
-        return ResponseEntity.ok(ApiResponse.success(null, "Login OTP sent"));
-    }
-
-    @PostMapping("/login/verify-otp")
-    public ResponseEntity<ApiResponse<AuthResponse>> loginVerifyOtp(@RequestBody Map<String, String> request) {
-        return ResponseEntity.ok(ApiResponse.success(authService.verifyLoginOtp(request.get("identifier"), request.get("code")), "Login successful"));
+    @PostMapping("/login")
+    public ResponseEntity<ApiResponse<AuthResponse>> login(@RequestBody LoginRequest request) {
+        return ResponseEntity.ok(ApiResponse.success(authService.login(request), "Login successful"));
     }
 
     @GetMapping("/me")
