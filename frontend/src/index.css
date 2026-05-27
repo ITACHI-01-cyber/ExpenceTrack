@@ -1,57 +1,85 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
-@layer base {
-  :root {
-    --bg-color: #F0EEFF;
-    --card-bg: #FFFFFF;
-    --text-main: #1F1F2E;
-    --text-muted: #6B7280;
-    --border-color: rgba(124, 92, 191, 0.12);
-    
-    --primary-main: #7C5CBF;
-    --primary-light: #A78BFA;
-    --primary-glow: #C4B5FD;
-  }
-
-  body.dark {
-    --bg-color: #121212;
-    --card-bg: #1E1E1E;
-    --text-main: #F3F4F6;
-    --text-muted: #9CA3AF;
-    --border-color: rgba(255, 255, 255, 0.1);
-  }
-
-  body[data-accent="blue"] {
-    --primary-main: #1D4ED8;
-    --primary-light: #3B82F6;
-    --primary-glow: #DBEAFE;
-  }
-
-  body[data-accent="green"] {
-    --primary-main: #15803D;
-    --primary-light: #22C55E;
-    --primary-glow: #DCFCE7;
-  }
-
-  body[data-accent="purple"] {
-    --primary-main: #7C5CBF;
-    --primary-light: #A78BFA;
-    --primary-glow: #C4B5FD;
-  }
-
-  body {
-    @apply bg-background text-neutral-text antialiased font-sans;
-  }
+@theme {
+  --color-background: var(--bg-color);
+  --color-card: var(--card-bg);
+  
+  --color-primary: var(--primary-main);
+  --color-primary-light: var(--primary-light);
+  --color-primary-glow: var(--primary-glow);
+  
+  --color-success: #10B981;
+  --color-danger: #EF4444;
+  
+  --color-neutral-text: var(--text-main);
+  --color-neutral-muted: var(--text-muted);
+  
+  --color-border: var(--border-color);
+  
+  --font-sans: "Plus Jakarta Sans", sans-serif;
+  
+  --radius-card: 16px;
+  --radius-btn: 10px;
+  --radius-input: 10px;
+  --radius-chip: 999px;
+  
+  --shadow-card: 0 4px 24px rgba(124, 92, 191, 0.08);
+  --shadow-hover: 0 8px 32px rgba(124, 92, 191, 0.14);
 }
 
-@layer utilities {
-  .tabular-nums {
-    font-variant-numeric: tabular-nums;
-  }
+:root {
+  --bg-color: #F0EEFF;
+  --card-bg: #FFFFFF;
+  --text-main: #1F1F2E;
+  --text-muted: #6B7280;
+  --border-color: rgba(124, 92, 191, 0.12);
   
-  .glass-card {
-    @apply bg-white/80 backdrop-blur-xl border border-white/20 shadow-card;
-  }
+  --primary-main: #7C5CBF;
+  --primary-light: #A78BFA;
+  --primary-glow: #C4B5FD;
+}
+
+body.dark {
+  --bg-color: #121212;
+  --card-bg: #1E1E1E;
+  --text-main: #F3F4F6;
+  --text-muted: #9CA3AF;
+  --border-color: rgba(255, 255, 255, 0.1);
+}
+
+body[data-accent="blue"] {
+  --primary-main: #1D4ED8;
+  --primary-light: #3B82F6;
+  --primary-glow: #DBEAFE;
+}
+
+body[data-accent="green"] {
+  --primary-main: #15803D;
+  --primary-light: #22C55E;
+  --primary-glow: #DCFCE7;
+}
+
+body[data-accent="purple"] {
+  --primary-main: #7C5CBF;
+  --primary-light: #A78BFA;
+  --primary-glow: #C4B5FD;
+}
+
+body {
+  background-color: var(--bg-color);
+  color: var(--text-main);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-family: var(--font-sans);
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+.glass-card {
+  background-color: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: var(--shadow-card);
 }
