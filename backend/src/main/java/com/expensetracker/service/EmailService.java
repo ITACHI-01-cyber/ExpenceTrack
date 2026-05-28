@@ -1,76 +1,77 @@
 package com.expensetracker.service;
 
-import com.resend.Resend;
-import com.resend.core.exception.ResendException;
-import com.resend.services.emails.model.CreateEmailOptions;
-import com.resend.services.emails.model.CreateEmailResponse;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.MailException;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
-import jakarta.annotation.PostConstruct;
+import java.io.UnsupportedEncodingException;
 
+@Slf4j
 @Service
+@RequiredArgsConstructor
 public class EmailService {
 
-    @Value("${resend.api.key}")
-    private String resendApiKey;
-    
-    @Value("${resend.from.email}")
+    private final JavaMailSender mailSender;
+
+    @Value("${app.mail.from:}")
     private String fromEmail;
 
-    private Resend resend;
+    @Value("${app.mail.from-name:Expense Tracker}")
+    private String fromName;
 
-    @PostConstruct
-    public void init() {
-        this.resend = new Resend(resendApiKey);
-    }
-
+    @Async
     public void sendOtpEmail(String toEmail, String otp, String purpose) {
-        String body = "Hello,\n\n"
-                    + "Your One-Time Password (OTP) for " + purpose + " is: " + otp + "\n\n"
-                    + "This code is valid for 5 minutes. Do not share it with anyone.\n\n"
-                    + "Thank you,\nExpense Tracker Team";
+        String subject = "Your Expense Tracker OTP Code";
+        String html = """
+                <div style="font-family:Arial,sans-serif;max-width:480px;margin:auto;padding:24px;border:1px solid #eee;border-radius:12px;">
+                    <h2 style="color:#360568;margin:0 0 16px;">Expense Tracker</h2>
+                    <p>Hello,</p>
+                    <p>Your One-Time Password (OTP) for <b>%s</b> is:</p>
+                    <div style="font-size:28px;font-weight:bold;letter-spacing:6px;background:#f4f6fa;padding:14px 20px;border-radius:8px;text-align:center;margin:16px 0;">
+                        %s
+                    </div>
+                    <p>This code is valid for <b>5 minutes</b>. Do not share it with anyone.</p>
+                    <p style="color:#888;font-size:12px;margin-top:24px;">If you did not request this, you can safely ignore this email.</p>
+                </div>
+                """.formatted(purpose, otp);
 
-        CreateEmailOptions params = CreateEmailOptions.builder()
-                .from("Expense Tracker <" + fromEmail + ">")
-                .to(toEmail)
-                .subject("Expense Tracker - Your OTP Code")
-                .text(body)
-                .build();
-
-        try {
-            CreateEmailResponse data = resend.emails().send(params);
-            System.out.println("Resend Email ID: " + data.getId());
-        } catch (ResendException e) {
-            System.err.println("Failed to send email via Resend: " + e.getMessage());
-            // Fallback for development if API key is not configured correctly:
-            System.out.println("=========================================");
-            System.out.println("MOCK EMAIL SENT TO: " + toEmail);
-            System.out.println("SUBJECT: Expense Tracker - Your OTP Code");
-            System.out.println("BODY: \n" + body);
-            System.out.println("=========================================");
-        }
+        sendHtml(toEmail, subject, html);
     }
 
-    public void sendPasswordResetSuccessEmail(String toEmail, String plainPassword) {
-        String body = "Hello,\n\n"
-                    + "Your password has been successfully reset.\n"
-                    + "Your new password is: " + plainPassword + "\n\n"
-                    + "If you did not make this change, please contact support immediately.\n\n"
-                    + "Thank you,\nExpense Tracker Team";
-                    
-        CreateEmailOptions params = CreateEmailOptions.builder()
-                .from("Expense Tracker <" + fromEmail + ">")
-                .to(toEmail)
-                .subject("Expense Tracker - Password Reset Successful")
-                .text(body)
-                .build();
+    @Async
+    public void sendPasswordResetSuccessEmail(String toEmail) {
+        String subject = "Your Expense Tracker password was changed";
+        String html = """
+                <div style="font-family:Arial,sans-serif;max-width:480px;margin:auto;padding:24px;border:1px solid #eee;border-radius:12px;">
+                    <h2 style="color:#360568;margin:0 0 16px;">Password Changed</h2>
+                    <p>Your Expense Tracker password was just changed successfully.</p>
+                    <p>If this wasn't you, please reset your password again immediately and contact support.</p>
+                </div>
+                """;
 
+        sendHtml(toEmail, subject, html);
+    }
+
+    private void sendHtml(String to, String subject, String html) {
         try {
-            CreateEmailResponse data = resend.emails().send(params);
-            System.out.println("Resend Email ID: " + data.getId());
-        } catch (ResendException e) {
-            System.err.println("Failed to send email via Resend: " + e.getMessage());
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, false, "UTF-8");
+            helper.setFrom(fromEmail, fromName);
+            helper.setTo(to);
+            helper.setSubject(subject);
+            helper.setText(html, true);
+            mailSender.send(message);
+            log.info("Email sent to {} (subject: {})", to, subject);
+        } catch (MessagingException | MailException | UnsupportedEncodingException e) {
+            log.error("Failed to send email to {}: {}", to, e.getMessage(), e);
+            throw new RuntimeException("Failed to send email. Please try again later.");
         }
     }
 }

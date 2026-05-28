@@ -175,7 +175,7 @@ public class AuthService {
 
         otpRepository.delete(otp);
 
-        emailService.sendPasswordResetSuccessEmail(email, newPassword);
+        emailService.sendPasswordResetSuccessEmail(email);
     }
 
     public void requestUsernameRecovery(String email) {
