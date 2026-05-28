@@ -26,7 +26,6 @@ public class EmailService {
     @Value("${app.mail.from-name:Expense Tracker}")
     private String fromName;
 
-    @Async
     public void sendOtpEmail(String toEmail, String otp, String purpose) {
         String subject = "Your Expense Tracker OTP Code";
         String html = """
