@@ -1,13 +1,12 @@
 package com.expensetracker.service;
 
-import com.resend.Resend;
-import com.resend.core.exception.ResendException;
-import com.resend.services.emails.model.CreateEmailOptions;
-import com.resend.services.emails.model.CreateEmailResponse;
-import jakarta.annotation.PostConstruct;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
@@ -16,26 +15,13 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class EmailService {
 
-    @Value("${resend.api.key:}")
-    private String resendApiKey;
+    private final JavaMailSender mailSender;
 
-    @Value("${app.mail.from:onboarding@resend.dev}")
+    @Value("${app.mail.from:your-email@gmail.com}")
     private String fromEmail;
 
     @Value("${app.mail.from-name:Expense Tracker}")
     private String fromName;
-
-    private Resend resend;
-
-    @PostConstruct
-    public void init() {
-        if (resendApiKey != null && !resendApiKey.isEmpty()) {
-            this.resend = new Resend(resendApiKey);
-            log.info("Resend client initialized");
-        } else {
-            log.warn("RESEND_API_KEY is not set. Emails will not be sent.");
-        }
-    }
 
     public void sendOtpEmail(String toEmail, String otp, String purpose) {
         String subject = "Your Expense Tracker OTP Code";
@@ -70,22 +56,18 @@ public class EmailService {
     }
 
     private void sendHtml(String to, String subject, String html) {
-        if (resend == null) {
-            log.error("Failed to send email to {}: Resend client is not initialized (missing API key)", to);
-            throw new RuntimeException("Failed to send email. Email service not configured.");
-        }
-
         try {
-            CreateEmailOptions params = CreateEmailOptions.builder()
-                    .from(fromName + " <" + fromEmail + ">")
-                    .to(to)
-                    .subject(subject)
-                    .html(html)
-                    .build();
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
-            CreateEmailResponse data = resend.emails().send(params);
-            log.info("Email sent via Resend to {} (ID: {})", to, data.getId());
-        } catch (ResendException e) {
+            helper.setFrom(fromEmail, fromName);
+            helper.setTo(to);
+            helper.setSubject(subject);
+            helper.setText(html, true);
+
+            mailSender.send(message);
+            log.info("Email sent to {} via Brevo SMTP", to);
+        } catch (MessagingException | java.io.UnsupportedEncodingException e) {
             log.error("Failed to send email to {}: {}", to, e.getMessage(), e);
             throw new RuntimeException("Failed to send email. Please try again later.");
         }

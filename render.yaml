@@ -18,9 +18,9 @@ services:
         sync: false
       - key: SEED_DEMO_DATA
         value: false
-      - key: MAIL_USERNAME
+      - key: BREVO_SMTP_LOGIN
         sync: false
-      - key: MAIL_PASSWORD
+      - key: BREVO_SMTP_KEY
         sync: false
       - key: MAIL_FROM
         sync: false
