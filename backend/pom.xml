@@ -33,11 +33,8 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
-        <!-- Spring Boot Mail (SMTP via Brevo) -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-mail</artifactId>
-        </dependency>
+        <!-- Spring Boot Web (already included, needed for RestTemplate) -->
+        <!-- Brevo uses HTTP API, no mail starter needed -->
         
         <dependency>
             <groupId>org.projectlombok</groupId>

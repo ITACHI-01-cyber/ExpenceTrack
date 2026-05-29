@@ -1,27 +1,31 @@
 package com.expensetracker.service;
 
-import jakarta.mail.MessagingException;
-import jakarta.mail.internet.MimeMessage;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.http.*;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+
+import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class EmailService {
 
-    private final JavaMailSender mailSender;
+    @Value("${brevo.api.key:}")
+    private String brevoApiKey;
 
     @Value("${app.mail.from:your-email@gmail.com}")
     private String fromEmail;
 
     @Value("${app.mail.from-name:Expense Tracker}")
     private String fromName;
+
+    private final RestTemplate restTemplate = new RestTemplate();
+
+    private static final String BREVO_API_URL = "https://api.brevo.com/v3/smtp/email";
 
     public void sendOtpEmail(String toEmail, String otp, String purpose) {
         String subject = "Your Expense Tracker OTP Code";
@@ -56,18 +60,33 @@ public class EmailService {
     }
 
     private void sendHtml(String to, String subject, String html) {
+        if (brevoApiKey == null || brevoApiKey.isEmpty()) {
+            log.error("BREVO_API_KEY is not set. Cannot send email to {}", to);
+            throw new RuntimeException("Email service not configured.");
+        }
+
         try {
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.set("api-key", brevoApiKey);
 
-            helper.setFrom(fromEmail, fromName);
-            helper.setTo(to);
-            helper.setSubject(subject);
-            helper.setText(html, true);
+            Map<String, Object> body = Map.of(
+                    "sender", Map.of("name", fromName, "email", fromEmail),
+                    "to", List.of(Map.of("email", to)),
+                    "subject", subject,
+                    "htmlContent", html
+            );
 
-            mailSender.send(message);
-            log.info("Email sent to {} via Brevo SMTP", to);
-        } catch (MessagingException | java.io.UnsupportedEncodingException e) {
+            HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
+            ResponseEntity<String> response = restTemplate.postForEntity(BREVO_API_URL, request, String.class);
+
+            if (response.getStatusCode().is2xxSuccessful()) {
+                log.info("Email sent to {} via Brevo API", to);
+            } else {
+                log.error("Brevo API returned {}: {}", response.getStatusCode(), response.getBody());
+                throw new RuntimeException("Failed to send email.");
+            }
+        } catch (Exception e) {
             log.error("Failed to send email to {}: {}", to, e.getMessage(), e);
             throw new RuntimeException("Failed to send email. Please try again later.");
         }
