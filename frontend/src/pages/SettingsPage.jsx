@@ -107,30 +107,30 @@ const SettingsPage = () => {
     <Layout>
       <TopBar title="Settings" />
       
-      <div className="bg-white rounded-2xl shadow-sm border border-border overflow-hidden flex flex-col md:flex-row min-h-[500px]">
+      <div className="bg-surface rounded-2xl shadow-sm border border-border overflow-hidden flex flex-col md:flex-row min-h-[500px]">
         {/* Sidebar Tabs */}
-        <div className="w-full md:w-64 bg-neutral-100 p-3 md:p-4 md:border-r border-border flex gap-2 overflow-x-auto md:flex-col">
+        <div className="w-full md:w-64 bg-background p-3 md:p-4 md:border-r border-border flex gap-2 overflow-x-auto md:flex-col">
           <button 
             onClick={() => setActiveTab('profile')}
-            className={`flex shrink-0 items-center gap-2 px-4 py-3 rounded-xl transition-all text-sm font-medium md:gap-3 ${activeTab === 'profile' ? 'bg-primary text-white shadow-md' : 'text-neutral-muted hover:bg-white'}`}
+            className={`flex shrink-0 items-center gap-2 px-4 py-3 rounded-xl transition-all text-sm font-medium md:gap-3 ${activeTab === 'profile' ? 'bg-primary text-white shadow-md' : 'text-neutral-muted hover:bg-surface'}`}
           >
             <UserCircle size={18} /> Profile
           </button>
           <button 
             onClick={() => setActiveTab('appearance')}
-            className={`flex shrink-0 items-center gap-2 px-4 py-3 rounded-xl transition-all text-sm font-medium md:gap-3 ${activeTab === 'appearance' ? 'bg-primary text-white shadow-md' : 'text-neutral-muted hover:bg-white'}`}
+            className={`flex shrink-0 items-center gap-2 px-4 py-3 rounded-xl transition-all text-sm font-medium md:gap-3 ${activeTab === 'appearance' ? 'bg-primary text-white shadow-md' : 'text-neutral-muted hover:bg-surface'}`}
           >
             <Palette size={18} /> Appearance
           </button>
           <button 
             onClick={() => setActiveTab('preferences')}
-            className={`flex shrink-0 items-center gap-2 px-4 py-3 rounded-xl transition-all text-sm font-medium md:gap-3 ${activeTab === 'preferences' ? 'bg-primary text-white shadow-md' : 'text-neutral-muted hover:bg-white'}`}
+            className={`flex shrink-0 items-center gap-2 px-4 py-3 rounded-xl transition-all text-sm font-medium md:gap-3 ${activeTab === 'preferences' ? 'bg-primary text-white shadow-md' : 'text-neutral-muted hover:bg-surface'}`}
           >
             <CreditCard size={18} /> Preferences
           </button>
           <button 
             onClick={() => setActiveTab('integrations')}
-            className={`flex shrink-0 items-center gap-2 px-4 py-3 rounded-xl transition-all text-sm font-medium md:gap-3 ${activeTab === 'integrations' ? 'bg-primary text-white shadow-md' : 'text-neutral-muted hover:bg-white'}`}
+            className={`flex shrink-0 items-center gap-2 px-4 py-3 rounded-xl transition-all text-sm font-medium md:gap-3 ${activeTab === 'integrations' ? 'bg-primary text-white shadow-md' : 'text-neutral-muted hover:bg-surface'}`}
           >
             <Mail size={18} /> Integrations
           </button>
@@ -187,7 +187,7 @@ const SettingsPage = () => {
                     value={name} 
                     onChange={(e) => setName(e.target.value)} 
                     required
-                    className="w-full border border-border rounded-input p-2 bg-white text-sm" 
+                    className="w-full border border-border rounded-input p-2 bg-input-bg text-neutral-text text-sm" 
                   />
                 </div>
                 <Button type="submit" disabled={loading}>{loading ? 'Saving...' : 'Save Profile'}</Button>
@@ -203,13 +203,13 @@ const SettingsPage = () => {
                 <div>
                   <label className="block text-sm font-medium text-neutral-muted mb-2">Theme</label>
                   <div className="flex gap-4">
-                    <label className={`flex-1 border p-4 rounded-xl cursor-pointer text-center ${theme === 'light' ? 'border-primary bg-primary/5 ring-2 ring-primary/20' : 'border-border'}`}>
+                    <label className={`flex-1 border p-4 rounded-xl cursor-pointer text-center transition-all ${theme === 'light' ? 'border-primary bg-primary/5 ring-2 ring-primary/20' : 'border-border bg-surface'}`}>
                       <input type="radio" name="theme" value="light" checked={theme === 'light'} onChange={() => setTheme('light')} className="sr-only" />
-                      <span className="font-medium">Light</span>
+                      <span className="font-medium text-neutral-text">☀️ Light</span>
                     </label>
-                    <label className={`flex-1 border p-4 rounded-xl cursor-pointer text-center ${theme === 'dark' ? 'border-primary bg-primary/5 ring-2 ring-primary/20' : 'border-border'}`}>
+                    <label className={`flex-1 border p-4 rounded-xl cursor-pointer text-center transition-all ${theme === 'dark' ? 'border-primary bg-primary/5 ring-2 ring-primary/20' : 'border-border bg-surface'}`}>
                       <input type="radio" name="theme" value="dark" checked={theme === 'dark'} onChange={() => setTheme('dark')} className="sr-only" />
-                      <span className="font-medium">Dark</span>
+                      <span className="font-medium text-neutral-text">🌙 Dark</span>
                     </label>
                   </div>
                 </div>
@@ -241,7 +241,7 @@ const SettingsPage = () => {
                   <select 
                     value={currency} 
                     onChange={(e) => setCurrency(e.target.value)} 
-                    className="w-full border border-border rounded-input p-2 bg-white text-sm"
+                    className="w-full border border-border rounded-input p-2 bg-input-bg text-neutral-text text-sm"
                   >
                     <option value="INR">₹ Indian Rupee (INR)</option>
                     <option value="USD">$ US Dollar (USD)</option>
@@ -260,7 +260,7 @@ const SettingsPage = () => {
             <div className="animate-[fade-in_0.3s_ease-out_both]">
               <h2 className="text-xl font-bold mb-6 text-neutral-text">Integrations</h2>
               <div className="max-w-md space-y-6">
-                <div className="border border-border rounded-xl p-4 flex items-center justify-between bg-white">
+                <div className="border border-border rounded-xl p-4 flex items-center justify-between bg-surface">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-red-500">
                       <Mail size={20} />

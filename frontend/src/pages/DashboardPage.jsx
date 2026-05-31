@@ -8,6 +8,7 @@ import ExpenseStatsChart from '../components/dashboard/ExpenseStatsChart';
 import RecentPayments from '../components/dashboard/RecentPayments';
 import MonthlyExpenseGrid from '../components/dashboard/MonthlyExpenseGrid';
 import SavingsGoalsGrid from '../components/dashboard/SavingsGoalsGrid';
+import SavingsCard3D from '../components/dashboard/SavingsCard3D';
 import EditBudgetModal from '../components/ui/EditBudgetModal';
 import AddGoalModal from '../components/ui/AddGoalModal';
 import { formatCurrency } from '../utils/formatCurrency';
@@ -175,7 +176,7 @@ const DashboardPage = () => {
         <div className="lg:col-span-8 flex flex-col gap-6 w-full overflow-hidden lg:gap-8">
           
           <div className="h-[260px] sm:h-[300px]">
-            <ExpenseStatsChart data={chartData} />
+            <ExpenseStatsChart data={chartData} allTransactions={allTransactions} />
           </div>
 
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:gap-8 lg:mt-4">
@@ -183,6 +184,9 @@ const DashboardPage = () => {
               <MonthlyExpenseGrid categories={expenseCategories} />
             </div>
             <div className="flex-1">
+              <div className="mb-4 max-w-xs sm:max-w-sm">
+                <SavingsCard3D goals={goals} />
+              </div>
               <SavingsGoalsGrid
                 goals={goals}
                 onAddClick={() => setIsAddGoalModalOpen(true)}

@@ -1,5 +1,6 @@
 @import "tailwindcss";
 
+
 @theme {
   --color-background: var(--bg-color);
   --color-card: var(--card-bg);
@@ -15,6 +16,10 @@
   --color-neutral-muted: var(--text-muted);
   
   --color-border: var(--border-color);
+
+  --color-surface: var(--surface-color);
+  --color-surface-hover: var(--surface-hover);
+  --color-input-bg: var(--input-bg);
   
   --font-sans: "Plus Jakarta Sans", sans-serif;
   
@@ -30,6 +35,9 @@
 :root {
   --bg-color: #F0EEFF;
   --card-bg: #FFFFFF;
+  --surface-color: #FFFFFF;
+  --surface-hover: #F9FAFB;
+  --input-bg: #FFFFFF;
   --text-main: #1F1F2E;
   --text-muted: #6B7280;
   --border-color: rgba(124, 92, 191, 0.12);
@@ -40,11 +48,16 @@
 }
 
 body.dark {
-  --bg-color: #121212;
-  --card-bg: #1E1E1E;
+  --bg-color: #0f0f14;
+  --card-bg: #1a1a24;
+  --surface-color: #1a1a24;
+  --surface-hover: #22222e;
+  --input-bg: #22222e;
   --text-main: #F3F4F6;
   --text-muted: #9CA3AF;
-  --border-color: rgba(255, 255, 255, 0.1);
+  --border-color: rgba(255, 255, 255, 0.08);
+  
+  --primary-glow: rgba(167, 139, 250, 0.15);
 }
 
 body[data-accent="blue"] {
@@ -52,17 +65,26 @@ body[data-accent="blue"] {
   --primary-light: #3B82F6;
   --primary-glow: #DBEAFE;
 }
+body[data-accent="blue"].dark {
+  --primary-glow: rgba(59, 130, 246, 0.15);
+}
 
 body[data-accent="green"] {
   --primary-main: #15803D;
   --primary-light: #22C55E;
   --primary-glow: #DCFCE7;
 }
+body[data-accent="green"].dark {
+  --primary-glow: rgba(34, 197, 94, 0.15);
+}
 
 body[data-accent="purple"] {
   --primary-main: #7C5CBF;
   --primary-light: #A78BFA;
   --primary-glow: #C4B5FD;
+}
+body[data-accent="purple"].dark {
+  --primary-glow: rgba(167, 139, 250, 0.15);
 }
 
 body {
@@ -82,4 +104,107 @@ body {
   backdrop-filter: blur(24px);
   border: 1px solid rgba(255, 255, 255, 0.2);
   box-shadow: var(--shadow-card);
+}
+
+body.dark .glass-card {
+  background-color: rgba(26, 26, 36, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* ===== DARK MODE GLOBAL OVERRIDES ===== */
+/* Using !important to override Tailwind v4 utility layer */
+
+body.dark [class*="bg-white"] {
+  background-color: var(--card-bg) !important;
+}
+
+body.dark [class*="bg-neutral-100"],
+body.dark [class*="bg-neutral-50"] {
+  background-color: #14141c !important;
+}
+
+body.dark [class*="bg-gray-100"],
+body.dark [class*="bg-gray-50"] {
+  background-color: #22222e !important;
+}
+
+body.dark [class*="text-gray-900"],
+body.dark [class*="text-gray-800"] {
+  color: #F3F4F6 !important;
+}
+body.dark [class*="text-gray-700"],
+body.dark [class*="text-gray-600"] {
+  color: #D1D5DB !important;
+}
+body.dark [class*="text-gray-500"],
+body.dark [class*="text-gray-400"] {
+  color: #9CA3AF !important;
+}
+
+body.dark [class*="border-gray-100"],
+body.dark [class*="border-gray-200"],
+body.dark [class*="border-gray-50"] {
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Inputs */
+body.dark input,
+body.dark select,
+body.dark textarea {
+  background-color: var(--input-bg) !important;
+  color: var(--text-main) !important;
+  border-color: var(--border-color) !important;
+}
+
+body.dark input::placeholder,
+body.dark textarea::placeholder {
+  color: var(--text-muted) !important;
+}
+
+/* Tables */
+body.dark th {
+  color: var(--text-muted) !important;
+  background-color: rgba(15, 15, 20, 0.5) !important;
+}
+body.dark td {
+  color: var(--text-main) !important;
+}
+body.dark tr {
+  border-color: var(--border-color) !important;
+}
+
+/* Sidebar */
+body.dark aside {
+  background-color: rgba(26, 26, 36, 0.95) !important;
+  backdrop-filter: blur(20px);
+}
+
+/* Shadows */
+body.dark [class*="shadow-sm"] {
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4) !important;
+}
+body.dark [class*="shadow-md"] {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
+}
+
+/* Hover states */
+body.dark [class*="hover\:bg-white"]:hover {
+  background-color: var(--surface-hover) !important;
+}
+
+/* Background with opacity */
+body.dark [class*="bg-background/"] {
+  background-color: rgba(15, 15, 20, 0.5) !important;
+}
+
+/* Scrollbar */
+body.dark ::-webkit-scrollbar {
+  width: 6px;
+}
+body.dark ::-webkit-scrollbar-track {
+  background: var(--bg-color);
+}
+body.dark ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
 }

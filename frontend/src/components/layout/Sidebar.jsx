@@ -20,7 +20,7 @@ const Sidebar = () => {
   ];
 
   return (
-    <aside className="fixed bottom-4 left-4 right-4 z-50 rounded-[2rem] bg-white/90 p-2 shadow-[0_8px_30px_rgb(0,0,0,0.12)] backdrop-blur-md md:relative md:bottom-auto md:left-auto md:right-auto md:w-[220px] md:h-[calc(100vh-32px)] md:rounded-2xl md:bg-white/95 md:p-4 md:py-8 md:shadow-card md:ml-4 md:flex md:flex-col md:justify-between">
+    <aside className="fixed bottom-4 left-4 right-4 z-50 rounded-[2rem] bg-surface/90 p-2 shadow-[0_8px_30px_rgb(0,0,0,0.12)] backdrop-blur-md md:relative md:bottom-auto md:left-auto md:right-auto md:w-[220px] md:h-[calc(100vh-32px)] md:rounded-2xl md:bg-surface/95 md:p-4 md:py-8 md:shadow-card md:ml-4 md:flex md:flex-col md:justify-between border border-border">
       <div className="hidden md:flex flex-col gap-8">
         <div className="flex items-center gap-2 px-2 text-primary">
           <Star fill="currentColor" size={24} />

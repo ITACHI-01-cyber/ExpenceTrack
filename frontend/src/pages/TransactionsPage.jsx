@@ -4,6 +4,7 @@ import TopBar from '../components/layout/TopBar';
 import Button from '../components/ui/Button';
 import Badge from '../components/ui/Badge';
 import Modal from '../components/ui/Modal';
+import TransactionStatsCard3D from '../components/ui/TransactionStatsCard3D';
 import api from '../services/api';
 import { formatDate } from '../utils/dateHelpers';
 import { formatCurrency } from '../utils/formatCurrency';
@@ -248,7 +249,7 @@ const TransactionsPage = () => {
           key={tx.id || idx}
           type="button"
           onClick={() => openEditModal(tx)}
-          className="w-full rounded-xl border border-border bg-white p-4 text-left shadow-sm transition-colors hover:bg-background/40"
+          className="w-full rounded-xl border border-border bg-surface p-4 text-left shadow-sm transition-colors hover:bg-surface-hover"
         >
           <div className="mb-3 flex items-start justify-between gap-3">
             <div className="min-w-0">
@@ -300,7 +301,12 @@ const TransactionsPage = () => {
         </Button>
       </div>
 
-      <div className="mb-4 flex flex-col gap-3 rounded-card border border-border bg-white p-4 shadow-sm md:flex-row md:items-end md:justify-between">
+      {/* 3D Stats Card */}
+      <div className="mb-5 max-w-sm sm:max-w-md lg:max-w-lg">
+        <TransactionStatsCard3D transactions={transactions} />
+      </div>
+
+      <div className="mb-4 flex flex-col gap-3 rounded-card border border-border bg-surface p-4 shadow-sm md:flex-row md:items-end md:justify-between">
         <div className="flex flex-wrap gap-2">
           {['week', 'month', 'year', 'custom'].map((mode) => (
             <button
@@ -324,7 +330,7 @@ const TransactionsPage = () => {
               max="2100"
               value={filterYear}
               onChange={(e) => setFilterYear(Number(e.target.value))}
-              className="w-28 rounded-input border border-border bg-white px-3 py-2 text-sm"
+              className="w-28 rounded-input border border-border bg-input-bg text-neutral-text px-3 py-2 text-sm"
             />
           )}
 
@@ -332,7 +338,7 @@ const TransactionsPage = () => {
             <select
               value={filterMonth}
               onChange={(e) => setFilterMonth(Number(e.target.value))}
-              className="rounded-input border border-border bg-white px-3 py-2 text-sm"
+              className="rounded-input border border-border bg-input-bg text-neutral-text px-3 py-2 text-sm"
             >
               {Array.from({ length: 12 }, (_, index) => (
                 <option key={index + 1} value={index + 1}>
@@ -348,20 +354,20 @@ const TransactionsPage = () => {
                 type="date"
                 value={customStartDate}
                 onChange={(e) => setCustomStartDate(e.target.value)}
-                className="rounded-input border border-border bg-white px-3 py-2 text-sm"
+                className="rounded-input border border-border bg-input-bg text-neutral-text px-3 py-2 text-sm"
               />
               <input
                 type="date"
                 value={customEndDate}
                 onChange={(e) => setCustomEndDate(e.target.value)}
-                className="rounded-input border border-border bg-white px-3 py-2 text-sm"
+                className="rounded-input border border-border bg-input-bg text-neutral-text px-3 py-2 text-sm"
               />
             </>
           )}
         </div>
       </div>
 
-      <div className="rounded-card border border-border bg-white p-3 shadow-sm md:hidden">
+      <div className="rounded-card border border-border bg-surface p-3 shadow-sm md:hidden">
         {loading ? (
           <div className="p-6 text-center text-neutral-muted">Loading transactions...</div>
         ) : transactions.length === 0 ? (
@@ -373,7 +379,7 @@ const TransactionsPage = () => {
         )}
       </div>
 
-      <div className="hidden bg-white rounded-card shadow-sm border border-border overflow-hidden md:block">
+      <div className="hidden bg-surface rounded-card shadow-sm border border-border overflow-hidden md:block">
         {loading ? (
           <div className="p-8 text-center text-neutral-muted">Loading transactions...</div>
         ) : (
@@ -447,7 +453,7 @@ const TransactionsPage = () => {
           <div>
             <label className="block text-sm mb-1 text-neutral-muted">Wallet/Card (Optional)</label>
             <select 
-              className="w-full border rounded-input p-2 bg-white"
+              className="w-full border rounded-input p-2 bg-input-bg text-neutral-text"
               value={formData.walletId}
               onChange={e => setFormData({...formData, walletId: e.target.value})}
             >
