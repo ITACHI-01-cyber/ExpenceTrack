@@ -33,13 +33,6 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
-        <!-- Spring Boot Dotenv (loads .env file for local development) -->
-        <dependency>
-            <groupId>me.paulschwarz</groupId>
-            <artifactId>spring-dotenv</artifactId>
-            <version>4.0.0</version>
-        </dependency>
-
         <!-- Spring Boot Web (already included, needed for RestTemplate) -->
         <!-- Brevo uses HTTP API, no mail starter needed -->
         
