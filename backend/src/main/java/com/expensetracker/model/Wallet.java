@@ -24,4 +24,9 @@ public class Wallet {
     private Double balance;
     private String bankName;
     private Boolean isDefault;
+    private String cardBrand;
+    private String designPreset;
+    private String primaryColor;
+    private String secondaryColor;
+    private String textColor;
 }

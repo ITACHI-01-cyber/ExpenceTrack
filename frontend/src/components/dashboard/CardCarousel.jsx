@@ -2,15 +2,15 @@ import React, { useEffect, useState } from 'react';
 import { Plus } from 'lucide-react';
 import WalletCard from './WalletCard';
 
-const CardCarousel = ({ wallets, onAddCard }) => {
+const CardCarousel = ({ wallets, onAddCard, onAddMoney }) => {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const hasWallets = wallets && wallets.length > 0;
   const stackItems = hasWallets ? wallets : [];
   const visibleItems = stackItems.slice(0, 4);
   const layerOffset = 42;
   const stackHeight = hasWallets
-    ? 210 + (Math.min(stackItems.length, 4) - 1) * layerOffset + 16
-    : 230;
+    ? 310 + (Math.min(stackItems.length, 4) - 1) * layerOffset + 16
+    : 310;
 
   useEffect(() => {
     if (!hasWallets) {
@@ -55,16 +55,18 @@ const CardCarousel = ({ wallets, onAddCard }) => {
                   opacity: 1 - idx * 0.08,
                 }}
               >
-                <button
-                  type="button"
+                <div
                   onClick={() => selectWallet(idx)}
                   className={`block w-full text-left rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-4 ${
                     isFront ? 'cursor-default' : 'cursor-pointer'
                   }`}
-                  aria-label={`Select ${wallet.bankName || wallet.cardType || 'wallet'} card`}
                 >
-                  <WalletCard wallet={wallet} />
-                </button>
+                  <WalletCard
+                    wallet={wallet}
+                    interactive={isFront}
+                    onAddMoney={isFront ? onAddMoney : undefined}
+                  />
+                </div>
 
                 {idx === 3 && hiddenCount > 0 && (
                   <div className="pointer-events-none absolute inset-x-8 -bottom-5 rounded-full bg-neutral-900/10 px-3 py-1 text-center text-xs font-medium text-neutral-muted backdrop-blur">
@@ -84,7 +86,7 @@ const CardCarousel = ({ wallets, onAddCard }) => {
           <button
             type="button"
             onClick={onAddCard}
-            className={`absolute left-0 right-0 mx-auto flex h-[210px] w-full max-w-[340px] flex-col items-center justify-center rounded-2xl border-2 border-dashed border-primary/30 bg-white/70 text-primary/70 transition-all duration-300 hover:border-primary/50 hover:bg-primary/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-4 ${
+            className={`absolute left-0 right-0 mx-auto flex h-[300px] w-full max-w-[340px] flex-col items-center justify-center rounded-2xl border-2 border-dashed border-primary/30 bg-white/70 text-primary/70 transition-all duration-300 hover:border-primary/50 hover:bg-primary/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-4 ${
               hasWallets ? 'scale-[0.86]' : ''
             }`}
             style={{

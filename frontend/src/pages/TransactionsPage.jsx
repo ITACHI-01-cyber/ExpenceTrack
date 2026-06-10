@@ -6,6 +6,7 @@ import Badge from '../components/ui/Badge';
 import Modal from '../components/ui/Modal';
 import TransactionStatsCard3D from '../components/ui/TransactionStatsCard3D';
 import api from '../services/api';
+import walletService from '../services/walletService';
 import { formatDate } from '../utils/dateHelpers';
 import { formatCurrency } from '../utils/formatCurrency';
 import { Trash2, Plus } from 'lucide-react';
@@ -45,12 +46,18 @@ const getEmptyTransactionForm = () => ({
   walletId: ''
 });
 
+const toTitleCase = (value) => value
+  .trim()
+  .replace(/\s+/g, ' ')
+  .replace(/\b\w/g, (letter) => letter.toUpperCase());
+
 const TransactionsPage = () => {
   const [transactions, setTransactions] = useState([]);
   const [wallets, setWallets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState(null);
+  const [categoryHistory, setCategoryHistory] = useState([]);
   const now = new Date();
   const currentWeek = getWeekRange(now);
   const [filterMode, setFilterMode] = useState('month');
@@ -61,6 +68,53 @@ const TransactionsPage = () => {
   
   // Modal Form State
   const [formData, setFormData] = useState(getEmptyTransactionForm);
+
+  const savedCategories = React.useMemo(() => {
+    const uniqueCategories = new Map();
+    categoryHistory.forEach((category) => {
+      uniqueCategories.set(category.toLocaleLowerCase(), category);
+    });
+    transactions.forEach((transaction) => {
+      const category = transaction.category?.trim();
+      if (category && !uniqueCategories.has(category.toLocaleLowerCase())) {
+        uniqueCategories.set(category.toLocaleLowerCase(), category);
+      }
+    });
+    return [...uniqueCategories.values()].sort((a, b) => a.localeCompare(b));
+  }, [categoryHistory, transactions]);
+
+  const rememberMany = (categories) => {
+    const unique = new Map(
+      categoryHistory.map((c) => [String(c).toLocaleLowerCase(), c])
+    );
+
+    categories.forEach((value) => {
+      const category = String(value || '').trim().replace(/\s+/g, ' ');
+      if (category && !unique.has(category.toLocaleLowerCase())) {
+        unique.set(category.toLocaleLowerCase(), category);
+      }
+    });
+
+    const saved = [...unique.values()].sort((a, b) => a.localeCompare(b));
+    return saved;
+  };
+
+  const normalizeCategory = (value) => {
+    const trimmedValue = value.trim().replace(/\s+/g, ' ');
+    if (!trimmedValue) return '';
+
+    const exactMatch = savedCategories.find(
+      (category) => category.toLocaleLowerCase() === trimmedValue.toLocaleLowerCase()
+    );
+    if (exactMatch) return exactMatch;
+
+    const prefixMatches = savedCategories.filter(
+      (category) => category.toLocaleLowerCase().startsWith(trimmedValue.toLocaleLowerCase())
+    );
+    if (prefixMatches.length === 1) return prefixMatches[0];
+
+    return toTitleCase(trimmedValue);
+  };
 
   const buildTransactionParams = () => {
     if (filterMode === 'week') {
@@ -89,16 +143,19 @@ const TransactionsPage = () => {
 
   const fetchData = async () => {
     try {
-      const [txRes, walletRes] = await Promise.all([
-        api.get('/transactions', { params: buildTransactionParams() }),
-        api.get('/wallet')
-      ]);
+      const w = await walletService.getAll();
+      setWallets(w || []);
+    } catch (err) {
+      console.error('Failed to fetch wallets', err);
+    }
+
+    try {
+      const txRes = await api.get('/transactions', { params: buildTransactionParams() });
 
       if (txRes.data.success) {
-        setTransactions(txRes.data.data.sort((a,b) => new Date(b.date) - new Date(a.date)));
-      }
-      if (walletRes.data.success) {
-        setWallets(walletRes.data.data);
+        const sortedTransactions = txRes.data.data.sort((a,b) => new Date(b.date) - new Date(a.date));
+        setTransactions(sortedTransactions);
+        setCategoryHistory(rememberMany(sortedTransactions.map((transaction) => transaction.category)));
       }
     } catch (err) {
       console.error(err);
@@ -110,6 +167,11 @@ const TransactionsPage = () => {
   useEffect(() => {
     fetchData();
   }, [filterMode, filterMonth, filterYear, customStartDate, customEndDate]);
+
+  useEffect(() => {
+    // wallets are fetched in fetchData; no local storage sync needed
+    return undefined;
+  }, []);
 
   const handleDelete = async (id) => {
     try {
@@ -150,7 +212,11 @@ const TransactionsPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const payload = { ...formData, amount: parseFloat(formData.amount) };
+      const payload = {
+        ...formData,
+        amount: parseFloat(formData.amount),
+        category: normalizeCategory(formData.category)
+      };
       if (!payload.walletId) delete payload.walletId; // Don't send empty string if unselected
 
       if (editingTransaction) {
@@ -159,6 +225,7 @@ const TransactionsPage = () => {
         await api.post('/transactions', payload);
       }
 
+      setCategoryHistory((prev) => rememberMany([...prev, payload.category]));
       closeTransactionModal();
       fetchData(); // Refresh to get updated transactions and potentially wallets
     } catch (err) {
@@ -447,7 +514,28 @@ const TransactionsPage = () => {
 
           <div>
             <label className="block text-sm mb-1 text-neutral-muted">Category</label>
-            <input type="text" required className="w-full border rounded-input p-2" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} />
+            <input
+              type="text"
+              required
+              list="saved-transaction-categories"
+              autoComplete="off"
+              className="w-full border rounded-input p-2"
+              value={formData.category}
+              onChange={e => setFormData({...formData, category: e.target.value})}
+              onBlur={e => setFormData((current) => ({
+                ...current,
+                category: normalizeCategory(e.target.value)
+              }))}
+              placeholder="Start typing, e.g. Gro..."
+            />
+            <datalist id="saved-transaction-categories">
+              {savedCategories.map((category) => (
+                <option key={category.toLocaleLowerCase()} value={category} />
+              ))}
+            </datalist>
+            <p className="mt-1 text-xs text-neutral-muted">
+              Existing categories are matched without considering uppercase or lowercase.
+            </p>
           </div>
 
           <div>

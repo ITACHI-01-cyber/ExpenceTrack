@@ -4,9 +4,9 @@ import { formatCurrency } from '../../utils/formatCurrency';
 const MonthlyExpenseGrid = ({ categories }) => {
   return (
     <div className="h-full">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="font-semibold text-neutral-text">Monthly Expenses</h3>
-        <button className="text-sm text-neutral-muted hover:text-primary transition-colors">Edit</button>
+      <div className="mb-4 flex min-h-7 items-center justify-between gap-4">
+        <h3 className="font-semibold leading-tight text-neutral-text">Monthly Expenses</h3>
+        <button className="shrink-0 text-sm text-neutral-muted transition-colors hover:text-primary">Edit</button>
       </div>
       
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">

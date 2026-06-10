@@ -11,9 +11,11 @@ import SavingsGoalsGrid from '../components/dashboard/SavingsGoalsGrid';
 import SavingsCard3D from '../components/dashboard/SavingsCard3D';
 import EditBudgetModal from '../components/ui/EditBudgetModal';
 import AddGoalModal from '../components/ui/AddGoalModal';
+import AddBalanceModal from '../components/ui/AddBalanceModal';
 import { formatCurrency } from '../utils/formatCurrency';
 import { Settings2 } from 'lucide-react';
 import api from '../services/api';
+import walletService from '../services/walletService';
 
 const DashboardPage = () => {
   const navigate = useNavigate();
@@ -24,19 +26,26 @@ const DashboardPage = () => {
   const [loading, setLoading] = useState(true);
   const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false);
   const [isAddGoalModalOpen, setIsAddGoalModalOpen] = useState(false);
+  const [topUpWallet, setTopUpWallet] = useState(null);
 
   const [allTransactions, setAllTransactions] = useState([]);
 
   const fetchData = async () => {
     try {
+      const w = await walletService.getAll();
+      setWallets(w || []);
+    } catch (err) {
+      console.error('Failed to fetch wallets', err);
+    }
+
+    try {
       const now = new Date();
       const month = now.getMonth() + 1;
       const year = now.getFullYear();
 
-      const [summaryRes, txRes, walletRes, goalsRes] = await Promise.all([
+      const [summaryRes, txRes, goalsRes] = await Promise.all([
         api.get('/dashboard/summary'),
         api.get(`/transactions?month=${month}&year=${year}`),
-        api.get('/wallet'),
         api.get(`/goals?month=${month}&year=${year}`)
       ]);
 
@@ -47,9 +56,6 @@ const DashboardPage = () => {
         const sorted = txRes.data.data.sort((a, b) => new Date(b.date) - new Date(a.date));
         setAllTransactions(sorted);
         setTransactions(sorted.slice(0, 4));
-      }
-      if (walletRes.data.success) {
-        setWallets(walletRes.data.data);
       }
       if (goalsRes && goalsRes.data && goalsRes.data.success) {
         setGoals(goalsRes.data.data);
@@ -63,6 +69,7 @@ const DashboardPage = () => {
 
   useEffect(() => {
     fetchData();
+    return undefined;
   }, []);
 
   const chartData = React.useMemo(() => {
@@ -87,12 +94,15 @@ const DashboardPage = () => {
     const categories = {};
     allTransactions.forEach(tx => {
       if (tx.type === 'expense') {
-        const catName = tx.category || 'Uncategorized';
-        categories[catName] = (categories[catName] || 0) + tx.amount;
+        const catName = tx.category?.trim() || 'Uncategorized';
+        const categoryKey = catName.toLocaleLowerCase();
+        if (!categories[categoryKey]) {
+          categories[categoryKey] = { name: catName, amount: 0 };
+        }
+        categories[categoryKey].amount += tx.amount;
       }
     });
-    const mapped = Object.entries(categories)
-      .map(([name, amount]) => ({ name, amount }))
+    const mapped = Object.values(categories)
       .sort((a, b) => b.amount - a.amount);
     return mapped.length > 0 ? mapped : [{ name: 'No Expenses Yet', amount: 0 }];
   }, [allTransactions]);
@@ -123,6 +133,18 @@ const DashboardPage = () => {
     }
   };
 
+  const handleAddBalance = (amount) => {
+    (async () => {
+      try {
+        await walletService.addMoney(topUpWallet.id, amount);
+        const w = await walletService.getAll();
+        setWallets(w || []);
+      } catch (err) {
+        console.error('Failed to top up wallet', err);
+      }
+    })();
+  };
+
   if (loading) {
     return (
       <Layout>
@@ -141,7 +163,11 @@ const DashboardPage = () => {
         {/* LEFT COLUMN */}
         <div className="lg:col-span-4 flex flex-col w-full overflow-hidden">
           {/* Samsung Wallet Style Carousel */}
-          <CardCarousel wallets={wallets} onAddCard={() => navigate('/wallet')} />
+          <CardCarousel
+            wallets={wallets}
+            onAddCard={() => navigate('/wallet')}
+            onAddMoney={setTopUpWallet}
+          />
           
           <div className="mt-4 flex justify-between items-center rounded-xl border border-border bg-white p-4 shadow-sm group relative md:mt-6">
             <span className="text-neutral-muted text-sm font-medium">Monthly Income</span>
@@ -175,11 +201,11 @@ const DashboardPage = () => {
         {/* RIGHT COLUMN */}
         <div className="lg:col-span-8 flex flex-col gap-6 w-full overflow-hidden lg:gap-8">
           
-          <div className="h-[260px] sm:h-[300px]">
+          <div className="h-[360px] sm:h-[380px]">
             <ExpenseStatsChart data={chartData} allTransactions={allTransactions} />
           </div>
 
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:gap-8 lg:mt-4">
+          <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:gap-8">
             <div className="flex-1">
               <MonthlyExpenseGrid categories={expenseCategories} />
             </div>
@@ -210,6 +236,13 @@ const DashboardPage = () => {
         isOpen={isAddGoalModalOpen}
         onClose={() => setIsAddGoalModalOpen(false)}
         onSaveSuccess={fetchData}
+      />
+
+      <AddBalanceModal
+        wallet={topUpWallet}
+        isOpen={Boolean(topUpWallet)}
+        onClose={() => setTopUpWallet(null)}
+        onConfirm={handleAddBalance}
       />
     </Layout>
   );

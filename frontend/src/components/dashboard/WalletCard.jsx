@@ -1,97 +1,207 @@
 import React, { useState } from 'react';
+import { Eye, EyeOff, Pencil, Plus, QrCode, ScanLine, Trash2, Wifi } from 'lucide-react';
 import AnimatedNumber from '../ui/AnimatedNumber';
 import { formatCurrency } from '../../utils/formatCurrency';
+import { getCardBackground, getCardCoverStyle } from '../../utils/cardDesigns';
 
-const WalletCard = ({ wallet, onSwipe }) => {
-  const [showDetails, setShowDetails] = useState(false);
+const CardBrand = ({ brand, cardType }) => {
+  const normalizedBrand = (brand || cardType).toLowerCase();
 
-  // Extract variables
-  const { 
-    balance = 0, 
-    cardNumber = '', 
-    cardType = 'debit', 
-    cardHolderName = 'CARDHOLDER',
-    expiryDate = 'MM/YY',
-    bankName = ''
-  } = wallet;
-
-  // Determine card design based on type
-  let bgClass = 'bg-gradient-to-tr from-neutral-800 to-black'; // Default dark
-  let logo = null;
-  let typeLabel = cardType.toUpperCase();
-
-  if (cardType.toLowerCase() === 'credit') {
-    bgClass = 'bg-gradient-to-tr from-indigo-700 to-purple-900';
-    logo = <div className="text-white/80 font-bold italic text-lg tracking-widest">CREDIT</div>;
-  } else if (cardType.toLowerCase() === 'debit') {
-    bgClass = 'bg-gradient-to-tr from-emerald-600 to-teal-900';
-    logo = <div className="text-white/80 font-bold italic text-lg tracking-widest">DEBIT</div>;
-  } else if (cardType.toLowerCase() === 'upi') {
-    bgClass = 'bg-gradient-to-tr from-blue-600 to-cyan-800';
-    logo = <div className="text-white/90 font-black italic text-xl tracking-tighter">UPI</div>;
-  } else if (cardType.toLowerCase() === 'personal') {
-    bgClass = 'bg-gradient-to-tr from-rose-600 to-pink-900';
-    logo = <div className="text-white/80 font-bold text-lg tracking-widest">INFO</div>;
-  } else {
-    // mastercard / visa fallback
-    if (cardType.toLowerCase().includes('master')) {
-      logo = (
-        <div className="flex -space-x-2">
-          <div className="w-6 h-6 rounded-full bg-red-500 opacity-80 mix-blend-screen"></div>
-          <div className="w-6 h-6 rounded-full bg-yellow-500 opacity-80 mix-blend-screen"></div>
-        </div>
-      );
-    } else if (cardType.toLowerCase().includes('visa')) {
-      logo = <div className="text-white font-bold italic text-xl">VISA</div>;
-    }
+  if (normalizedBrand.includes('master')) {
+    return (
+      <div className="flex -space-x-2" aria-label="Mastercard">
+        <div className="h-7 w-7 rounded-full bg-red-500/95" />
+        <div className="h-7 w-7 rounded-full bg-yellow-400/95 mix-blend-screen" />
+      </div>
+    );
   }
 
-  // Format card number securely for display
+  return (
+    <div className="text-right leading-none">
+      <div className="text-xl font-black italic tracking-tight">
+        {cardType === 'upi' ? 'UPI' : (brand || 'VISA').toUpperCase()}
+      </div>
+      {cardType !== 'upi' && (
+        <div className="mt-1 text-[8px] font-bold uppercase tracking-[0.2em]">
+          {cardType}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const WalletCard = ({
+  wallet,
+  interactive = true,
+  preview = false,
+  onAddMoney,
+  onEdit,
+  onRemove,
+  removing = false
+}) => {
+  const [showDetails, setShowDetails] = useState(false);
+  const {
+    balance = 0,
+    cardNumber = '',
+    cardType = 'debit',
+    cardHolderName = 'CARDHOLDER',
+    expiryDate = 'MM/YY',
+    bankName = '',
+    cardBrand = ''
+  } = wallet;
+
   const isUpi = cardType.toLowerCase() === 'upi';
-  const displayId = isUpi 
-    ? cardNumber 
-    : (showDetails ? cardNumber : `**** **** **** ${cardNumber.slice(-4)}`);
+  const detailsVisible = showDetails || preview;
+  const displayId = isUpi
+    ? cardNumber
+    : (detailsVisible ? cardNumber : `•••• •••• •••• ${cardNumber.slice(-4)}`);
 
   return (
-    <div 
-      className={`relative h-[200px] w-full max-w-[340px] min-w-0 rounded-2xl p-5 text-white overflow-hidden shadow-lg transition-transform duration-300 hover:-translate-y-2 snap-center cursor-pointer sm:h-[210px] sm:min-w-[340px] sm:p-6 ${bgClass}`}
-      onClick={() => setShowDetails(!showDetails)}
-    >
-      {/* Abstract background shapes */}
-      <div className="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/3"></div>
-      <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/5 rounded-full translate-y-1/3 -translate-x-1/3"></div>
-      
-      {/* Top row */}
-      <div className="relative z-10 flex justify-between items-start mb-6">
-        <div>
-          <p className="text-white/60 text-xs font-medium uppercase tracking-wider mb-1">{bankName || typeLabel}</p>
-          <div className="flex items-center gap-2">
-            {!isUpi && (
-              <div className="w-8 h-6 bg-yellow-200/80 rounded flex items-center justify-center opacity-80">
-                <div className="w-6 h-4 border border-yellow-600/30 rounded-sm"></div>
+    <div className="relative w-full max-w-[360px] pt-2">
+      <div
+        className={`relative z-0 mx-5 h-[190px] overflow-hidden px-5 pb-16 pt-5 shadow-lg transition-transform duration-300 sm:mx-6 ${isUpi ? 'rounded-[30px]' : 'rounded-[22px]'}`}
+        style={getCardBackground(wallet)}
+      >
+        <div className="absolute -right-10 -top-14 h-40 w-40 rounded-full border-[24px] border-white/10" />
+        <div className="absolute -bottom-12 -left-10 h-32 w-32 rounded-full bg-white/10 blur-xl" />
+
+        {isUpi ? (
+          <div className="relative z-10">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] opacity-70">UPI payment pass</p>
+                <p className="mt-1 max-w-[180px] truncate text-lg font-bold">{bankName || 'UPI'}</p>
               </div>
-            )}
-            {isUpi && <div className="text-xs bg-white/20 px-2 py-0.5 rounded">UPI ID</div>}
+              <div className="grid h-11 w-11 place-items-center rounded-2xl bg-white/18 backdrop-blur">
+                <QrCode size={25} />
+              </div>
+            </div>
+
+            <div className="mt-5 flex items-center gap-3">
+              <div className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-white/18 text-lg font-bold uppercase">
+                {(cardHolderName || 'U').charAt(0)}
+              </div>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold">{cardHolderName}</p>
+                <p className="mt-0.5 truncate font-mono text-xs opacity-75">{displayId || 'name@bank'}</p>
+              </div>
+            </div>
+
+            <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider">
+              <ScanLine size={14} />
+              Scan and pay ready
+            </div>
           </div>
-        </div>
-        {logo}
+        ) : (
+          <>
+            <div className="relative z-10 flex items-start justify-between">
+              <div>
+                <p className="max-w-[190px] truncate text-xs font-bold uppercase tracking-[0.16em] opacity-80">
+                  {bankName || cardType}
+                </p>
+              <div className="mt-4 flex items-center gap-3">
+                <div className="grid h-7 w-10 place-items-center rounded-md bg-yellow-200/90 shadow-inner">
+                  <div className="h-5 w-7 rounded border border-yellow-700/30" />
+                </div>
+                <Wifi size={19} className="rotate-90 opacity-75" />
+              </div>
+              </div>
+              <CardBrand brand={cardBrand} cardType={cardType} />
+            </div>
+
+            <div className="relative z-10 mt-5">
+              <p className="font-mono text-[15px] font-semibold tracking-[0.14em] drop-shadow-sm sm:text-base">
+                {displayId || '•••• •••• •••• ••••'}
+              </p>
+              <div className="mt-3 flex items-end justify-between gap-4 text-[10px] font-semibold uppercase tracking-[0.12em] opacity-80">
+                <div className="min-w-0">
+                  <p className="mb-0.5 text-[8px] opacity-70">Card holder</p>
+                  <p className="truncate">{cardHolderName}</p>
+                </div>
+                <div className="shrink-0 text-right">
+                  <p className="mb-0.5 text-[8px] opacity-70">Valid thru</p>
+                  <p>{expiryDate || 'MM/YY'}</p>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
-      {/* Balance */}
-      <div className="relative z-10 mb-4">
-        <p className="text-white/60 text-xs font-medium mb-1">Available balance</p>
-        <h2 className="text-2xl font-bold tracking-tight tabular-nums">
-          <AnimatedNumber value={balance} formatter={formatCurrency} />
-        </h2>
-      </div>
+      <div
+        className="relative z-10 min-h-[176px] overflow-hidden rounded-[26px] border p-5 shadow-[0_18px_40px_rgba(15,23,42,0.2)]"
+        style={{ ...getCardCoverStyle(wallet), marginTop: '-62px' }}
+      >
+        <div
+          className="pointer-events-none absolute -top-5 left-[-5%] h-12 w-[110%] rounded-[50%] border-t border-white/30 bg-white/10"
+          aria-hidden="true"
+        />
+        <div className="pointer-events-none absolute inset-x-5 bottom-3 top-3 rounded-[20px] border border-dashed border-current opacity-20" />
 
-      {/* Bottom info */}
-      <div className="relative z-10 flex justify-between items-end mt-auto">
-        <div>
-          <p className="font-mono text-base tracking-widest text-white/90 drop-shadow-sm mb-2 sm:text-lg">{displayId || '**** **** **** ****'}</p>
-          <div className="flex justify-between items-center w-full max-w-[200px] text-xs text-white/70">
-            <div className="uppercase tracking-wider font-medium truncate max-w-[120px]">{cardHolderName}</div>
-            {!isUpi && <div className="font-medium">{expiryDate}</div>}
+        <div className="relative z-10 pt-5">
+          <p className="text-xs font-medium opacity-70">{isUpi ? 'UPI balance' : 'Total balance'}</p>
+          <h2 className="mt-1 text-2xl font-bold tracking-tight tabular-nums sm:text-[28px]">
+            <AnimatedNumber value={balance} formatter={formatCurrency} />
+          </h2>
+
+          <div className="mt-5 flex items-center justify-between gap-3">
+            {interactive ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => onAddMoney?.(wallet)}
+                  disabled={!onAddMoney}
+                  className="inline-flex h-10 items-center gap-2 rounded-full border border-current/20 bg-white/12 px-4 text-sm font-semibold backdrop-blur transition hover:bg-white/20"
+                >
+                  <Plus size={17} />
+                  Add balance
+                </button>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowDetails((current) => !current)}
+                    className="grid h-10 w-10 place-items-center rounded-full border border-current/20 bg-white/12 transition hover:bg-white/20"
+                    aria-label={showDetails ? 'Hide card number' : 'Show card number'}
+                    title={showDetails ? 'Hide card number' : 'Show card number'}
+                  >
+                    {showDetails ? <EyeOff size={17} /> : <Eye size={17} />}
+                  </button>
+                  {onEdit && (
+                    <button
+                      type="button"
+                      onClick={() => onEdit(wallet)}
+                      className="grid h-10 w-10 place-items-center rounded-full border border-current/20 bg-white/12 transition hover:bg-white/20"
+                      aria-label="Edit card"
+                      title="Edit card"
+                    >
+                      <Pencil size={16} />
+                    </button>
+                  )}
+                  {onRemove && (
+                    <button
+                      type="button"
+                      onClick={() => onRemove(wallet)}
+                      disabled={removing}
+                      className="grid h-10 w-10 place-items-center rounded-full border border-current/20 bg-white/12 transition hover:bg-red-500/30 disabled:opacity-50"
+                      aria-label="Remove card"
+                      title="Remove card"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  )}
+                </div>
+              </>
+            ) : onAddMoney ? (
+              <button
+                type="button"
+                onClick={() => onAddMoney(wallet)}
+                className="inline-flex h-10 items-center gap-2 rounded-full border border-current/20 bg-white/12 px-4 text-sm font-semibold transition hover:bg-white/20"
+              >
+                <Plus size={17} />
+                Add balance
+              </button>
+            ) : null}
           </div>
         </div>
       </div>

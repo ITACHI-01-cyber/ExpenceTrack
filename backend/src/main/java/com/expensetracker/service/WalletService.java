@@ -19,6 +19,7 @@ public class WalletService {
 
     public Wallet addWallet(String userId, Wallet wallet) {
         wallet.setUserId(userId);
+        wallet.setCvv(null);
         if (wallet.getBalance() == null) {
             wallet.setBalance(0.0);
         }
@@ -55,9 +56,14 @@ public class WalletService {
         wallet.setCardHolderName(walletDetails.getCardHolderName());
         wallet.setCardNumber(walletDetails.getCardNumber());
         wallet.setExpiryDate(walletDetails.getExpiryDate());
-        wallet.setCvv(walletDetails.getCvv());
+        wallet.setCvv(null);
         wallet.setBalance(walletDetails.getBalance() == null ? 0.0 : walletDetails.getBalance());
         wallet.setIsDefault(walletDetails.getIsDefault());
+        wallet.setCardBrand(walletDetails.getCardBrand());
+        wallet.setDesignPreset(walletDetails.getDesignPreset());
+        wallet.setPrimaryColor(walletDetails.getPrimaryColor());
+        wallet.setSecondaryColor(walletDetails.getSecondaryColor());
+        wallet.setTextColor(walletDetails.getTextColor());
 
         return walletRepository.save(wallet);
     }
