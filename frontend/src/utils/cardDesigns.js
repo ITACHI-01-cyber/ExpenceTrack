@@ -88,8 +88,33 @@ export const UPI_DESIGNS = [
   }
 ];
 
+export const CASH_DESIGNS = [
+  {
+    id: 'cash-pop',
+    name: 'Pop Cash',
+    primaryColor: '#FFD166',
+    secondaryColor: '#06D6A0',
+    textColor: '#0F172A'
+  },
+  {
+    id: 'cash-neon',
+    name: 'Neon Cash',
+    primaryColor: '#0EA5E9',
+    secondaryColor: '#F472B6',
+    textColor: '#FFFFFF'
+  },
+  {
+    id: 'cash-gold',
+    name: 'Gold Rush',
+    primaryColor: '#B45309',
+    secondaryColor: '#F59E0B',
+    textColor: '#FFFFFF'
+  }
+];
+
 export const getCardDesign = (wallet = {}) => {
-  const designs = wallet.cardType === 'upi' ? UPI_DESIGNS : CARD_DESIGNS;
+  const type = (wallet.cardType || '').toLowerCase();
+  const designs = type === 'upi' ? UPI_DESIGNS : (type === 'cash' ? CASH_DESIGNS : CARD_DESIGNS);
   const preset = designs.find((design) => design.id === wallet.designPreset)
     || designs[0];
 
@@ -119,6 +144,20 @@ export const getCardBackground = (wallet = {}) => {
     'upi-night': `radial-gradient(circle at 80% 10%, rgba(99,102,241,.45), transparent 30%), ${gradient}`,
     'upi-custom': `radial-gradient(circle at 10% 20%, rgba(255,255,255,.24), transparent 22%), radial-gradient(circle at 90% 85%, rgba(255,255,255,.16), transparent 28%), ${gradient}`
   };
+
+  // Cash specific funky patterns
+  const cashPatterns = {
+    'cash-pop': `conic-gradient(from 180deg at 50% 50%, rgba(255,255,255,.06), transparent 10%), repeating-linear-gradient(45deg, rgba(0,0,0,.03) 0 6px, transparent 6px 12px), ${gradient}`,
+    'cash-neon': `radial-gradient(circle at 10% 10%, rgba(255,255,255,.18), transparent 14%), repeating-linear-gradient(120deg, rgba(255,255,255,.05) 0 8px, transparent 8px 16px), ${gradient}`,
+    'cash-gold': `radial-gradient(circle at 85% 15%, rgba(255,255,255,.28), transparent 20%), linear-gradient(90deg, rgba(255,255,255,.03), transparent 60%), ${gradient}`
+  };
+
+  if (wallet.designPreset && cashPatterns[wallet.designPreset]) {
+    return {
+      backgroundImage: cashPatterns[wallet.designPreset],
+      color: design.textColor
+    };
+  }
 
   return {
     backgroundImage: patterns[wallet.designPreset] || gradient,

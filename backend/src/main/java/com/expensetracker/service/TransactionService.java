@@ -1,14 +1,16 @@
 package com.expensetracker.service;
 
-import com.expensetracker.model.Transaction;
-import com.expensetracker.repository.TransactionRepository;
-import com.expensetracker.repository.WalletRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-
 import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.util.List;
+
+import org.springframework.stereotype.Service;
+
+import com.expensetracker.model.Transaction;
+import com.expensetracker.repository.TransactionRepository;
+import com.expensetracker.repository.WalletRepository;
+
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -46,8 +48,8 @@ public class TransactionService {
     public Transaction updateTransaction(String id, String userId, Transaction transactionDetails) {
         Transaction transaction = transactionRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Transaction not found"));
-                
-        if (!transaction.getUserId().equals(userId)) {
+
+        if (!userId.equals(transaction.getUserId())) {
             throw new RuntimeException("Unauthorized");
         }
 
@@ -69,8 +71,8 @@ public class TransactionService {
     public void deleteTransaction(String id, String userId) {
         Transaction transaction = transactionRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Transaction not found"));
-                
-        if (!transaction.getUserId().equals(userId)) {
+
+        if (!userId.equals(transaction.getUserId())) {
             throw new RuntimeException("Unauthorized");
         }
 

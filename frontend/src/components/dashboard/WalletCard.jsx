@@ -51,15 +51,21 @@ const WalletCard = ({
   } = wallet;
 
   const isUpi = cardType.toLowerCase() === 'upi';
+  const isCash = cardType.toLowerCase() === 'cash';
   const detailsVisible = showDetails || preview;
-  const displayId = isUpi
-    ? cardNumber
-    : (detailsVisible ? cardNumber : `•••• •••• •••• ${cardNumber.slice(-4)}`);
+  const safeNumber = String(cardNumber || '');
+  const displayId = isCash
+    ? ''
+    : isUpi
+    ? safeNumber
+    : detailsVisible
+    ? safeNumber
+    : `•••• •••• •••• ${safeNumber.slice(-4)}`;
 
   return (
-    <div className="relative w-full max-w-[360px] pt-2">
+    <div className="relative w-full pt-2">
       <div
-        className={`relative z-0 mx-5 h-[190px] overflow-hidden px-5 pb-16 pt-5 shadow-lg transition-transform duration-300 sm:mx-6 ${isUpi ? 'rounded-[30px]' : 'rounded-[22px]'}`}
+        className={`relative z-0 mx-4 h-[190px] overflow-hidden px-5 pb-16 pt-5 shadow-lg transition-transform duration-300 sm:mx-6 ${isUpi ? 'rounded-[30px]' : 'rounded-[22px]'}`}
         style={getCardBackground(wallet)}
       >
         <div className="absolute -right-10 -top-14 h-40 w-40 rounded-full border-[24px] border-white/10" />
@@ -92,6 +98,28 @@ const WalletCard = ({
               Scan and pay ready
             </div>
           </div>
+        ) : isCash ? (
+          <div className="relative z-10">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] opacity-70">Cash Account</p>
+                <p className="mt-1 max-w-[180px] truncate text-lg font-bold">{bankName || 'Cash'}</p>
+              </div>
+              <div className="grid h-14 w-14 place-items-center rounded-2xl bg-white/18 backdrop-blur text-2xl">
+                💵
+              </div>
+            </div>
+
+            <div className="mt-5 flex items-center gap-3">
+              <div className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-white/18 text-lg font-bold uppercase">
+                {String((cardHolderName || 'C').charAt(0))}
+              </div>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold">{cardHolderName}</p>
+                <p className="mt-0.5 truncate font-mono text-xs opacity-75">Direct balance</p>
+              </div>
+            </div>
+          </div>
         ) : (
           <>
             <div className="relative z-10 flex items-start justify-between">
@@ -110,18 +138,29 @@ const WalletCard = ({
             </div>
 
             <div className="relative z-10 mt-5">
-              <p className="font-mono text-[15px] font-semibold tracking-[0.14em] drop-shadow-sm sm:text-base">
-                {displayId || '•••• •••• •••• ••••'}
-              </p>
+                {!isCash && (
+                  <p className="font-mono text-[15px] font-semibold tracking-[0.14em] drop-shadow-sm sm:text-base">
+                    {displayId || '•••• •••• •••• ••••'}
+                  </p>
+                )}
               <div className="mt-3 flex items-end justify-between gap-4 text-[10px] font-semibold uppercase tracking-[0.12em] opacity-80">
-                <div className="min-w-0">
-                  <p className="mb-0.5 text-[8px] opacity-70">Card holder</p>
-                  <p className="truncate">{cardHolderName}</p>
-                </div>
-                <div className="shrink-0 text-right">
-                  <p className="mb-0.5 text-[8px] opacity-70">Valid thru</p>
-                  <p>{expiryDate || 'MM/YY'}</p>
-                </div>
+                {!isCash ? (
+                  <>
+                    <div className="min-w-0">
+                      <p className="mb-0.5 text-[8px] opacity-70">Card holder</p>
+                      <p className="truncate">{cardHolderName}</p>
+                    </div>
+                    <div className="shrink-0 text-right">
+                      <p className="mb-0.5 text-[8px] opacity-70">Valid thru</p>
+                      <p>{expiryDate || 'MM/YY'}</p>
+                    </div>
+                  </>
+                ) : (
+                  <div className="min-w-0">
+                    <p className="mb-0.5 text-[8px] opacity-70">Account</p>
+                    <p className="truncate">Cash</p>
+                  </div>
+                )}
               </div>
             </div>
           </>
@@ -144,7 +183,7 @@ const WalletCard = ({
             <AnimatedNumber value={balance} formatter={formatCurrency} />
           </h2>
 
-          <div className="mt-5 flex items-center justify-between gap-3">
+          <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             {interactive ? (
               <>
                 <button
@@ -157,7 +196,7 @@ const WalletCard = ({
                   Add balance
                 </button>
 
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <button
                     type="button"
                     onClick={() => setShowDetails((current) => !current)}

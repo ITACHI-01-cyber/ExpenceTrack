@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Mail, ArrowLeft, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
 import api from '../services/api';
+import AuthLayout from '../components/layout/AuthLayout';
 
 const ForgotPasswordPage = () => {
   const [step, setStep] = useState(1);
@@ -91,82 +92,62 @@ const ForgotPasswordPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#f4f6fa] p-4 font-sans text-[#333333]">
-      <div className="w-full max-w-[400px] bg-white rounded-[32px] p-8 shadow-sm relative min-h-[600px] flex flex-col">
-        
-        {step < 4 && (
-          <button 
-            onClick={() => step > 1 ? setStep(step - 1) : navigate('/login')} 
-            className="text-[#333333] hover:text-black transition-colors mb-6"
-          >
-            <ArrowLeft size={24} />
-          </button>
-        )}
+    <AuthLayout title="Forgot password" subtitle="Recover access to your account" back={() => window.history.back()}>
+      <div className="space-y-6">
+        {error && <div className="rounded-3xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-100">{error}</div>}
 
-        {/* Step 1: Email */}
         {step === 1 && (
-          <div className="flex-1 flex flex-col">
-            <h2 className="text-[24px] font-bold mb-2">Forget your password</h2>
-            <p className="text-[#888888] text-[14px] mb-8">
-              Please enter your email to send the reset code to it
-            </p>
+          <div className="space-y-4">
+            <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
+              <h2 className="text-2xl font-semibold text-white">Forgot your password?</h2>
+              <p className="mt-2 text-sm text-white/60">Enter your email and we’ll send a code to reset it.</p>
+            </div>
 
-            {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
-
-            <form onSubmit={handleRequestOtp} className="flex-1 flex flex-col">
-              <div className="mb-2 ml-2">
-                <label className="text-[14px] font-medium text-[#333333]">Email</label>
-              </div>
-              <div className="bg-[#f2f2f2] rounded-full flex items-center px-4 py-3.5 mb-auto">
-                <Mail className="text-[#888888] w-5 h-5 mr-3" />
-                <input 
-                  type="email" 
-                  placeholder="ex@gmail.com"
-                  required
-                  className="bg-transparent flex-1 outline-none text-[#333333] placeholder-[#aaaaaa] text-[15px]"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-              </div>
-
-              <div className="mt-8">
-                <button 
-                  type="submit" 
-                  disabled={loading}
-                  className="w-full bg-[#360568] text-white rounded-full py-4 text-[16px] font-medium transition-colors disabled:opacity-70 mb-4"
-                >
-                  {loading ? 'Sending...' : 'Send code'}
-                </button>
-                <div className="text-center">
-                  <span className="text-[#888888] text-[13px]">Don't receive the code? </span>
-                  <button type="button" onClick={() => handleRequestOtp()} className="text-[#333333] font-medium text-[13px] hover:underline">
-                    Resend Code
-                  </button>
+            <form onSubmit={handleRequestOtp} className="space-y-5">
+              <label className="block text-sm text-white/70">
+                Email address
+                <div className="mt-3 rounded-2xl border border-white/10 bg-[#0f1220] px-4 py-3">
+                  <div className="flex items-center gap-3 text-white/50">
+                    <Mail size={18} />
+                    <input
+                      type="email"
+                      placeholder="you@example.com"
+                      required
+                      className="w-full bg-transparent text-white outline-none placeholder:text-white/30"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                    />
+                  </div>
                 </div>
+              </label>
+
+              <button type="submit" disabled={loading} className="w-full rounded-2xl bg-gradient-to-r from-[#ef4444] to-[#f59e0b] py-4 text-sm font-semibold text-white transition hover:opacity-95 disabled:opacity-60">
+                {loading ? 'Sending code…' : 'Send reset code'}
+              </button>
+
+              <div className="text-center text-sm text-white/50">
+                Didn’t receive the code? <button type="button" onClick={handleRequestOtp} className="text-white hover:underline">Resend</button>
               </div>
             </form>
           </div>
         )}
 
-        {/* Step 2: OTP Code */}
         {step === 2 && (
-          <div className="flex-1 flex flex-col">
-            <h2 className="text-[24px] font-bold mb-2">Forget your password</h2>
-            <p className="text-[#888888] text-[14px] mb-8">
-              Please enter the code that sent to {email}
-            </p>
+          <div className="space-y-4">
+            <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
+              <h2 className="text-2xl font-semibold text-white">Enter verification code</h2>
+              <p className="mt-2 text-sm text-white/60">We sent a 6-digit code to {email}.</p>
+            </div>
 
-            {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
-
-            <form onSubmit={handleVerifyOtp} className="flex-1 flex flex-col">
-              <div className="flex justify-between gap-2 mb-auto px-2">
+            <form onSubmit={handleVerifyOtp} className="space-y-5">
+              <div className="grid grid-cols-6 gap-3">
                 {otp.map((digit, index) => (
                   <input
                     key={index}
-                    ref={el => inputRefs.current[index] = el}
+                    ref={(el) => (inputRefs.current[index] = el)}
                     type="text"
                     maxLength="1"
-                    className="w-12 h-12 md:w-10 md:h-12 border-2 border-transparent bg-blue-50 focus:bg-white focus:border-blue-200 rounded-lg text-center text-xl font-bold text-[#333333] outline-none transition-all"
+                    className="h-14 rounded-3xl border border-white/10 bg-[#0f1220] text-center text-xl font-semibold text-white outline-none"
                     value={digit}
                     onChange={(e) => handleOtpChange(index, e.target.value)}
                     onKeyDown={(e) => handleOtpKeyDown(index, e)}
@@ -174,120 +155,91 @@ const ForgotPasswordPage = () => {
                 ))}
               </div>
 
-              <div className="mt-8">
-                <button 
-                  type="submit" 
-                  className="w-full bg-[#360568] text-white rounded-full py-4 text-[16px] font-medium transition-colors mb-4"
-                >
-                  Verify
-                </button>
-                <div className="text-center">
-                  <span className="text-[#888888] text-[13px]">Don't receive the code? </span>
-                  <button type="button" onClick={() => handleRequestOtp()} className="text-[#333333] font-medium text-[13px] hover:underline">
-                    Resend Code
-                  </button>
-                </div>
+              <button type="submit" className="w-full rounded-2xl bg-[#2563eb] py-4 text-sm font-semibold text-white transition hover:bg-[#1d4ed8]">
+                Verify code
+              </button>
+
+              <div className="text-center text-sm text-white/50">
+                Didn’t receive it? <button type="button" onClick={handleRequestOtp} className="text-white hover:underline">Resend code</button>
               </div>
             </form>
           </div>
         )}
 
-        {/* Step 3: New Password */}
         {step === 3 && (
-          <div className="flex-1 flex flex-col">
-            <h2 className="text-[24px] font-bold mb-2">Create a secure password</h2>
-            <p className="text-[#888888] text-[14px] mb-8">
-              Please enter a strong password and keep it well
-            </p>
+          <div className="space-y-4">
+            <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
+              <h2 className="text-2xl font-semibold text-white">Create a new password</h2>
+              <p className="mt-2 text-sm text-white/60">Use a strong password to keep your account secure.</p>
+            </div>
 
-            {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
+            <form onSubmit={handleResetPassword} className="space-y-5">
+              <label className="block text-sm text-white/70">
+                New password
+                <div className="mt-3 rounded-2xl border border-white/10 bg-[#0f1220] px-4 py-3 flex items-center gap-3">
+                  <span className="text-white/40">••</span>
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="New password"
+                    required
+                    className="w-full bg-transparent text-white outline-none placeholder:text-white/30"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                  />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="text-white/50">
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+              </label>
 
-            <form onSubmit={handleResetPassword} className="flex-1 flex flex-col">
-              <div className="mb-2 ml-2">
-                <label className="text-[14px] font-medium text-[#333333]">New password</label>
-              </div>
-              <div className="bg-[#f2f2f2] rounded-full flex items-center px-4 py-3 mb-4">
-                <span className="text-[#888888] font-bold tracking-widest mr-3">**</span>
-                <input 
-                  type={showPassword ? "text" : "password"} 
-                  placeholder="new password"
-                  required
-                  className="bg-transparent flex-1 outline-none text-[#333333] placeholder-[#aaaaaa] text-[15px]"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                />
-                <button type="button" onClick={() => setShowPassword(!showPassword)} className="text-[#888888]">
-                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                </button>
-              </div>
+              <label className="block text-sm text-white/70">
+                Confirm password
+                <div className="mt-3 rounded-2xl border border-white/10 bg-[#0f1220] px-4 py-3 flex items-center gap-3">
+                  <span className="text-white/40">••</span>
+                  <input
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    placeholder="Confirm password"
+                    required
+                    className="w-full bg-transparent text-white outline-none placeholder:text-white/30"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                  />
+                  <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="text-white/50">
+                    {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+              </label>
 
-              <div className="mb-2 ml-2">
-                <label className="text-[14px] font-medium text-[#333333]">Confirm new password</label>
-              </div>
-              <div className="bg-[#f2f2f2] rounded-full flex items-center px-4 py-3 mb-6">
-                <span className="text-[#888888] font-bold tracking-widest mr-3">**</span>
-                <input 
-                  type={showConfirmPassword ? "text" : "password"} 
-                  placeholder="confirm new password"
-                  required
-                  className="bg-transparent flex-1 outline-none text-[#333333] placeholder-[#aaaaaa] text-[15px]"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                />
-                <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="text-[#888888]">
-                  {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                </button>
-              </div>
-
-              <div className="mb-auto">
-                <p className="text-[13px] font-medium text-[#333333] mb-2">Must contain at least:</p>
-                <ul className="text-[#888888] text-[13px] list-disc pl-5 space-y-1">
-                  <li>8 characters</li>
-                  <li>1 upper case character</li>
-                  <li>1 special character</li>
+              <div className="rounded-3xl border border-white/10 bg-white/5 p-4 text-sm text-white/60">
+                <p className="font-semibold text-white">Password requirements</p>
+                <ul className="mt-3 space-y-2 list-disc pl-5 text-white/50">
+                  <li>At least 8 characters</li>
+                  <li>One uppercase letter</li>
+                  <li>One special character</li>
                 </ul>
               </div>
 
-              <div className="mt-8">
-                <button 
-                  type="submit" 
-                  disabled={loading}
-                  className="w-full bg-[#360568] text-white rounded-full py-4 text-[16px] font-medium transition-colors disabled:opacity-70 mb-4"
-                >
-                  {loading ? 'Resetting...' : 'Reset'}
-                </button>
-              </div>
+              <button type="submit" disabled={loading} className="w-full rounded-2xl bg-gradient-to-r from-[#22c55e] to-[#14b8a6] py-4 text-sm font-semibold text-white transition hover:opacity-95 disabled:opacity-60">
+                {loading ? 'Resetting…' : 'Reset password'}
+              </button>
             </form>
           </div>
         )}
 
-        {/* Step 4: Success Modal */}
         {step === 4 && (
-          <div className="absolute inset-0 bg-black/20 rounded-[32px] flex items-center justify-center p-4 backdrop-blur-sm z-10">
-            <div className="bg-white rounded-[24px] p-8 w-full shadow-2xl relative flex flex-col items-center animate-in zoom-in-95 duration-200">
-              <button onClick={() => navigate('/login')} className="absolute top-4 left-4 text-[#888888] hover:text-black">
-                <ArrowLeft size={20} />
-              </button>
-              
-              <div className="w-16 h-16 rounded-full bg-green-50 flex items-center justify-center mb-6 mt-4 text-green-500">
-                <CheckCircle2 size={32} />
-              </div>
-              
-              <h3 className="text-[18px] font-bold text-[#333333] mb-8 text-center">
-                Password changed successfully
-              </h3>
-              
-              <button 
-                onClick={() => navigate('/login')}
-                className="w-full bg-[#360568] text-white rounded-full py-3 text-[16px] font-medium transition-colors"
-              >
-                Log in
-              </button>
+          <div className="rounded-[32px] border border-white/10 bg-[#0a1420]/90 p-8 text-center">
+            <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-400">
+              <CheckCircle2 size={32} />
             </div>
+            <h3 className="text-2xl font-semibold text-white">Password updated!</h3>
+            <p className="mt-2 text-sm text-white/60">You can now log in with your new password.</p>
+            <button onClick={() => navigate('/login')} className="mt-8 w-full rounded-2xl bg-[#2563eb] py-4 text-sm font-semibold text-white transition hover:bg-[#1d4ed8]">
+              Return to login
+            </button>
           </div>
         )}
       </div>
-    </div>
+    </AuthLayout>
   );
 };
 

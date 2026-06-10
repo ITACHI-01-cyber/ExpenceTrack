@@ -3,6 +3,7 @@ import Layout from '../components/layout/Layout';
 import TopBar from '../components/layout/TopBar';
 import Button from '../components/ui/Button';
 import WalletCard from '../components/dashboard/WalletCard';
+import BigWallet from '../components/dashboard/BigWallet';
 import AddCardModal from '../components/ui/AddCardModal';
 import AddBalanceModal from '../components/ui/AddBalanceModal';
 import { Plus } from 'lucide-react';
@@ -15,6 +16,7 @@ const WalletPage = () => {
   const [editingWallet, setEditingWallet] = useState(null);
   const [topUpWallet, setTopUpWallet] = useState(null);
   const [deletingWalletId, setDeletingWalletId] = useState(null);
+  const [selectedWalletId, setSelectedWalletId] = useState(null);
 
   const fetchWallets = async () => {
     setLoading(true);
@@ -32,6 +34,10 @@ const WalletPage = () => {
     fetchWallets();
     return undefined;
   }, []);
+
+  useEffect(() => {
+    if (!selectedWalletId && wallets.length > 0) setSelectedWalletId(wallets[0].id);
+  }, [wallets, selectedWalletId]);
 
   const handleSaveCard = async (cardData) => {
     try {
@@ -106,28 +112,23 @@ const WalletPage = () => {
         Cards are stored in your account and synchronized to the server.
       </p>
 
-      <div className="grid grid-cols-1 gap-x-7 gap-y-10 sm:grid-cols-2 xl:grid-cols-3">
-        {loading ? (
-          <div className="w-full text-center text-neutral-muted py-12">Loading cards...</div>
-        ) : wallets.length > 0 ? (
-          wallets.map((w, i) => (
-            <div key={w.id || i} className="mx-auto w-full max-w-[360px] animate-[fade-in_0.5s_ease-out_both] sm:mx-0" style={{animationDelay: `${i*150}ms`}}>
-              <WalletCard
-                wallet={w}
-                onAddMoney={openTopUpModal}
-                onEdit={openEditCardModal}
-                onRemove={handleDeleteWallet}
-                removing={deletingWalletId === w.id}
-              />
-            </div>
-          ))
-        ) : (
-          <div className="w-full text-center text-neutral-muted py-12 border-2 border-dashed border-border rounded-xl sm:col-span-2 xl:col-span-3">
-            <p className="mb-4">No cards found in your wallet.</p>
-            <Button variant="outline" onClick={openAddCardModal}>Add your first card</Button>
-          </div>
-        )}
-      </div>
+      {loading ? (
+        <div className="w-full text-center text-neutral-muted py-12">Loading cards...</div>
+      ) : wallets.length > 0 ? (
+        <BigWallet
+          wallets={wallets}
+          selectedId={selectedWalletId}
+          onSelect={(id) => setSelectedWalletId(id)}
+          onAddMoney={(wallet) => openTopUpModal(wallet)}
+          onEdit={(wallet) => openEditCardModal(wallet)}
+          onRemove={(wallet) => handleDeleteWallet(wallet)}
+        />
+      ) : (
+        <div className="w-full text-center text-neutral-muted py-12 border-2 border-dashed border-border rounded-xl sm:col-span-2 xl:col-span-3">
+          <p className="mb-4">No cards found in your wallet.</p>
+          <Button variant="outline" onClick={openAddCardModal}>Add your first card</Button>
+        </div>
+      )}
 
       <AddCardModal 
         isOpen={isModalOpen} 

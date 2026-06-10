@@ -1,9 +1,12 @@
 package com.expensetracker.service;
 
+import org.springframework.lang.NonNull;
+import org.springframework.stereotype.Service;
+
 import com.expensetracker.model.User;
 import com.expensetracker.repository.UserRepository;
+
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
@@ -11,7 +14,7 @@ public class UserService {
 
     private final UserRepository userRepository;
 
-    public User updateSettings(String userId, User settingsUpdate) {
+    public User updateSettings(@NonNull String userId, @NonNull User settingsUpdate) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 

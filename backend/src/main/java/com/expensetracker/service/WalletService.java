@@ -1,11 +1,13 @@
 package com.expensetracker.service;
 
-import com.expensetracker.model.Wallet;
-import com.expensetracker.repository.WalletRepository;
-import lombok.RequiredArgsConstructor;
+import java.util.List;
+
 import org.springframework.stereotype.Service;
 
-import java.util.List;
+import com.expensetracker.model.Wallet;
+import com.expensetracker.repository.WalletRepository;
+
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -34,11 +36,12 @@ public class WalletService {
         Wallet wallet = walletRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Wallet not found"));
 
-        if (!wallet.getUserId().equals(userId)) {
+        if (!userId.equals(wallet.getUserId())) {
             throw new RuntimeException("Unauthorized");
         }
 
-        double currentBalance = wallet.getBalance() == null ? 0.0 : wallet.getBalance();
+        Double walletBalance = wallet.getBalance();
+        double currentBalance = walletBalance == null ? 0.0 : walletBalance;
         wallet.setBalance(currentBalance + amount);
         return walletRepository.save(wallet);
     }
@@ -57,7 +60,8 @@ public class WalletService {
         wallet.setCardNumber(walletDetails.getCardNumber());
         wallet.setExpiryDate(walletDetails.getExpiryDate());
         wallet.setCvv(null);
-        wallet.setBalance(walletDetails.getBalance() == null ? 0.0 : walletDetails.getBalance());
+        Double walletDetailsBalance = walletDetails.getBalance();
+        wallet.setBalance(walletDetailsBalance == null ? 0.0 : walletDetailsBalance);
         wallet.setIsDefault(walletDetails.getIsDefault());
         wallet.setCardBrand(walletDetails.getCardBrand());
         wallet.setDesignPreset(walletDetails.getDesignPreset());

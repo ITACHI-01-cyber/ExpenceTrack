@@ -33,21 +33,25 @@
 }
 
 :root {
-  --bg-color: #F0EEFF;
-  --card-bg: #FFFFFF;
-  --surface-color: #FFFFFF;
-  --surface-hover: #F9FAFB;
-  --input-bg: #FFFFFF;
-  --text-main: #1F1F2E;
-  --text-muted: #6B7280;
-  --border-color: rgba(124, 92, 191, 0.12);
-  
-  --primary-main: #7C5CBF;
-  --primary-light: #A78BFA;
-  --primary-glow: #C4B5FD;
+  /* Matte off-white palette */
+  --bg-color: #EDE8DF; /* Page bg */
+  --card-bg: #F5F1EA; /* Card surface */
+  --surface-color: #F5F1EA; /* Panels */
+  --surface-hover: #F0F0EC; /* Slight hover */
+  --input-bg: #F5F1EA;
+  --left-panel-bg: #F0EBE2; /* Left panel area */
+  --text-main: #1A1A1A; /* Near-black headings */
+  --text-muted: #6B6560; /* Warm gray descriptions */
+  --border-color: #2B2B2B; /* Dark charcoal border */
+  --divider-color: #D4CEC4; /* Subtle warm line */
+
+  --primary-main: #E8622A; /* CTA button orange */
+  --primary-light: #F79466;
+  --primary-glow: #FBD6C9;
 }
 
 body.dark {
+  /* Dark mode fallback palette */
   --bg-color: #0f0f14;
   --card-bg: #1a1a24;
   --surface-color: #1a1a24;
@@ -56,8 +60,9 @@ body.dark {
   --text-main: #F3F4F6;
   --text-muted: #9CA3AF;
   --border-color: rgba(255, 255, 255, 0.08);
-  
-  --primary-glow: rgba(167, 139, 250, 0.15);
+  --divider-color: rgba(255,255,255,0.06);
+
+  --primary-glow: rgba(232,98,42,0.12);
 }
 
 body[data-accent="blue"] {

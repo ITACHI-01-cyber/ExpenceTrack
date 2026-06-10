@@ -4,13 +4,14 @@ import WalletCard from './WalletCard';
 
 const CardCarousel = ({ wallets, onAddCard, onAddMoney }) => {
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const hasWallets = wallets && wallets.length > 0;
+  const hasWallets = Array.isArray(wallets) && wallets.length > 0;
   const stackItems = hasWallets ? wallets : [];
+  const activeWallet = hasWallets ? stackItems[selectedIndex] : null;
   const visibleItems = stackItems.slice(0, 4);
   const layerOffset = 42;
   const stackHeight = hasWallets
-    ? 310 + (Math.min(stackItems.length, 4) - 1) * layerOffset + 16
-    : 310;
+    ? 320 + (Math.min(stackItems.length, 4) - 1) * layerOffset + 16
+    : 320;
 
   useEffect(() => {
     if (!hasWallets) {
@@ -58,9 +59,15 @@ const CardCarousel = ({ wallets, onAddCard, onAddMoney }) => {
                 <div
                   onClick={() => selectWallet(idx)}
                   className={`block w-full text-left rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-4 ${
-                    isFront ? 'cursor-default' : 'cursor-pointer'
+                    isFront ? 'cursor-default border border-white/10 bg-white/5' : 'cursor-pointer hover:shadow-lg'
                   }`}
+                  aria-current={isFront ? 'true' : undefined}
                 >
+                  {isFront && (
+                    <div className="absolute right-4 top-4 z-10 rounded-full bg-primary/90 px-3 py-1 text-[10px] uppercase tracking-[0.24em] text-white shadow-sm">
+                      Active
+                    </div>
+                  )}
                   <WalletCard
                     wallet={wallet}
                     interactive={isFront}
@@ -87,10 +94,10 @@ const CardCarousel = ({ wallets, onAddCard, onAddMoney }) => {
             type="button"
             onClick={onAddCard}
             className={`absolute left-0 right-0 mx-auto flex h-[300px] w-full max-w-[340px] flex-col items-center justify-center rounded-2xl border-2 border-dashed border-primary/30 bg-white/70 text-primary/70 transition-all duration-300 hover:border-primary/50 hover:bg-primary/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-4 ${
-              hasWallets ? 'scale-[0.86]' : ''
+              hasWallets ? 'scale-[0.92]' : ''
             }`}
             style={{
-              top: hasWallets ? `${Math.min(stackItems.length, 4) * layerOffset}px` : '0px',
+              top: hasWallets ? `${Math.min(stackItems.length, 4) * layerOffset + 12}px` : '0px',
               zIndex: 1,
               transformOrigin: 'top center',
             }}
@@ -103,6 +110,9 @@ const CardCarousel = ({ wallets, onAddCard, onAddMoney }) => {
           </button>
         )}
       </div>
+      {hasWallets && stackItems.length > 1 && (
+        <p className="mt-4 text-center text-xs text-neutral-muted">Tap a card in the stack to bring it forward and manage the active wallet.</p>
+      )}
     </div>
   );
 };

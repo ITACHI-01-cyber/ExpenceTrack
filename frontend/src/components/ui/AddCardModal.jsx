@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { ArrowLeft, Check, X } from 'lucide-react';
 import WalletCard from '../dashboard/WalletCard';
-import { CARD_DESIGNS, UPI_DESIGNS } from '../../utils/cardDesigns';
+import { CARD_DESIGNS, UPI_DESIGNS, CASH_DESIGNS } from '../../utils/cardDesigns';
 import Button from './Button';
 import AddBalanceModal from './AddBalanceModal';
 
@@ -71,7 +71,8 @@ const AddCardModal = ({ isOpen, onClose, onSave, initialData = null }) => {
   if (!isOpen) return null;
 
   const isUpi = formData.cardType === 'upi';
-  const availableDesigns = isUpi ? UPI_DESIGNS : CARD_DESIGNS;
+  const isCash = formData.cardType === 'cash';
+  const availableDesigns = isUpi ? UPI_DESIGNS : (isCash ? CASH_DESIGNS : CARD_DESIGNS);
 
   const updateField = (name, value) => {
     setFormData((current) => ({ ...current, [name]: value }));
@@ -82,7 +83,7 @@ const AddCardModal = ({ isOpen, onClose, onSave, initialData = null }) => {
     const { name, value } = event.target;
 
     if (name === 'cardType' && value !== formData.cardType) {
-      const nextDesign = value === 'upi' ? UPI_DESIGNS[0] : CARD_DESIGNS[0];
+      const nextDesign = value === 'upi' ? UPI_DESIGNS[0] : (value === 'cash' ? CASH_DESIGNS[0] : CARD_DESIGNS[0]);
       setFormData((current) => applyDesign({
         ...current,
         cardType: value,
@@ -107,19 +108,27 @@ const AddCardModal = ({ isOpen, onClose, onSave, initialData = null }) => {
   };
 
   const validateDetails = () => {
-    if (!formData.bankName.trim() || !formData.cardHolderName.trim() || !formData.cardNumber.trim()) {
-      setError('Complete the bank, account holder, and card details.');
+    if (!formData.cardHolderName.trim()) {
+      setError('Please enter the account or cardholder name.');
       return false;
     }
-    const cardDigits = formData.cardNumber.replace(/\D/g, '');
-    if (!isUpi && (cardDigits.length < 12 || cardDigits.length > 19)) {
-      setError('Enter a valid card number using 12 to 19 digits.');
-      return false;
+
+    if (!isCash) {
+      if (!formData.bankName.trim() || !formData.cardNumber.trim()) {
+        setError('Complete the bank, account holder, and card details.');
+        return false;
+      }
+      const cardDigits = String(formData.cardNumber).replace(/\D/g, '');
+      if (!isUpi && (cardDigits.length < 12 || cardDigits.length > 19)) {
+        setError('Enter a valid card number using 12 to 19 digits.');
+        return false;
+      }
+      if (!isUpi && !/^(0[1-9]|1[0-2])\/\d{2}$/.test(formData.expiryDate)) {
+        setError('Enter the expiry date in MM/YY format.');
+        return false;
+      }
     }
-    if (!isUpi && !/^(0[1-9]|1[0-2])\/\d{2}$/.test(formData.expiryDate)) {
-      setError('Enter the expiry date in MM/YY format.');
-      return false;
-    }
+
     return true;
   };
 
@@ -188,10 +197,11 @@ const AddCardModal = ({ isOpen, onClose, onSave, initialData = null }) => {
                   <option value="credit">Credit Card</option>
                   <option value="upi">UPI Account</option>
                   <option value="personal">Personal Card</option>
+                  <option value="cash">Cash Account</option>
                 </select>
               </div>
 
-              {!isUpi && (
+              {!isUpi && !isCash && (
                 <div>
                   <label className="mb-1.5 block text-sm font-medium">Card Network</label>
                   <select name="cardBrand" value={formData.cardBrand} onChange={handleChange} className={inputClass}>
@@ -213,21 +223,23 @@ const AddCardModal = ({ isOpen, onClose, onSave, initialData = null }) => {
                 <input name="cardHolderName" value={formData.cardHolderName} onChange={handleChange} className={inputClass} placeholder="Name shown on card" />
               </div>
 
-              <div className={isUpi ? 'sm:col-span-2' : ''}>
-                <label className="mb-1.5 block text-sm font-medium">{isUpi ? 'UPI ID' : 'Card Number'}</label>
-                <input
-                  name="cardNumber"
-                  value={formData.cardNumber}
-                  onChange={handleChange}
-                  className={inputClass}
-                  placeholder={isUpi ? 'name@bank' : '0000-0000-0000-0000'}
-                  inputMode={isUpi ? 'text' : 'numeric'}
-                  autoComplete={isUpi ? 'off' : 'cc-number'}
-                  maxLength={isUpi ? undefined : 23}
-                />
-              </div>
+              {!isCash && (
+                <div className={isUpi ? 'sm:col-span-2' : ''}>
+                  <label className="mb-1.5 block text-sm font-medium">{isUpi ? 'UPI ID' : 'Card Number'}</label>
+                  <input
+                    name="cardNumber"
+                    value={formData.cardNumber}
+                    onChange={handleChange}
+                    className={inputClass}
+                    placeholder={isUpi ? 'name@bank' : '0000-0000-0000-0000'}
+                    inputMode={isUpi ? 'text' : 'numeric'}
+                    autoComplete={isUpi ? 'off' : 'cc-number'}
+                    maxLength={isUpi ? undefined : 23}
+                  />
+                </div>
+              )}
 
-              {!isUpi && (
+              {!isUpi && !isCash && (
                 <div>
                   <label className="mb-1.5 block text-sm font-medium">Expiry Date</label>
                   <input

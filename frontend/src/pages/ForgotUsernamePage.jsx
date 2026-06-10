@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Mail, Lock, KeyRound, ArrowLeft, User } from 'lucide-react';
 import api from '../services/api';
+import AuthLayout from '../components/layout/AuthLayout';
 
 const ForgotUsernamePage = () => {
   const [method, setMethod] = useState(''); // 'otp' or 'password'
@@ -65,163 +66,102 @@ const ForgotUsernamePage = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-[#503fb0] via-[#984399] to-[#db3c7f] p-4 font-sans">
-      <div className="w-full max-w-[500px] bg-white rounded-[10px] p-10 md:p-14 shadow-2xl relative">
-        <button onClick={() => step === 1 && !method ? navigate('/login') : setStep(1)} className="absolute top-6 left-6 text-[#999999] hover:text-[#57b846] transition-colors flex items-center gap-1">
-          <ArrowLeft size={16} /> Back
-        </button>
-        
-        <h2 className="text-[28px] font-bold text-[#333333] text-center mb-8 tracking-tight mt-6">
-          Recover / Change Username
-        </h2>
+    <AuthLayout title="Recover Username" subtitle="Recover or change your username" back={() => window.history.back()}>
+      <div className="space-y-6">
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
+          <h2 className="text-2xl font-semibold text-white">Recover your username</h2>
+          <p className="mt-2 text-sm text-white/60">Choose how you want to recover or update your username.</p>
+        </div>
 
-        {error && (
-          <div className="bg-red-50 text-red-500 p-3 rounded-lg mb-6 text-sm text-center border border-red-100">
-            {error}
-          </div>
-        )}
-
-        {message && (
-          <div className="bg-green-50 text-green-600 p-3 rounded-lg mb-6 text-sm text-center border border-green-100">
-            {message}
-          </div>
-        )}
+        {error && <div className="rounded-3xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-100">{error}</div>}
+        {message && <div className="rounded-3xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm text-emerald-100">{message}</div>}
 
         {step === 1 && !method && (
-          <div className="flex flex-col gap-4">
-            <p className="text-[#666666] text-[14px] text-center mb-2">
-              How would you like to recover or change your username?
-            </p>
-            <button 
-              onClick={() => { setMethod('otp'); setStep(1); }}
-              className="w-full bg-[#e6e6e6] hover:bg-[#d4d4d4] text-[#333333] rounded-xl py-4 text-[15px] font-bold transition-colors flex flex-col items-center gap-2"
-            >
-              <Mail className="w-6 h-6 text-[#666666]" />
-              <span>Send OTP to Email</span>
+          <div className="grid gap-4">
+            <button onClick={() => { setMethod('otp'); setStep(1); }} className="rounded-3xl border border-white/10 bg-[#0f1220] p-5 text-left text-white transition hover:border-white/20">
+              <div className="flex items-center gap-3 text-white/70 mb-3">
+                <Mail size={18} />
+                <span className="text-sm uppercase tracking-[0.24em] text-white/50">OTP via email</span>
+              </div>
+              <p className="text-sm">Send a one-time code to your email to reset your username.</p>
             </button>
-            <button 
-              onClick={() => { setMethod('password'); setStep(2); }}
-              className="w-full bg-[#e6e6e6] hover:bg-[#d4d4d4] text-[#333333] rounded-xl py-4 text-[15px] font-bold transition-colors flex flex-col items-center gap-2"
-            >
-              <Lock className="w-6 h-6 text-[#666666]" />
-              <span>Use Current Password</span>
+            <button onClick={() => { setMethod('password'); setStep(2); }} className="rounded-3xl border border-white/10 bg-[#0f1220] p-5 text-left text-white transition hover:border-white/20">
+              <div className="flex items-center gap-3 text-white/70 mb-3">
+                <Lock size={18} />
+                <span className="text-sm uppercase tracking-[0.24em] text-white/50">Current password</span>
+              </div>
+              <p className="text-sm">Use your existing password to confirm identity and update username.</p>
             </button>
           </div>
         )}
 
         {step === 1 && method === 'otp' && (
-          <form onSubmit={handleRequestOtp} className="flex flex-col">
-            <p className="text-[#666666] text-[14px] text-center mb-6">
-              Enter your email address to receive an OTP.
-            </p>
-            <div className="bg-[#e6e6e6] rounded-full flex items-center px-6 py-4 mb-6">
-              <Mail className="text-[#666666] w-5 h-5 mr-3" />
-              <input 
-                type="email" 
-                placeholder="Email Address"
-                required
-                className="bg-transparent flex-1 outline-none text-[#333333] placeholder-[#999999] text-[15px] font-medium w-full"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
+          <form onSubmit={handleRequestOtp} className="space-y-5">
+            <div className="rounded-3xl border border-white/10 bg-[#0f1220] p-4">
+              <label className="block text-sm text-white/70">Email address</label>
+              <div className="mt-3 flex items-center gap-3 rounded-2xl border border-white/10 bg-[#08101c] px-4 py-3">
+                <Mail className="text-white/50" />
+                <input type="email" placeholder="Email address" required value={email} onChange={(e) => setEmail(e.target.value)} className="w-full bg-transparent text-white outline-none placeholder:text-white/30" />
+              </div>
             </div>
-            <button 
-              type="submit" 
-              disabled={loading}
-              className="w-full bg-[#57b846] hover:bg-[#333333] text-white rounded-full py-4 text-[15px] font-bold uppercase tracking-wider transition-colors disabled:opacity-70"
-            >
-              {loading ? 'Sending...' : 'Send OTP'}
+            <button type="submit" disabled={loading} className="w-full rounded-2xl bg-gradient-to-r from-[#ef4444] to-[#f59e0b] py-4 text-sm font-semibold text-white transition hover:opacity-95 disabled:opacity-60">
+              {loading ? 'Sending…' : 'Send OTP'}
             </button>
           </form>
         )}
 
         {step === 2 && method === 'otp' && (
-          <form onSubmit={handleChangeViaOtp} className="flex flex-col">
-            <p className="text-[#666666] text-[14px] text-center mb-6">
-              Enter the OTP sent to your email to set a new username.
-            </p>
-            <div className="bg-[#e6e6e6] rounded-full flex items-center px-6 py-4 mb-4">
-              <KeyRound className="text-[#666666] w-5 h-5 mr-3" />
-              <input 
-                type="text" 
-                placeholder="6-Digit OTP"
-                required
-                maxLength="6"
-                className="bg-transparent flex-1 outline-none text-[#333333] placeholder-[#999999] text-[15px] font-medium w-full tracking-widest"
-                value={code}
-                onChange={(e) => setCode(e.target.value)}
-              />
+          <form onSubmit={handleChangeViaOtp} className="space-y-5">
+            <div className="rounded-3xl border border-white/10 bg-[#0f1220] p-4">
+              <label className="block text-sm text-white/70">OTP code</label>
+              <div className="mt-3 flex items-center gap-3 rounded-2xl border border-white/10 bg-[#08101c] px-4 py-3">
+                <KeyRound className="text-white/50" />
+                <input type="text" placeholder="6-digit OTP" required maxLength={6} value={code} onChange={(e) => setCode(e.target.value)} className="w-full bg-transparent text-white outline-none placeholder:text-white/30 tracking-[0.2em]" />
+              </div>
             </div>
-            <div className="bg-[#e6e6e6] rounded-full flex items-center px-6 py-4 mb-6">
-              <User className="text-[#666666] w-5 h-5 mr-3" />
-              <input 
-                type="text" 
-                placeholder="New Username"
-                required
-                className="bg-transparent flex-1 outline-none text-[#333333] placeholder-[#999999] text-[15px] font-medium w-full"
-                value={newUsername}
-                onChange={(e) => setNewUsername(e.target.value)}
-              />
+            <div className="rounded-3xl border border-white/10 bg-[#0f1220] p-4">
+              <label className="block text-sm text-white/70">New username</label>
+              <div className="mt-3 flex items-center gap-3 rounded-2xl border border-white/10 bg-[#08101c] px-4 py-3">
+                <User className="text-white/50" />
+                <input type="text" placeholder="New username" required value={newUsername} onChange={(e) => setNewUsername(e.target.value)} className="w-full bg-transparent text-white outline-none placeholder:text-white/30" />
+              </div>
             </div>
-            <button 
-              type="submit" 
-              disabled={loading}
-              className="w-full bg-[#57b846] hover:bg-[#333333] text-white rounded-full py-4 text-[15px] font-bold uppercase tracking-wider transition-colors disabled:opacity-70"
-            >
-              {loading ? 'Updating...' : 'Set Username'}
+            <button type="submit" disabled={loading} className="w-full rounded-2xl bg-gradient-to-r from-[#22c55e] to-[#14b8a6] py-4 text-sm font-semibold text-white transition hover:opacity-95 disabled:opacity-60">
+              {loading ? 'Updating…' : 'Set username'}
             </button>
           </form>
         )}
 
         {step === 2 && method === 'password' && (
-          <form onSubmit={handleChangeViaPassword} className="flex flex-col">
-            <p className="text-[#666666] text-[14px] text-center mb-6">
-              Verify your identity with your email and password to change your username.
-            </p>
-            <div className="bg-[#e6e6e6] rounded-full flex items-center px-6 py-4 mb-4">
-              <Mail className="text-[#666666] w-5 h-5 mr-3" />
-              <input 
-                type="email" 
-                placeholder="Email Address"
-                required
-                className="bg-transparent flex-1 outline-none text-[#333333] placeholder-[#999999] text-[15px] font-medium w-full"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
+          <form onSubmit={handleChangeViaPassword} className="space-y-5">
+            <div className="rounded-3xl border border-white/10 bg-[#0f1220] p-4">
+              <label className="block text-sm text-white/70">Email address</label>
+              <div className="mt-3 flex items-center gap-3 rounded-2xl border border-white/10 bg-[#08101c] px-4 py-3">
+                <Mail className="text-white/50" />
+                <input type="email" placeholder="Email address" required value={email} onChange={(e) => setEmail(e.target.value)} className="w-full bg-transparent text-white outline-none placeholder:text-white/30" />
+              </div>
             </div>
-            <div className="bg-[#e6e6e6] rounded-full flex items-center px-6 py-4 mb-4">
-              <Lock className="text-[#666666] w-5 h-5 mr-3" />
-              <input 
-                type="password" 
-                placeholder="Current Password"
-                required
-                className="bg-transparent flex-1 outline-none text-[#333333] placeholder-[#999999] text-[15px] font-medium w-full"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
+            <div className="rounded-3xl border border-white/10 bg-[#0f1220] p-4">
+              <label className="block text-sm text-white/70">Current password</label>
+              <div className="mt-3 flex items-center gap-3 rounded-2xl border border-white/10 bg-[#08101c] px-4 py-3">
+                <Lock className="text-white/50" />
+                <input type="password" placeholder="Current password" required value={password} onChange={(e) => setPassword(e.target.value)} className="w-full bg-transparent text-white outline-none placeholder:text-white/30" />
+              </div>
             </div>
-            <div className="bg-[#e6e6e6] rounded-full flex items-center px-6 py-4 mb-6">
-              <User className="text-[#666666] w-5 h-5 mr-3" />
-              <input 
-                type="text" 
-                placeholder="New Username"
-                required
-                className="bg-transparent flex-1 outline-none text-[#333333] placeholder-[#999999] text-[15px] font-medium w-full"
-                value={newUsername}
-                onChange={(e) => setNewUsername(e.target.value)}
-              />
+            <div className="rounded-3xl border border-white/10 bg-[#0f1220] p-4">
+              <label className="block text-sm text-white/70">New username</label>
+              <div className="mt-3 flex items-center gap-3 rounded-2xl border border-white/10 bg-[#08101c] px-4 py-3">
+                <User className="text-white/50" />
+                <input type="text" placeholder="New username" required value={newUsername} onChange={(e) => setNewUsername(e.target.value)} className="w-full bg-transparent text-white outline-none placeholder:text-white/30" />
+              </div>
             </div>
-            <button 
-              type="submit" 
-              disabled={loading}
-              className="w-full bg-[#57b846] hover:bg-[#333333] text-white rounded-full py-4 text-[15px] font-bold uppercase tracking-wider transition-colors disabled:opacity-70"
-            >
-              {loading ? 'Updating...' : 'Set Username'}
+            <button type="submit" disabled={loading} className="w-full rounded-2xl bg-gradient-to-r from-[#22c55e] to-[#14b8a6] py-4 text-sm font-semibold text-white transition hover:opacity-95 disabled:opacity-60">
+              {loading ? 'Updating…' : 'Set username'}
             </button>
           </form>
         )}
       </div>
-    </div>
+    </AuthLayout>
   );
 };
 
