@@ -1,118 +1,185 @@
 import React, { useEffect, useState } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, ChevronRight } from 'lucide-react';
 import WalletCard from './WalletCard';
+import { getCardDesign } from '../../utils/cardDesigns';
 
 const CardCarousel = ({ wallets, onAddCard, onAddMoney }) => {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const hasWallets = Array.isArray(wallets) && wallets.length > 0;
-  const stackItems = hasWallets ? wallets : [];
-  const activeWallet = hasWallets ? stackItems[selectedIndex] : null;
-  const visibleItems = stackItems.slice(0, 4);
-  const layerOffset = 42;
-  const stackHeight = hasWallets
-    ? 320 + (Math.min(stackItems.length, 4) - 1) * layerOffset + 16
-    : 320;
+  const totalCards = hasWallets ? wallets.length : 0;
 
   useEffect(() => {
     if (!hasWallets) {
       setSelectedIndex(0);
       return;
     }
-
     if (selectedIndex >= wallets.length) {
       setSelectedIndex(0);
     }
   }, [hasWallets, selectedIndex, wallets]);
 
-  const orderedWallets = hasWallets
-    ? [...wallets.slice(selectedIndex), ...wallets.slice(0, selectedIndex)]
-    : [];
-
-  const selectWallet = (relativeIndex) => {
-    if (!hasWallets || relativeIndex === 0) return;
-    setSelectedIndex((selectedIndex + relativeIndex) % wallets.length);
+  const handleNext = () => {
+    if (totalCards > 1) {
+      setSelectedIndex((prev) => (prev + 1) % totalCards);
+    }
   };
 
+  const selectWallet = (index) => {
+    setSelectedIndex(index);
+  };
+
+  // Get color for the active card's chevron button gradient
+  const activePreset = hasWallets ? getCardDesign(wallets[selectedIndex]) : null;
+  const primaryColor = activePreset?.primaryColor || '#7C3AED';
+  const secondaryColor = activePreset?.secondaryColor || '#EC4899';
+
   return (
-    <div className="w-full mb-10 relative">
-      <div
-        className="relative mx-auto w-full max-w-[340px] sm:max-w-[360px]"
-        style={{ height: `${stackHeight}px` }}
-      >
-        {hasWallets ? (
-          orderedWallets.slice(0, 4).map((wallet, idx) => {
-            const isFront = idx === 0;
-            const hiddenCount = Math.max(0, stackItems.length - visibleItems.length);
+    <div className="w-full mb-6 relative select-none">
+      {/* Semicircular Carousel Wrapper */}
+      <div className="relative mx-auto w-full max-w-[480px] h-[400px] flex items-center justify-between overflow-hidden px-2">
+        
+        {/* Left side: Card Fan Stack along a vertical arc */}
+        <div className="relative w-[82%] h-full flex items-center justify-center">
+          {hasWallets ? (
+            wallets.map((wallet, idx) => {
+              // Calculate offset relative to selected card (with wrap-around index calculation)
+              let diff = idx - selectedIndex;
+              // Make sure diff is within the closest distance
+              if (diff < -totalCards / 2) diff += totalCards;
+              if (diff > totalCards / 2) diff -= totalCards;
 
-            return (
-              <div
-                key={wallet.id || `${wallet.cardNumber}-${idx}`}
-                className="absolute left-0 right-0 mx-auto w-full max-w-[340px] transition-all duration-300 ease-out"
-                style={{
-                  top: `${idx * layerOffset}px`,
-                  zIndex: 20 - idx,
-                  transform: `scale(${1 - idx * 0.035})`,
-                  transformOrigin: 'top center',
-                  opacity: 1 - idx * 0.08,
-                }}
-              >
+              const isSelected = idx === selectedIndex;
+              const absDiff = Math.abs(diff);
+
+              // Don't render cards that are too far out of view
+              if (absDiff > 2 && totalCards > 3) return null;
+
+              // Calculate 3D transforms for the semicircular arc
+              const translateY = diff * 132; // Increased spacing
+              const translateX = -absDiff * 48; // Pushed further left to separate wider cards
+              const rotate = diff * 8; // Curved rotation
+              const scale = isSelected ? 1 : 0.82 - absDiff * 0.05; // Scaled down background cards
+              const opacity = isSelected ? 1 : 0.35; // Lowered background opacity
+
+              return (
                 <div
+                  key={wallet.id || `${wallet.cardNumber}-${idx}`}
                   onClick={() => selectWallet(idx)}
-                  className={`block w-full text-left rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-4 ${
-                    isFront ? 'cursor-default border border-white/10 bg-white/5' : 'cursor-pointer hover:shadow-lg'
-                  }`}
-                  aria-current={isFront ? 'true' : undefined}
+                  className={`absolute w-full transition-all duration-500 ease-out origin-right-center`}
+                  style={{
+                    transform: `translateY(${translateY}px) translateX(${translateX}px) scale(${scale}) rotate(${rotate}deg)`,
+                    zIndex: 50 - absDiff,
+                    opacity: opacity,
+                    cursor: isSelected ? 'default' : 'pointer',
+                  }}
                 >
-                  {isFront && (
-                    <div className="absolute right-4 top-4 z-10 rounded-full bg-primary/90 px-3 py-1 text-[10px] uppercase tracking-[0.24em] text-white shadow-sm">
-                      Active
-                    </div>
-                  )}
-                  <WalletCard
-                    wallet={wallet}
-                    interactive={isFront}
-                    onAddMoney={isFront ? onAddMoney : undefined}
-                  />
-                </div>
-
-                {idx === 3 && hiddenCount > 0 && (
-                  <div className="pointer-events-none absolute inset-x-8 -bottom-5 rounded-full bg-neutral-900/10 px-3 py-1 text-center text-xs font-medium text-neutral-muted backdrop-blur">
-                    +{hiddenCount} more
+                  <div className={`relative w-full rounded-2xl ${isSelected ? 'shadow-[0_16px_32px_rgba(0,0,0,0.15)]' : 'hover:scale-[1.01] transition-transform'}`}>
+                    {isSelected && (
+                      <div className="absolute right-4 top-4 z-10 rounded-full bg-primary/95 px-3 py-1 text-[10px] uppercase tracking-[0.24em] text-white shadow-sm">
+                        Active
+                      </div>
+                    )}
+                    <WalletCard
+                      wallet={wallet}
+                      interactive={isSelected}
+                      onAddMoney={isSelected ? onAddMoney : undefined}
+                      compact={!isSelected}
+                    />
                   </div>
-                )}
-              </div>
-            );
-          })
-        ) : (
-          <div className="flex h-full w-full items-center justify-center rounded-2xl border-2 border-dashed border-border bg-white/60">
-            <p className="text-neutral-muted">No cards found.</p>
-          </div>
-        )}
-
-        {onAddCard && (
-          <button
-            type="button"
-            onClick={onAddCard}
-            className={`absolute left-0 right-0 mx-auto flex h-[300px] w-full max-w-[340px] flex-col items-center justify-center rounded-2xl border-2 border-dashed border-primary/30 bg-white/70 text-primary/70 transition-all duration-300 hover:border-primary/50 hover:bg-primary/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-4 ${
-              hasWallets ? 'scale-[0.92]' : ''
-            }`}
-            style={{
-              top: hasWallets ? `${Math.min(stackItems.length, 4) * layerOffset + 12}px` : '0px',
-              zIndex: 1,
-              transformOrigin: 'top center',
-            }}
-            aria-label="Add new card"
-          >
-            <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-              <Plus size={24} />
+                </div>
+              );
+            })
+          ) : (
+            <div className="flex h-[180px] w-full items-center justify-center rounded-2xl border-2 border-dashed border-border bg-white/60">
+              <p className="text-neutral-muted">No cards found.</p>
             </div>
-            <span className="font-medium">Add New Card</span>
-          </button>
+          )}
+        </div>
+
+        {/* Right side: Interactive Colored Dot Arc */}
+        <div className="relative w-[18%] h-full flex flex-col justify-center items-center">
+          {hasWallets && totalCards > 0 && (
+            <div className="relative flex flex-col items-center justify-center h-[260px] w-full">
+              {/* SVG Arc track background */}
+              <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 100 260">
+                <path
+                  d="M 10 10 Q 55 130 10 250"
+                  fill="none"
+                  stroke="rgba(0, 0, 0, 0.03)"
+                  strokeWidth="2"
+                  strokeDasharray="4 4"
+                />
+              </svg>
+
+              {/* Dots placed along the arc */}
+              {wallets.map((wallet, idx) => {
+                let diff = idx - selectedIndex;
+                if (diff < -totalCards / 2) diff += totalCards;
+                if (diff > totalCards / 2) diff -= totalCards;
+
+                const isSelected = idx === selectedIndex;
+                const absDiff = Math.abs(diff);
+
+                // Math for layout placement along the Q 55 130 arc
+                // Normalized t value between 0 (top) and 1 (bottom)
+                const t = 0.5 + (diff / Math.max(totalCards, 3)) * 0.7;
+                // Bezier quadratic formula: B(t) = (1-t)^2 * P0 + 2(1-t)t * P1 + t^2 * P2
+                const y = (1 - t) * (1 - t) * 10 + 2 * (1 - t) * t * 130 + t * t * 250;
+                const x = (1 - t) * (1 - t) * 10 + 2 * (1 - t) * t * 48 + t * t * 10;
+
+                const preset = getCardDesign(wallet);
+
+                if (isSelected) {
+                  return (
+                    <button
+                      key={`dot-${idx}`}
+                      type="button"
+                      onClick={handleNext}
+                      className="absolute w-11 h-11 rounded-full flex items-center justify-center transition-all duration-500 scale-110 shadow-lg text-white z-30 cursor-pointer focus:outline-none hover:scale-115"
+                      style={{
+                        left: `${x - 22}px`,
+                        top: `${y - 22}px`,
+                        background: `linear-gradient(135deg, ${primaryColor}, ${secondaryColor})`,
+                        boxShadow: `0 8px 16px ${primaryColor}40`
+                      }}
+                      title="Next Card"
+                    >
+                      <ChevronRight size={20} className="animate-pulse" />
+                    </button>
+                  );
+                }
+
+                // Standard colored indicator dot
+                return (
+                  <button
+                    key={`dot-${idx}`}
+                    type="button"
+                    onClick={() => selectWallet(idx)}
+                    className="absolute w-3.5 h-3.5 rounded-full border border-white shadow-sm transition-all duration-300 hover:scale-125 z-20 cursor-pointer focus:outline-none"
+                    style={{
+                      left: `${x - 7}px`,
+                      top: `${y - 7}px`,
+                      backgroundColor: preset.primaryColor || '#CCC',
+                      opacity: absDiff > 2 ? 0.25 : 0.65
+                    }}
+                    title={wallet.bankName || 'Wallet'}
+                  />
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+      </div>
+
+      {/* Bottom controls */}
+      <div className="flex flex-col items-center gap-4 mt-2">
+        {hasWallets && totalCards > 1 && (
+          <p className="text-center text-[10px] text-neutral-muted">
+            Tap a card or click the arrow button to spin the card wheel.
+          </p>
         )}
       </div>
-      {hasWallets && stackItems.length > 1 && (
-        <p className="mt-4 text-center text-xs text-neutral-muted">Tap a card in the stack to bring it forward and manage the active wallet.</p>
-      )}
     </div>
   );
 };

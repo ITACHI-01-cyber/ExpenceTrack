@@ -248,8 +248,8 @@ const DashboardPage = () => {
       
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-8">
         
-        {/* LEFT COLUMN */}
-        <div className="lg:col-span-4 flex flex-col w-full overflow-hidden">
+        {/* LEFT COLUMN (now wider for card carousel) */}
+        <div className="lg:col-span-8 flex flex-col w-full overflow-hidden">
           {/* Samsung Wallet Style Carousel */}
           <CardCarousel
             wallets={wallets}
@@ -286,15 +286,15 @@ const DashboardPage = () => {
           <RecentPayments transactions={transactions} />
         </div>
 
-        {/* RIGHT COLUMN */}
-        <div className="lg:col-span-8 flex flex-col gap-6 w-full overflow-hidden lg:gap-8">
+        {/* RIGHT COLUMN (now narrower for graph) */}
+        <div className="lg:col-span-4 flex flex-col gap-6 w-full overflow-hidden lg:gap-8">
           
           <div className="h-[360px] sm:h-[380px]">
             <ExpenseStatsChart data={chartData} allTransactions={allTransactions} />
           </div>
 
-          <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:gap-8">
-            <div className="flex-1">
+          <div className="grid grid-cols-1 gap-6">
+            <div className="w-full">
               <MonthlyExpenseGrid 
                 categories={expenseCategories} 
                 filterType={gridFilterType}
@@ -302,8 +302,8 @@ const DashboardPage = () => {
                 onFilterChange={handleGridFilterChange}
               />
             </div>
-            <div className="flex-1">
-              <div className="mb-4 max-w-xs sm:max-w-sm">
+            <div className="w-full">
+              <div className="mb-4 w-full">
                 <SavingsCard3D goals={goals} />
               </div>
               <SavingsGoalsGrid
