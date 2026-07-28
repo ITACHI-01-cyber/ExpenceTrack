@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Mail, Lock, KeyRound, ArrowLeft, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
+import { User, Mail, Lock, KeyRound, Eye, EyeOff } from 'lucide-react';
 import api from '../services/api';
 import useAuthStore from '../store/authStore';
 import AuthLayout from '../components/layout/AuthLayout';
@@ -114,126 +114,154 @@ const SignupPage = () => {
     }
   };
 
+  const heroTitle = 'Hello ! Welcome Aboard';
+  const heroSubtitle = 'We are glad to see you 😊';
+
   return (
     <AuthLayout
-      title="Create account"
-      subtitle="Sign up to track your money and stay on top of every expense"
-      heroImage="https://w.wallhaven.cc/full/gw/wallhaven-gw2yx3.jpg"
+      title={heroTitle}
+      subtitle={heroSubtitle}
+      heroImage="https://w.wallhaven.cc/full/qr/wallhaven-qrm855.jpg"
       back={() => navigate('/login')}
     >
-      <div className="space-y-6">
-        {error && <div className="rounded-3xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-100">{error}</div>}
+      <div className="space-y-6 text-slate-800">
 
-        {step === 1 && (
-          <form onSubmit={handleSubmit} className="space-y-5 rounded-[32px] border border-white/10 bg-[#08101c]/95 p-6 shadow-[0_32px_80px_rgba(0,0,0,0.25)] backdrop-blur-md">
-            <div className="space-y-4">
+
+        {error && (
+          <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-600 font-medium">
+            {error}
+          </div>
+        )}
+
+        {step === 1 ? (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <p className="text-sm uppercase tracking-[0.24em] text-white/50">Personal info</p>
-                <h2 className="mt-3 text-2xl font-semibold text-white">Let’s create your account</h2>
-              </div>
-
-              <label className="block text-sm text-white/70">
-                Full name
-                <div className="mt-3 rounded-2xl border border-white/10 bg-[#0f1220] px-4 py-3 flex items-center gap-3">
-                  <User className="text-white/50" />
+                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+                  Name
+                </label>
+                <div className="flex items-center gap-3 rounded-full bg-[#f5ebe6] px-5 py-3 transition focus-within:ring-2 focus-within:ring-primary/20">
+                  <User size={15} className="text-slate-400" />
                   <input
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    placeholder="Your full name"
-                    className="w-full bg-transparent text-white outline-none placeholder:text-white/30"
+                    placeholder="Your name"
+                    className="w-full bg-transparent text-slate-800 outline-none placeholder:text-slate-400/80 text-sm"
                     required
                   />
                 </div>
-              </label>
+              </div>
 
-              <label className="block text-sm text-white/70">
-                Username
-                <div className="mt-3 rounded-2xl border border-white/10 bg-[#0f1220] px-4 py-3 flex items-center gap-3">
-                  <KeyRound className="text-white/50" />
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+                  Username
+                </label>
+                <div className="flex items-center gap-3 rounded-full bg-[#f5ebe6] px-5 py-3 transition focus-within:ring-2 focus-within:ring-primary/20">
+                  <KeyRound size={15} className="text-slate-400" />
                   <input
                     value={formData.username}
                     onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                    placeholder="Choose a username"
-                    className="w-full bg-transparent text-white outline-none placeholder:text-white/30"
+                    placeholder="Username"
+                    className="w-full bg-transparent text-slate-800 outline-none placeholder:text-slate-400/80 text-sm"
                     required
                   />
                 </div>
-              </label>
+              </div>
+            </div>
 
-              <label className="block text-sm text-white/70">
-                Email address
-                <div className="mt-3 rounded-2xl border border-white/10 bg-[#0f1220] px-4 py-3 flex items-center gap-3">
-                  <Mail className="text-white/50" />
-                  <input
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    placeholder="you@example.com"
-                    className="w-full bg-transparent text-white outline-none placeholder:text-white/30"
-                    required
-                  />
-                </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+                Email Address
               </label>
+              <div className="flex items-center gap-3 rounded-full bg-[#f5ebe6] px-5 py-3 transition focus-within:ring-2 focus-within:ring-primary/20">
+                <Mail size={15} className="text-slate-400" />
+                <input
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  placeholder="you@example.com"
+                  className="w-full bg-transparent text-slate-800 outline-none placeholder:text-slate-400/80 text-sm"
+                  required
+                />
+              </div>
+            </div>
 
-              <label className="block text-sm text-white/70">
-                Password
-                <div className="mt-3 rounded-2xl border border-white/10 bg-[#0f1220] px-4 py-3 flex items-center gap-3">
-                  <Lock className="text-white/50" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+                  Password
+                </label>
+                <div className="flex items-center gap-3 rounded-full bg-[#f5ebe6] px-5 py-3 transition focus-within:ring-2 focus-within:ring-primary/20">
+                  <Lock size={15} className="text-slate-400" />
                   <input
                     type={showPassword ? 'text' : 'password'}
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    placeholder="Create a password"
-                    className="w-full bg-transparent text-white outline-none placeholder:text-white/30"
+                    placeholder="Password"
+                    className="w-full bg-transparent text-slate-800 outline-none placeholder:text-slate-400/80 text-sm"
                     required
                   />
-                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="text-white/50">
-                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="text-slate-400 hover:text-slate-600 transition">
+                    {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
                   </button>
                 </div>
-              </label>
+              </div>
 
-              <label className="block text-sm text-white/70">
-                Confirm password
-                <div className="mt-3 rounded-2xl border border-white/10 bg-[#0f1220] px-4 py-3 flex items-center gap-3">
-                  <Lock className="text-white/50" />
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+                  Confirm Password
+                </label>
+                <div className="flex items-center gap-3 rounded-full bg-[#f5ebe6] px-5 py-3 transition focus-within:ring-2 focus-within:ring-primary/20">
+                  <Lock size={15} className="text-slate-400" />
                   <input
                     type={showConfirmPassword ? 'text' : 'password'}
                     value={formData.confirmPassword}
                     onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                    placeholder="Confirm password"
-                    className="w-full bg-transparent text-white outline-none placeholder:text-white/30"
+                    placeholder="Confirm"
+                    className="w-full bg-transparent text-slate-800 outline-none placeholder:text-slate-400/80 text-sm"
                     required
                   />
-                  <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="text-white/50">
-                    {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="text-slate-400 hover:text-slate-600 transition">
+                    {showConfirmPassword ? <EyeOff size={15} /> : <Eye size={15} />}
                   </button>
                 </div>
+              </div>
+            </div>
+
+            <div className="py-1">
+              <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-500">
+                <input 
+                  type="checkbox" 
+                  required
+                  className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary/20 accent-primary" 
+                />
+                <span>I agree terms of service and privacy policy</span>
               </label>
             </div>
 
-            <button type="submit" disabled={loading} className="w-full rounded-2xl bg-gradient-to-r from-[#22c55e] to-[#14b8a6] py-4 text-sm font-semibold text-white transition hover:opacity-95 disabled:opacity-60">
-              {loading ? 'Sending code…' : 'Create account'}
+            <button 
+              type="submit" 
+              disabled={loading} 
+              className="w-full rounded-full bg-[#f5ebe6] py-3.5 text-sm font-semibold text-slate-800 hover:bg-[#ebdcd4] transition shadow-sm disabled:opacity-60 mt-1"
+            >
+              {loading ? 'Sending code…' : 'Sign up'}
             </button>
 
-            <div className="text-center text-sm text-white/50">
+            <div className="text-center text-xs text-slate-500 font-medium pt-2 border-t border-slate-200/50">
               Already have an account?{' '}
-              <button type="button" onClick={() => navigate('/login')} className="text-white hover:underline">
+              <button type="button" onClick={() => navigate('/login')} className="text-slate-800 font-semibold hover:underline">
                 Log in
               </button>
             </div>
           </form>
-        )}
-
-        {step === 2 && (
-          <form onSubmit={handleVerify} className="space-y-6 rounded-[32px] border border-white/10 bg-[#08101c]/95 p-6 shadow-[0_32px_80px_rgba(0,0,0,0.25)] backdrop-blur-md">
+        ) : (
+          <form onSubmit={handleVerify} className="space-y-5">
             <div>
-              <p className="text-sm uppercase tracking-[0.24em] text-white/50">Verify your email</p>
-              <h2 className="mt-3 text-2xl font-semibold text-white">Enter the 6-digit code</h2>
-              <p className="mt-2 text-sm text-white/60">We sent a verification code to {sentEmail}</p>
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1 ml-1">Verify Email</p>
+              <p className="text-xs text-slate-400 font-medium">We sent a verification code to <span className="font-semibold text-slate-600">{sentEmail}</span></p>
             </div>
 
-            <div className="grid grid-cols-6 gap-3">
+            <div className="grid grid-cols-6 gap-2">
               {otp.map((digit, index) => (
                 <input
                   key={index}
@@ -244,18 +272,22 @@ const SignupPage = () => {
                   value={digit}
                   onChange={(e) => handleOtpChange(index, e.target.value)}
                   onKeyDown={(e) => handleOtpKeyDown(index, e)}
-                  className="h-14 rounded-3xl border border-white/10 bg-[#0f1220] text-center text-xl font-semibold text-white outline-none"
+                  className="h-12 rounded-full border-none bg-[#f5ebe6] text-center text-lg font-semibold text-slate-800 outline-none"
                 />
               ))}
             </div>
 
-            <button type="submit" disabled={loading || otp.join('').length !== 6} className="w-full rounded-2xl bg-gradient-to-r from-[#22c55e] to-[#14b8a6] py-4 text-sm font-semibold text-white transition hover:opacity-95 disabled:opacity-60">
+            <button 
+              type="submit" 
+              disabled={loading || otp.join('').length !== 6} 
+              className="w-full rounded-full bg-[#f5ebe6] py-3.5 text-sm font-semibold text-slate-800 hover:bg-[#ebdcd4] transition disabled:opacity-60 shadow-sm mt-1"
+            >
               {loading ? 'Verifying…' : 'Verify & continue'}
             </button>
 
-            <div className="text-center text-sm text-white/50">
+            <div className="text-center text-xs text-slate-500 font-medium pt-2 border-t border-slate-200/50">
               Didn’t receive the code?{' '}
-              <button type="button" onClick={handleResend} className="text-white hover:underline">
+              <button type="button" onClick={handleResend} className="text-slate-800 font-semibold hover:underline">
                 Resend code
               </button>
             </div>

@@ -85,14 +85,14 @@ const TransactionStatsCard3D = ({ transactions = [] }) => {
 
   return (
     <div
-      className="perspective-[1000px] w-full"
+      className="perspective-[1000px] w-full h-full flex"
       onMouseMove={handleMouseMove}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
       <div
         ref={cardRef}
-        className="relative w-full rounded-2xl overflow-hidden transition-transform duration-200 ease-out will-change-transform"
+        className="relative w-full h-full min-h-[300px] md:min-h-[320px] rounded-2xl overflow-hidden transition-transform duration-200 ease-out will-change-transform flex flex-col justify-between"
         style={{
           transform: `rotateX(${rotation.x}deg) rotateY(${rotation.y}deg) scale(${isHovering ? 1.02 : 1})`,
           transformStyle: 'preserve-3d',
@@ -111,33 +111,35 @@ const TransactionStatsCard3D = ({ transactions = [] }) => {
         <div className="absolute bottom-20 right-6 w-1 h-1 bg-white/20 rounded-full animate-pulse delay-500" />
 
         {/* Content */}
-        <div className="relative z-10 p-5 sm:p-6">
-          {/* Label */}
-          <p className="text-xs font-semibold uppercase tracking-widest text-purple-300/80 mb-2">
-            Expenses
-          </p>
+        <div className="relative z-10 p-5 sm:p-6 flex flex-col justify-between h-full flex-1">
+          <div>
+            {/* Label */}
+            <p className="text-xs font-semibold uppercase tracking-widest text-purple-300/80 mb-2">
+              Expenses
+            </p>
 
-          {/* Big number */}
-          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white tabular-nums tracking-tight mb-1">
-            ₹{totalExpenses.toLocaleString()}
-          </h2>
+            {/* Big number */}
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white tabular-nums tracking-tight mb-1">
+              ₹{totalExpenses.toLocaleString()}
+            </h2>
 
-          {/* Change */}
-          <div className="flex items-center gap-1.5 mb-4">
-            {changeAmount !== 0 && (
-              <>
-                <span className={`text-sm font-medium ${changeAmount > 0 ? 'text-red-400' : 'text-emerald-400'}`}>
-                  {changeAmount > 0 ? '+' : ''}₹{Math.abs(changeAmount).toLocaleString()}
-                </span>
-                <span className={`text-xs flex items-center gap-0.5 ${changeAmount > 0 ? 'text-red-400' : 'text-emerald-400'}`}>
-                  ({changePercent > 0 ? '+' : ''}{changePercent.toFixed(1)}%)
-                  {changeAmount > 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
-                </span>
-              </>
-            )}
-            {changeAmount === 0 && (
-              <span className="text-sm text-white/50">No change from last month</span>
-            )}
+            {/* Change */}
+            <div className="flex items-center gap-1.5 mb-4">
+              {changeAmount !== 0 && (
+                <>
+                  <span className={`text-sm font-medium ${changeAmount > 0 ? 'text-red-400' : 'text-emerald-400'}`}>
+                    {changeAmount > 0 ? '+' : ''}₹{Math.abs(changeAmount).toLocaleString()}
+                  </span>
+                  <span className={`text-xs flex items-center gap-0.5 ${changeAmount > 0 ? 'text-red-400' : 'text-emerald-400'}`}>
+                    ({changePercent > 0 ? '+' : ''}{changePercent.toFixed(1)}%)
+                    {changeAmount > 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
+                  </span>
+                </>
+              )}
+              {changeAmount === 0 && (
+                <span className="text-sm text-white/50">No change from last month</span>
+              )}
+            </div>
           </div>
 
           {/* Chart */}

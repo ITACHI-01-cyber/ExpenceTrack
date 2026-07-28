@@ -5,6 +5,7 @@ import Button from '../components/ui/Button';
 import Badge from '../components/ui/Badge';
 import Modal from '../components/ui/Modal';
 import TransactionStatsCard3D from '../components/ui/TransactionStatsCard3D';
+import CategoryStatsCard3D from '../components/ui/CategoryStatsCard3D';
 import api from '../services/api';
 import walletService from '../services/walletService';
 import { formatDate } from '../utils/dateHelpers';
@@ -368,9 +369,14 @@ const TransactionsPage = () => {
         </Button>
       </div>
 
-      {/* 3D Stats Card */}
-      <div className="mb-5 max-w-sm sm:max-w-md lg:max-w-lg">
-        <TransactionStatsCard3D transactions={transactions} />
+      {/* 3D Stats Cards */}
+      <div className="mb-5 flex flex-col md:flex-row gap-5 items-stretch w-full">
+        <div className="w-full md:w-1/2 flex">
+          <TransactionStatsCard3D transactions={transactions} />
+        </div>
+        <div className="w-full md:w-1/2 flex">
+          <CategoryStatsCard3D transactions={transactions} />
+        </div>
       </div>
 
       <div className="mb-4 flex flex-col gap-3 rounded-card border border-border bg-surface p-4 shadow-sm md:flex-row md:items-end md:justify-between">

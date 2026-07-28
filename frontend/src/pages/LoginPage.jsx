@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Lock, Mail, ArrowRight, KeyRound } from 'lucide-react';
+import { Lock, Mail } from 'lucide-react';
 import useAuthStore from '../store/authStore';
 import api from '../services/api';
 import OtpInput from 'react-otp-input';
@@ -53,58 +53,120 @@ const LoginPage = () => {
     }
   };
 
-  const heroTitle = 'Welcome back';
-  const heroSubtitle = 'Sign in to continue your journey';
+  const heroTitle = 'Hello ! Welcome Back';
+  const heroSubtitle = 'We are glad to see you 😊';
 
   return (
-    <AuthLayout title={heroTitle} subtitle={heroSubtitle} heroImage="https://w.wallhaven.cc/full/gw/wallhaven-gw2yx3.jpg">
-      <div className="space-y-6">
-        <div className="rounded-[32px] border border-white/10 bg-[#070a12]/80 p-6 shadow-[0_24px_80px_rgba(0,0,0,0.25)] backdrop-blur-md">
-          {error && <div className="mb-4 rounded-3xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-200">{error}</div>}
+    <AuthLayout 
+      title={heroTitle} 
+      subtitle={heroSubtitle} 
+      heroImage="https://w.wallhaven.cc/full/yq/wallhaven-yqg6r7.jpg"
+    >
+      <div className="space-y-6 text-slate-800">
 
-          {authStep === 'form' ? (
-            <form onSubmit={handleSubmit} className="space-y-4">
+        {error && (
+          <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-600 font-medium">
+            {error}
+          </div>
+        )}
 
-
-              <label className="space-y-2 text-sm text-white/70">
-                <span className="text-xs uppercase tracking-[0.24em] text-white/50">Email address</span>
-                <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-[#0f1220] px-4 py-3 transition focus-within:border-white/20">
-                  <Mail className="text-white/50" />
-                  <input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} placeholder="you@example.com" className="w-full bg-transparent text-white outline-none" required />
+        {authStep === 'form' ? (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-3.5">
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+                  Email Address
+                </label>
+                <div className="flex items-center gap-3 rounded-full bg-[#f5ebe6] px-5 py-3.5 transition focus-within:ring-2 focus-within:ring-primary/20">
+                  <Mail size={16} className="text-slate-400" />
+                  <input 
+                    type="email" 
+                    value={formData.email} 
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })} 
+                    placeholder="you@example.com" 
+                    className="w-full bg-transparent text-slate-800 outline-none placeholder:text-slate-400/80 text-sm" 
+                    required 
+                  />
                 </div>
-              </label>
-
-              <label className="space-y-2 text-sm text-white/70">
-                <span className="text-xs uppercase tracking-[0.24em] text-white/50">Password</span>
-                <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-[#0f1220] px-4 py-3 transition focus-within:border-white/20">
-                  <Lock className="text-white/50" />
-                  <input type="password" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} placeholder="Password" className="w-full bg-transparent text-white outline-none" required />
-                </div>
-              </label>
-
-
-
-              <button type="submit" disabled={loading} className="w-full rounded-2xl bg-gradient-to-r from-[#ef4444] to-[#f59e0b] py-4 text-sm font-semibold text-white transition hover:opacity-95 disabled:opacity-60">
-                {loading ? 'Signing in…' : 'Continue with Email'}
-              </button>
-            </form>
-          ) : (
-            <form onSubmit={handleOtpSubmit} className="space-y-4">
-              <div className="text-sm text-white/70">Enter the 6-digit code sent to {formData.email}</div>
-              <div className="grid grid-cols-6 gap-3">
-                <OtpInput value={otp} onChange={setOtp} numInputs={6} inputStyle={{ width: '100%', height: '58px', borderRadius: '18px', border: '1px solid rgba(255,255,255,0.12)', background: '#0f1220', color: '#fff', fontSize: '18px', fontWeight: 700, outline: 'none' }} />
               </div>
-              <button type="submit" disabled={loading || otp.length !== 6} className="w-full rounded-2xl border border-white/10 bg-white/5 py-4 text-sm font-semibold text-white transition hover:bg-white/10 disabled:opacity-60">
-                {loading ? 'Verifying…' : 'Verify & Continue'}
-              </button>
-            </form>
-          )}
-        </div>
 
-        <div className="flex flex-col gap-3 text-center text-sm text-white/60">
-          <button type="button" onClick={() => navigate('/signup')} className="underline transition hover:text-white">Sign Up</button>
-          <button type="button" onClick={() => navigate('/forgot-password')} className="underline transition hover:text-white">Forgot password?</button>
-          <button type="button" onClick={() => navigate('/forgot-username')} className="underline transition hover:text-white">Forgot username?</button>
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+                  Password
+                </label>
+                <div className="flex items-center gap-3 rounded-full bg-[#f5ebe6] px-5 py-3.5 transition focus-within:ring-2 focus-within:ring-primary/20">
+                  <Lock size={16} className="text-slate-400" />
+                  <input 
+                    type="password" 
+                    value={formData.password} 
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })} 
+                    placeholder="Password" 
+                    className="w-full bg-transparent text-slate-800 outline-none placeholder:text-slate-400/80 text-sm" 
+                    required 
+                  />
+                </div>
+              </div>
+            </div>
+
+            <button 
+              type="submit" 
+              disabled={loading} 
+              className="w-full rounded-full bg-[#f5ebe6] py-3.5 text-sm font-semibold text-slate-800 hover:bg-[#ebdcd4] transition shadow-sm disabled:opacity-60 mt-2"
+            >
+              {loading ? 'Signing in…' : 'Sign in'}
+            </button>
+          </form>
+        ) : (
+          <form onSubmit={handleOtpSubmit} className="space-y-4">
+            <div className="text-xs font-medium text-slate-500 mb-2">
+              Enter the 6-digit code sent to <span className="font-semibold text-slate-700">{formData.email}</span>
+            </div>
+            <div className="grid grid-cols-6 gap-2">
+              <OtpInput 
+                value={otp} 
+                onChange={setOtp} 
+                numInputs={6} 
+                renderInput={(props) => <input {...props} />}
+                containerStyle="flex justify-between w-full gap-2"
+                inputStyle={{ 
+                  width: '100%', 
+                  height: '48px', 
+                  borderRadius: '9999px', 
+                  border: 'none', 
+                  background: '#f5ebe6', 
+                  color: '#1e293b', 
+                  fontSize: '16px', 
+                  fontWeight: 700, 
+                  outline: 'none',
+                  textAlign: 'center'
+                }} 
+              />
+            </div>
+            <button 
+              type="submit" 
+              disabled={loading || otp.length !== 6} 
+              className="w-full rounded-full bg-[#f5ebe6] py-3.5 text-sm font-semibold text-slate-800 hover:bg-[#ebdcd4] transition disabled:opacity-60 shadow-sm mt-2"
+            >
+              {loading ? 'Verifying…' : 'Verify & Continue'}
+            </button>
+          </form>
+        )}
+
+        <div className="flex flex-col gap-2.5 text-center text-xs text-slate-500 font-medium pt-2 border-t border-slate-200/50">
+          <div>
+            Don't have an account?{' '}
+            <button type="button" onClick={() => navigate('/signup')} className="text-slate-800 font-semibold hover:underline">
+              Sign Up
+            </button>
+          </div>
+          <div className="flex justify-center gap-4">
+            <button type="button" onClick={() => navigate('/forgot-password')} className="hover:text-slate-800 hover:underline">
+              Forgot password?
+            </button>
+            <button type="button" onClick={() => navigate('/forgot-username')} className="hover:text-slate-800 hover:underline">
+              Forgot username?
+            </button>
+          </div>
         </div>
       </div>
     </AuthLayout>

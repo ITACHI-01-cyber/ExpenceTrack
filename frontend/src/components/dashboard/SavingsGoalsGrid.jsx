@@ -1,8 +1,8 @@
 import React from 'react';
 import { formatCurrency } from '../../utils/formatCurrency';
-import { Check, Plus, Target, X } from 'lucide-react';
+import { Check, Plus, Target, X, Edit2, Trash2 } from 'lucide-react';
 
-const SavingsGoalsGrid = ({ goals, onAddClick, onStatusChange }) => {
+const SavingsGoalsGrid = ({ goals, onAddClick, onStatusChange, onEditClick, onDeleteClick }) => {
   return (
     <div className="h-full">
       <div className="flex flex-wrap justify-between items-center gap-3 mb-4">
@@ -29,16 +29,38 @@ const SavingsGoalsGrid = ({ goals, onAddClick, onStatusChange }) => {
           {goals.map((goal, idx) => (
             <div 
               key={goal.id} 
-              className={`bg-white border-l-4 rounded-r-xl p-4 flex flex-col shadow-sm hover:shadow-md transition-all animate-[fade-in_0.5s_ease-out_both] ${
+              className={`bg-white border-l-4 rounded-r-xl p-4 flex flex-col shadow-sm hover:shadow-md transition-all group animate-[fade-in_0.5s_ease-out_both] ${
                 goal.completed ? 'border-l-success' : 'border-l-primary'
               }`}
               style={{ animationDelay: `${idx * 80}ms` }}
             >
               <div className="flex justify-between items-start mb-2">
-                <p className="text-sm font-bold text-neutral-text leading-tight">{goal.title}</p>
-                <p className="text-sm font-bold text-primary tabular-nums whitespace-nowrap ml-2">
-                  {formatCurrency(goal.amount)}
-                </p>
+                <div className="flex-1 min-w-0 pr-2">
+                  <p className="text-sm font-bold text-neutral-text leading-tight truncate">{goal.title}</p>
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <p className="text-sm font-bold text-primary tabular-nums whitespace-nowrap">
+                    {formatCurrency(goal.amount)}
+                  </p>
+                  
+                  {/* Action triggers */}
+                  <div className="flex items-center gap-0.5 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity ml-1.5">
+                    <button 
+                      onClick={() => onEditClick?.(goal)}
+                      className="p-1 rounded text-neutral-muted hover:text-primary hover:bg-neutral-muted/10 transition-colors"
+                      title="Edit Target"
+                    >
+                      <Edit2 size={12} />
+                    </button>
+                    <button 
+                      onClick={() => onDeleteClick?.(goal.id)}
+                      className="p-1 rounded text-neutral-muted hover:text-danger hover:bg-danger/10 transition-colors"
+                      title="Delete Target"
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
+                </div>
               </div>
               <div className="mt-auto flex flex-wrap items-center justify-between gap-2">
                 <span className="text-[10px] font-medium bg-neutral-100 text-neutral-muted px-2 py-0.5 rounded uppercase tracking-wide">

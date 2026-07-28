@@ -2,38 +2,81 @@ import React from 'react';
 import { ArrowLeft } from 'lucide-react';
 
 const AuthLayout = ({ title = 'Welcome back', subtitle = 'Sign in to continue', leftTitle, leftSubtitle, heroImage, children, back }) => {
-  const panelTitle = leftTitle || title;
-  const panelSubtitle = leftSubtitle || subtitle;
-
   return (
-    <div className="min-h-screen overflow-hidden bg-[#04050b] text-white">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.18),transparent_18%),radial-gradient(circle_at_bottom_right,_rgba(34,197,94,0.18),transparent_20%)] pointer-events-none" />
-      <div className="relative mx-auto flex min-h-screen w-full max-w-[1200px] items-center justify-center px-4 py-8">
-        <div className="absolute inset-0 md:hidden bg-cover bg-center" style={heroImage ? { backgroundImage: `url(${heroImage})` } : { backgroundColor: '#07090f' }} />
-        <div className="absolute inset-0 md:hidden bg-black/35" />
-        <div className="relative z-10 flex w-full flex-col overflow-hidden rounded-[40px] border border-white/10 bg-[#090b13]/95 shadow-[0_40px_120px_rgba(0,0,0,0.45)] backdrop-blur-xl md:flex-row">
-          <div className="hidden md:flex md:w-1/2 items-center justify-center p-10" style={heroImage ? { backgroundImage: `url(${heroImage})`, backgroundSize: 'cover', backgroundPosition: 'center' } : { backgroundColor: '#07090f' }}>
-            <div className="absolute inset-0 bg-black/25" />
-          </div>
+    <div className="min-h-screen flex items-center justify-center bg-black text-slate-800 p-2 sm:p-4 relative overflow-y-auto">
+      {/* Viewport background: blurred and dimmed hero image */}
+      <div 
+        className="absolute inset-0 bg-cover bg-center pointer-events-none transition-all duration-500"
+        style={{
+          backgroundImage: heroImage ? `url(${heroImage})` : 'none',
+          filter: 'blur(24px) brightness(0.6)',
+          transform: 'scale(1.1)',
+          opacity: 0.75
+        }}
+      />
+      
+      {/* Main Container */}
+      <div className="relative z-10 flex w-full max-w-[1000px] min-h-fit md:min-h-[620px] md:h-[650px] overflow-hidden rounded-[32px] md:rounded-[40px] border border-white/10 bg-[#d5e3ec] shadow-[0_24px_80px_rgba(0,0,0,0.5)] md:flex-row flex-col">
+        
+        {/* Left Side: Hero Image (visible on md+) */}
+        <div 
+          className="hidden md:block md:w-[45%] h-full relative bg-cover bg-center shrink-0" 
+          style={heroImage ? { backgroundImage: `url(${heroImage})` } : { backgroundColor: '#1e293b' }}
+        >
+          {/* Subtle overlay to blend */}
+          <div className="absolute inset-0 bg-black/5" />
+        </div>
 
-          <div className="w-full md:w-1/2 p-6 md:p-10 flex items-center justify-center">
-            <div className="w-full max-w-[430px] space-y-6">
-              {back && (
-                <button onClick={back} className="inline-flex items-center gap-2 text-white/70 transition hover:text-white">
-                  <ArrowLeft size={16} /> Back
-                </button>
-              )}
-              <div className="rounded-[32px] border border-white/10 bg-[#08101c]/95 p-6 shadow-[0_32px_80px_rgba(0,0,0,0.25)] backdrop-blur-md">
-                <div className="mb-6">
-                  <p className="text-xs uppercase tracking-[0.32em] text-white/50">{title}</p>
-                  <h1 className="mt-4 text-3xl font-semibold text-white">{title}</h1>
-                  <p className="mt-2 text-sm text-white/60">{subtitle}</p>
-                </div>
-                {children}
-              </div>
+        {/* Wavy Divider SVG (visible on md+) */}
+        <div className="hidden md:block absolute left-[45%] top-0 bottom-0 w-[40px] h-full z-20 pointer-events-none translate-x-[-39.5px]">
+          <svg className="w-full h-full text-[#d5e3ec] fill-current" viewBox="0 0 40 100" preserveAspectRatio="none">
+            <path d="M40,0 C15,15 -10,35 25,50 C50,60 15,85 40,100 Z" />
+          </svg>
+        </div>
+
+        {/* Mobile top image banner */}
+        <div 
+          className="block md:hidden w-full h-[180px] bg-cover bg-center relative"
+          style={heroImage ? { backgroundImage: `url(${heroImage})` } : { backgroundColor: '#1e293b' }}
+        >
+          <div className="absolute inset-0 bg-black/15" />
+          {back && (
+            <button 
+              onClick={back} 
+              className="absolute top-4 left-4 inline-flex items-center gap-1.5 text-xs font-semibold text-white bg-black/40 backdrop-blur-sm px-3 py-1.5 rounded-full"
+            >
+              <ArrowLeft size={12} /> Back
+            </button>
+          )}
+        </div>
+
+        {/* Right Side: Form Content */}
+        <div className="w-full md:w-[55%] flex-1 overflow-y-auto p-6 sm:p-8 md:p-10 flex flex-col justify-center relative">
+          {back && (
+            <button 
+              onClick={back} 
+              className="hidden md:inline-flex absolute top-6 left-8 items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-800 transition-colors"
+            >
+              <ArrowLeft size={14} /> Back
+            </button>
+          )}
+          
+          <div className="w-full max-w-[380px] mx-auto space-y-6 py-4">
+            <div className="text-center md:text-left">
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-800 leading-tight">
+                {title}
+              </h1>
+              <p className="mt-1 text-sm font-medium text-slate-500">
+                {subtitle}
+              </p>
+            </div>
+            
+            <div className="text-slate-800">
+              {children}
             </div>
           </div>
         </div>
+
       </div>
     </div>
   );

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { ArrowLeft, Check, X } from 'lucide-react';
 import WalletCard from '../dashboard/WalletCard';
-import { CARD_DESIGNS, UPI_DESIGNS, CASH_DESIGNS } from '../../utils/cardDesigns';
+import { CARD_DESIGNS, UPI_DESIGNS, CASH_DESIGNS, SCENIC_DESIGNS, getCardBackground } from '../../utils/cardDesigns';
 import Button from './Button';
 import AddBalanceModal from './AddBalanceModal';
 
@@ -299,6 +299,28 @@ const AddCardModal = ({ isOpen, onClose, onSave, initialData = null }) => {
                     {formData.designPreset === design.id && <Check className="absolute right-2 top-2" size={16} />}
                   </button>
                 ))}
+              </div>
+
+              {/* Scenic / Illustrated Cards Section */}
+              <div className="mt-5">
+                <p className="mb-3 text-sm font-semibold text-neutral-text">🎨 Scenic Cards</p>
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-2">
+                  {SCENIC_DESIGNS.map((design) => {
+                    const scenicBg = getCardBackground({ designPreset: design.id, primaryColor: design.primaryColor, secondaryColor: design.secondaryColor, textColor: design.textColor });
+                    return (
+                      <button
+                        key={design.id}
+                        type="button"
+                        onClick={() => selectDesign(design)}
+                        className={`relative h-24 overflow-hidden rounded-xl border-2 p-3 text-left transition-all ${formData.designPreset === design.id ? 'border-primary shadow-md ring-2 ring-primary/30' : 'border-transparent hover:border-primary/40'}`}
+                        style={{ ...scenicBg, backgroundSize: 'cover' }}
+                      >
+                        <span className="relative z-10 text-xs font-bold drop-shadow-[0_1px_3px_rgba(0,0,0,0.5)]">{design.name}</span>
+                        {formData.designPreset === design.id && <Check className="absolute right-2 top-2 drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]" size={16} />}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
               <div className="mt-5">

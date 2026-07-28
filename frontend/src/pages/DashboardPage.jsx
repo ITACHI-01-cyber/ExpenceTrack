@@ -11,6 +11,7 @@ import SavingsGoalsGrid from '../components/dashboard/SavingsGoalsGrid';
 import SavingsCard3D from '../components/dashboard/SavingsCard3D';
 import EditBudgetModal from '../components/ui/EditBudgetModal';
 import AddGoalModal from '../components/ui/AddGoalModal';
+import EditGoalModal from '../components/ui/EditGoalModal';
 import AddBalanceModal from '../components/ui/AddBalanceModal';
 import { formatCurrency } from '../utils/formatCurrency';
 import { Settings2 } from 'lucide-react';
@@ -26,9 +27,74 @@ const DashboardPage = () => {
   const [loading, setLoading] = useState(true);
   const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false);
   const [isAddGoalModalOpen, setIsAddGoalModalOpen] = useState(false);
+  const [isEditGoalModalOpen, setIsEditGoalModalOpen] = useState(false);
+  const [selectedGoalToEdit, setSelectedGoalToEdit] = useState(null);
   const [topUpWallet, setTopUpWallet] = useState(null);
 
   const [allTransactions, setAllTransactions] = useState([]);
+  const [gridTransactions, setGridTransactions] = useState([]);
+  const [gridFilterType, setGridFilterType] = useState('month'); // 'week' | 'month' | 'lastMonth' | 'year' | 'custom'
+  const [gridCustomRange, setGridCustomRange] = useState({ startDate: '', endDate: '' });
+
+  const getTransactionsQueryString = (type, range) => {
+    const now = new Date();
+    const formatDate = (date) => {
+      const yyyy = date.getFullYear();
+      const mm = String(date.getMonth() + 1).padStart(2, '0');
+      const dd = String(date.getDate()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}`;
+    };
+
+    if (type === 'week') {
+      const startOfWeek = new Date(now);
+      const day = startOfWeek.getDay();
+      const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1);
+      startOfWeek.setDate(diff);
+      const startDate = formatDate(startOfWeek);
+      const endDate = formatDate(now);
+      return `?startDate=${startDate}&endDate=${endDate}`;
+    } else if (type === 'month') {
+      const month = now.getMonth() + 1;
+      const year = now.getFullYear();
+      return `?month=${month}&year=${year}`;
+    } else if (type === 'lastMonth') {
+      const lastMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const month = lastMonthDate.getMonth() + 1;
+      const year = lastMonthDate.getFullYear();
+      return `?month=${month}&year=${year}`;
+    } else if (type === 'year') {
+      const year = now.getFullYear();
+      const startDate = `${year}-01-01`;
+      const endDate = `${year}-12-31`;
+      return `?startDate=${startDate}&endDate=${endDate}`;
+    } else if (type === 'custom' && range?.startDate && range?.endDate) {
+      return `?startDate=${range.startDate}&endDate=${range.endDate}`;
+    } else {
+      const month = now.getMonth() + 1;
+      const year = now.getFullYear();
+      return `?month=${month}&year=${year}`;
+    }
+  };
+
+  const fetchGridTransactions = async (type, range) => {
+    try {
+      const query = getTransactionsQueryString(type, range);
+      const res = await api.get(`/transactions${query}`);
+      if (res.data.success) {
+        setGridTransactions(res.data.data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch grid transactions", err);
+    }
+  };
+
+  const handleGridFilterChange = async (type, range) => {
+    setGridFilterType(type);
+    if (range) {
+      setGridCustomRange(range);
+    }
+    await fetchGridTransactions(type, range);
+  };
 
   const fetchData = async () => {
     try {
@@ -42,11 +108,13 @@ const DashboardPage = () => {
       const now = new Date();
       const month = now.getMonth() + 1;
       const year = now.getFullYear();
+      const gridQuery = getTransactionsQueryString(gridFilterType, gridCustomRange);
 
-      const [summaryRes, txRes, goalsRes] = await Promise.all([
+      const [summaryRes, txRes, goalsRes, gridTxRes] = await Promise.all([
         api.get('/dashboard/summary'),
         api.get(`/transactions?month=${month}&year=${year}`),
-        api.get(`/goals?month=${month}&year=${year}`)
+        api.get(`/goals?month=${month}&year=${year}`),
+        api.get(`/transactions${gridQuery}`)
       ]);
 
       if (summaryRes.data.success) {
@@ -59,6 +127,9 @@ const DashboardPage = () => {
       }
       if (goalsRes && goalsRes.data && goalsRes.data.success) {
         setGoals(goalsRes.data.data);
+      }
+      if (gridTxRes.data.success) {
+        setGridTransactions(gridTxRes.data.data);
       }
     } catch (err) {
       console.error("Failed to fetch dashboard data", err);
@@ -92,7 +163,7 @@ const DashboardPage = () => {
 
   const expenseCategories = React.useMemo(() => {
     const categories = {};
-    allTransactions.forEach(tx => {
+    gridTransactions.forEach(tx => {
       if (tx.type === 'expense') {
         const catName = tx.category?.trim() || 'Uncategorized';
         const categoryKey = catName.toLocaleLowerCase();
@@ -104,8 +175,8 @@ const DashboardPage = () => {
     });
     const mapped = Object.values(categories)
       .sort((a, b) => b.amount - a.amount);
-    return mapped.length > 0 ? mapped : [{ name: 'No Expenses Yet', amount: 0 }];
-  }, [allTransactions]);
+    return mapped;
+  }, [gridTransactions]);
 
   const handleGoalStatusChange = async (goal, completed) => {
     if (goal.completed === completed) return;
@@ -130,6 +201,23 @@ const DashboardPage = () => {
       setGoals((currentGoals) =>
         currentGoals.map((item) => item.id === goal.id ? goal : item)
       );
+    }
+  };
+
+  const handleEditGoalClick = (goal) => {
+    setSelectedGoalToEdit(goal);
+    setIsEditGoalModalOpen(true);
+  };
+
+  const handleDeleteGoal = async (goalId) => {
+    if (!window.confirm("Are you sure you want to delete this target?")) return;
+    try {
+      const res = await api.delete(`/goals/${goalId}`);
+      if (res.data.success) {
+        fetchData();
+      }
+    } catch (err) {
+      console.error("Failed to delete goal", err);
     }
   };
 
@@ -207,7 +295,12 @@ const DashboardPage = () => {
 
           <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:gap-8">
             <div className="flex-1">
-              <MonthlyExpenseGrid categories={expenseCategories} />
+              <MonthlyExpenseGrid 
+                categories={expenseCategories} 
+                filterType={gridFilterType}
+                customRange={gridCustomRange}
+                onFilterChange={handleGridFilterChange}
+              />
             </div>
             <div className="flex-1">
               <div className="mb-4 max-w-xs sm:max-w-sm">
@@ -217,6 +310,8 @@ const DashboardPage = () => {
                 goals={goals}
                 onAddClick={() => setIsAddGoalModalOpen(true)}
                 onStatusChange={handleGoalStatusChange}
+                onEditClick={handleEditGoalClick}
+                onDeleteClick={handleDeleteGoal}
               />
             </div>
           </div>
@@ -235,6 +330,16 @@ const DashboardPage = () => {
       <AddGoalModal 
         isOpen={isAddGoalModalOpen}
         onClose={() => setIsAddGoalModalOpen(false)}
+        onSaveSuccess={fetchData}
+      />
+
+      <EditGoalModal
+        isOpen={isEditGoalModalOpen}
+        onClose={() => {
+          setIsEditGoalModalOpen(false);
+          setSelectedGoalToEdit(null);
+        }}
+        goal={selectedGoalToEdit}
         onSaveSuccess={fetchData}
       />
 

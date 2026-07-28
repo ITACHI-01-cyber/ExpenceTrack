@@ -48,7 +48,7 @@ const WalletCard = ({
     expiryDate = 'MM/YY',
     bankName = '',
     cardBrand = ''
-  } = wallet;
+  } = wallet || {};
 
   const isUpi = cardType.toLowerCase() === 'upi';
   const isCash = cardType.toLowerCase() === 'cash';
@@ -168,7 +168,7 @@ const WalletCard = ({
       </div>
 
       <div
-        className="relative z-10 min-h-[176px] overflow-hidden rounded-[26px] border p-5 shadow-[0_18px_40px_rgba(15,23,42,0.2)]"
+        className="relative z-10 min-h-[176px] overflow-hidden rounded-[26px] border border-white/[0.08] p-5 shadow-[0_18px_40px_rgba(15,23,42,0.4)]"
         style={{ ...getCardCoverStyle(wallet), marginTop: '-62px' }}
       >
         <div
