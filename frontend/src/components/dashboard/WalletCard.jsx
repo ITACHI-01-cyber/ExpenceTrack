@@ -61,7 +61,7 @@ const WalletCard = ({
     <div className="relative w-full flex flex-col gap-3">
       {/* ATM Card Plate */}
       <div
-        className={`relative z-0 mx-auto w-full max-w-[350px] sm:max-w-[390px] h-[215px] overflow-hidden px-5 py-5 shadow-md transition-all duration-300 ${isUpi ? 'rounded-[28px]' : 'rounded-[20px]'}`}
+        className={`relative z-0 mx-auto w-full max-w-[350px] sm:max-w-[390px] h-[180px] min-[360px]:h-[200px] sm:h-[215px] overflow-hidden px-5 py-5 shadow-md transition-all duration-300 ${isUpi ? 'rounded-[28px]' : 'rounded-[20px]'}`}
         style={getCardBackground(wallet)}
       >
         {/* Card shine overlay */}
@@ -69,7 +69,7 @@ const WalletCard = ({
         
         {/* Chip and contactless icon */}
         {!isCash && !isUpi && (
-          <div className="absolute left-5 top-[76px] z-10 flex items-center gap-2">
+          <div className="absolute left-5 top-[38%] min-[360px]:top-[70px] sm:top-[76px] z-10 flex items-center gap-2">
             <div className="grid h-6 w-8 place-items-center rounded bg-yellow-200/90 shadow-inner">
               <div className="h-4.5 w-6 rounded border border-yellow-700/30" />
             </div>

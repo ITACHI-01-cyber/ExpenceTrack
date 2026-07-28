@@ -36,7 +36,7 @@ const CardCarousel = ({ wallets, onAddCard, onAddMoney }) => {
   return (
     <div className="w-full mb-6 relative select-none">
       {/* Semicircular Carousel Wrapper */}
-      <div className="relative mx-auto w-full max-w-[480px] h-[400px] flex items-center justify-between overflow-hidden px-2">
+      <div className="relative mx-auto w-full max-w-[480px] h-[340px] min-[360px]:h-[380px] sm:h-[400px] flex items-center justify-between overflow-hidden px-2">
         
         {/* Left side: Card Fan Stack along a vertical arc */}
         <div className="relative w-[82%] h-full flex items-center justify-center">
