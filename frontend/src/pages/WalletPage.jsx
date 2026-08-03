@@ -10,7 +10,7 @@ import walletService from '../services/walletService';
 import { formatCurrency } from '../utils/formatCurrency';
 import { getCardBackground } from '../utils/cardDesigns';
 
-const MiniCardPreview = ({ wallet, isSelected, onClick }) => {
+const MiniCardPreview = ({ wallet, isSelected, onClick, index = 0 }) => {
   const bg = getCardBackground(wallet);
   const isUpi = (wallet.cardType || '').toLowerCase() === 'upi';
   const isCash = (wallet.cardType || '').toLowerCase() === 'cash';
@@ -21,18 +21,30 @@ const MiniCardPreview = ({ wallet, isSelected, onClick }) => {
     <button
       type="button"
       onClick={onClick}
-      className={`
-        relative shrink-0 w-[200px] h-[120px] rounded-2xl overflow-hidden transition-all duration-300 cursor-pointer group
-        ${isSelected
-          ? 'ring-2 ring-primary shadow-lg scale-[1.04]'
-          : 'ring-1 ring-white/10 hover:ring-white/35 hover:shadow-lg hover:scale-[1.02]'
-        }
-      `}
-      style={bg}
+      className="card-enter relative shrink-0 w-[200px] h-[120px] rounded-2xl overflow-hidden cursor-pointer group"
+      style={{
+        ...bg,
+        animationDelay: `${index * 60}ms`,
+        transition: 'transform 0.3s cubic-bezier(0.23,1,0.32,1), box-shadow 0.3s ease, outline 0.15s ease',
+        transform: isSelected ? 'scale(1.05) translateY(-2px)' : 'scale(1)',
+        boxShadow: isSelected
+          ? '0 12px 32px rgba(0,0,0,0.28), 0 0 0 2.5px rgba(255,255,255,0.85)'
+          : '0 4px 12px rgba(0,0,0,0.12)',
+        outline: isSelected ? '2px solid var(--primary-main)' : '2px solid transparent',
+        outlineOffset: '2px',
+      }}
     >
-      {/* Decorative circles */}
-      <div className="absolute -right-4 -top-4 h-16 w-16 rounded-full border-[10px] border-white/10" />
-      <div className="absolute -bottom-4 -left-4 h-12 w-12 rounded-full bg-white/8" />
+      {/* Decorative orbs */}
+      <div className="absolute -right-4 -top-4 h-16 w-16 rounded-full border-[10px] border-white/10 pointer-events-none" />
+      <div className="absolute -bottom-4 -left-4 h-12 w-12 rounded-full bg-white/8 pointer-events-none" />
+
+      {/* Shimmer on hover */}
+      <div
+        className="absolute inset-0 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-300"
+        style={{
+          background: 'linear-gradient(115deg, rgba(255,255,255,0) 30%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0) 70%)',
+        }}
+      />
 
       <div className="relative z-10 p-3.5 flex flex-col justify-between h-full text-white">
         <div className="flex items-start justify-between">
@@ -44,8 +56,8 @@ const MiniCardPreview = ({ wallet, isSelected, onClick }) => {
           </span>
         </div>
         <div className="text-left">
-          <p className="font-mono text-[11px] tracking-[0.1em] opacity-80 mb-1">
-            {isCash ? '💵 Cash' : isUpi ? safeNumber : `•••• •••• •••• ${lastFour || '••••'}`}
+          <p className="font-mono text-[10.5px] tracking-[0.1em] opacity-75 mb-0.5">
+            {isCash ? '💵 Cash' : isUpi ? safeNumber : `•••• ${lastFour || '••••'}`}
           </p>
           <p className="text-sm font-bold tabular-nums">
             {formatCurrency(wallet.balance || 0)}
@@ -53,9 +65,9 @@ const MiniCardPreview = ({ wallet, isSelected, onClick }) => {
         </div>
       </div>
 
-      {/* Selection glow pulse */}
+      {/* Selected shimmer gradient */}
       {isSelected && (
-        <div className="absolute inset-0 rounded-2xl bg-gradient-to-t from-white/10 to-transparent pointer-events-none" />
+        <div className="absolute inset-0 rounded-2xl bg-gradient-to-t from-white/15 to-transparent pointer-events-none" />
       )}
     </button>
   );
@@ -198,23 +210,25 @@ const WalletPage = () => {
       ) : wallets.length > 0 ? (
         <>
           {/* Main Content: Card + Settings */}
-          <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 mb-8">
+          <div className="flex flex-col lg:flex-row lg:items-start gap-6 lg:gap-8 mb-8">
 
             {/* Left Column — Selected Card Display */}
-            <div className="w-full lg:w-[55%] xl:w-[52%]">
-              <div className="relative">
-                {/* Ambient glow behind card */}
+            <div className="w-full lg:w-[55%] xl:w-[52%] flex flex-col">
+              {/* Glow + Card stack */}
+              <div className="relative flex flex-col items-center pt-4 pb-2">
+                {/* Ambient glow — purely decorative, behind everything */}
                 <div
-                  className="absolute top-8 left-1/2 -translate-x-1/2 w-[80%] h-[70%] rounded-3xl blur-3xl opacity-15 pointer-events-none"
+                  className="absolute top-4 left-1/2 -translate-x-1/2 w-[75%] h-[200px] sm:h-[220px] rounded-3xl blur-3xl pointer-events-none"
                   style={{
                     background: selected
                       ? `linear-gradient(135deg, ${selected.primaryColor || '#7C3AED'}, ${selected.secondaryColor || '#EC4899'})`
-                      : 'transparent'
+                      : 'transparent',
+                    opacity: 0.18,
+                    transition: 'background 0.6s ease',
+                    zIndex: 0,
                   }}
                 />
-
-                {/* Card with 3D wrapper */}
-                <div className="relative z-10">
+                <div className="relative w-full" style={{ zIndex: 1 }}>
                   <WalletCard
                     wallet={selected}
                     interactive={true}
@@ -286,10 +300,11 @@ const WalletPage = () => {
               </span>
             </div>
             <div className="flex items-center gap-4 overflow-x-auto pb-4 -mx-1 px-1 scrollbar-hide">
-              {wallets.map((w) => (
+              {wallets.map((w, i) => (
                 <MiniCardPreview
                   key={w.id}
                   wallet={w}
+                  index={i}
                   isSelected={w.id === selected?.id}
                   onClick={() => setSelectedWalletId(w.id)}
                 />
