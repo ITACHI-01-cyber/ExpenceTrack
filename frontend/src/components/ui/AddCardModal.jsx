@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { ArrowLeft, Check, X } from 'lucide-react';
 import WalletCard from '../dashboard/WalletCard';
-import { CARD_DESIGNS, UPI_DESIGNS, CASH_DESIGNS, SCENIC_DESIGNS, getCardBackground } from '../../utils/cardDesigns';
+import { CARD_DESIGNS, UPI_DESIGNS, CASH_DESIGNS, SCENIC_DESIGNS, DC_DESIGNS, getCardBackground } from '../../utils/cardDesigns';
+import CARD_ICONS, { CardIconRenderer } from '../../utils/cardIcons';
 import Button from './Button';
 import AddBalanceModal from './AddBalanceModal';
 
@@ -16,7 +17,10 @@ const getDefaultFormData = () => ({
   designPreset: 'midnight',
   primaryColor: '#111827',
   secondaryColor: '#312E81',
-  textColor: '#FFFFFF'
+  textColor: '#FFFFFF',
+  cardIcon: 'none',
+  backSignatureText: 'Not Valid without Authorized Signature',
+  backContactInfo: 'support@bank.com | 1-800-555-0199'
 });
 
 const inputClass = 'w-full rounded-lg border border-border bg-white px-4 py-2.5 text-primary focus:outline-none focus:ring-2 focus:ring-primary/20';
@@ -259,6 +263,33 @@ const AddCardModal = ({ isOpen, onClose, onSave, initialData = null }) => {
                 <label className="mb-1.5 block text-sm font-medium">Current Balance</label>
                 <input type="number" name="balance" value={formData.balance} onChange={handleChange} className={inputClass} min="0" step="0.01" placeholder="0.00" />
               </div>
+
+              {/* Back side customization section */}
+              <div className="sm:col-span-2 border-t border-border pt-4 mt-2">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-muted mb-3">Back Side Details</h4>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="mb-1.5 block text-xs font-medium">Signature Strip Text</label>
+                    <input
+                      name="backSignatureText"
+                      value={formData.backSignatureText || ''}
+                      onChange={handleChange}
+                      className={inputClass}
+                      placeholder="e.g. Not Valid without Authorized Signature"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-xs font-medium">Contact / Disclaimer Info</label>
+                    <input
+                      name="backContactInfo"
+                      value={formData.backContactInfo || ''}
+                      onChange={handleChange}
+                      className={inputClass}
+                      placeholder="e.g. support@bank.com | 1-800-555-0199"
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
 
             <p className="mt-5 rounded-xl bg-primary/5 p-3 text-xs text-neutral-muted">
@@ -320,6 +351,59 @@ const AddCardModal = ({ isOpen, onClose, onSave, initialData = null }) => {
                       </button>
                     );
                   })}
+                </div>
+              </div>
+              {/* DC Superhero Cards Section */}
+              <div className="mt-5">
+                <p className="mb-3 text-sm font-semibold text-neutral-text">🦸‍♂️ DC Superhero Cards</p>
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-2">
+                  {DC_DESIGNS.map((design) => {
+                    const dcBg = getCardBackground({ designPreset: design.id, primaryColor: design.primaryColor, secondaryColor: design.secondaryColor, textColor: design.textColor });
+                    return (
+                      <button
+                        key={design.id}
+                        type="button"
+                        onClick={() => selectDesign(design)}
+                        className={`relative h-24 overflow-hidden rounded-xl border-2 p-3 text-left transition-all ${formData.designPreset === design.id ? 'border-primary shadow-md ring-2 ring-primary/30' : 'border-transparent hover:border-primary/40'}`}
+                        style={{ ...dcBg, backgroundSize: 'cover' }}
+                      >
+                        <span className="relative z-10 text-xs font-bold drop-shadow-[0_1px_3px_rgba(0,0,0,0.5)]">{design.name}</span>
+                        {formData.designPreset === design.id && <Check className="absolute right-2 top-2 drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]" size={16} />}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Card Icon Picker */}
+              <div className="mt-5">
+                <p className="mb-3 text-sm font-semibold text-neutral-text">✨ Card Logo</p>
+                <div className="grid grid-cols-4 gap-2 sm:grid-cols-5 lg:grid-cols-4">
+                  {CARD_ICONS.map((icon) => (
+                    <button
+                      key={icon.id}
+                      type="button"
+                      onClick={() => updateField('cardIcon', icon.id)}
+                      className={`relative flex flex-col items-center justify-center gap-1 rounded-xl border-2 p-2.5 transition-all duration-200 ${
+                        formData.cardIcon === icon.id
+                          ? 'border-primary bg-primary/10 shadow-md ring-2 ring-primary/25'
+                          : 'border-border bg-white hover:border-primary/40 hover:shadow-sm'
+                      }`}
+                      style={{ minHeight: '68px' }}
+                    >
+                      {icon.component ? (
+                        <CardIconRenderer iconId={icon.id} size={32} />
+                      ) : (
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-neutral-100 text-neutral-400">
+                          <X size={14} />
+                        </div>
+                      )}
+                      <span className="text-[9px] font-semibold uppercase tracking-wider text-neutral-muted">{icon.name}</span>
+                      {formData.cardIcon === icon.id && (
+                        <Check className="absolute right-1.5 top-1.5 text-primary" size={12} />
+                      )}
+                    </button>
+                  ))}
                 </div>
               </div>
 

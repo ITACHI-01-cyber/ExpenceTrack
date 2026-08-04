@@ -68,6 +68,9 @@ public class WalletService {
         wallet.setPrimaryColor(walletDetails.getPrimaryColor());
         wallet.setSecondaryColor(walletDetails.getSecondaryColor());
         wallet.setTextColor(walletDetails.getTextColor());
+        wallet.setCardIcon(walletDetails.getCardIcon());
+        wallet.setBackSignatureText(walletDetails.getBackSignatureText());
+        wallet.setBackContactInfo(walletDetails.getBackContactInfo());
 
         return walletRepository.save(wallet);
     }

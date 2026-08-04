@@ -112,6 +112,31 @@ export const CASH_DESIGNS = [
   }
 ];
 
+
+export const DC_DESIGNS = [
+  {
+    id: 'dc-superman',
+    name: 'Superman Classic',
+    primaryColor: '#0055A5',
+    secondaryColor: '#E61E25',
+    textColor: '#FFFFFF'
+  },
+  {
+    id: 'dc-wonderwoman',
+    name: 'Wonder Woman Gold',
+    primaryColor: '#800000',
+    secondaryColor: '#E31837',
+    textColor: '#FFD700'
+  },
+  {
+    id: 'dc-batman',
+    name: 'Batman Dark Knight',
+    primaryColor: '#141414',
+    secondaryColor: '#262626',
+    textColor: '#F3F4F6'
+  }
+];
+
 /* ─── Scenic / Illustrated Card Designs ─── */
 export const SCENIC_DESIGNS = [
   {
@@ -176,6 +201,17 @@ export const getCardDesign = (wallet = {}) => {
   const safeWallet = wallet || {};
   const type = (safeWallet.cardType || '').toLowerCase();
   const designs = type === 'upi' ? UPI_DESIGNS : (type === 'cash' ? CASH_DESIGNS : CARD_DESIGNS);
+
+  // Check DC designs
+  const dcMatch = DC_DESIGNS.find((d) => d.id === safeWallet.designPreset);
+  if (dcMatch) {
+    return {
+      ...dcMatch,
+      primaryColor: safeWallet.primaryColor || dcMatch.primaryColor,
+      secondaryColor: safeWallet.secondaryColor || dcMatch.secondaryColor,
+      textColor: safeWallet.textColor || dcMatch.textColor
+    };
+  }
 
   // Check scenic designs first (they work across all card types)
   const scenicMatch = SCENIC_DESIGNS.find((d) => d.id === safeWallet.designPreset);
@@ -309,6 +345,30 @@ const scenicPatterns = {
     return {
       backgroundImage: `${lavaEmber1}, ${smoke}, ${lavaGlow}, ${haze}, ${volcano}, ${volcanoSide}, ${sky}`,
       color: design.textColor
+    };
+  },
+  'dc-superman': (design) => {
+    return {
+      backgroundImage: `url('https://logoblink.com/static/0b6d4ce5c7b9891df4d74d1f1d134cce/cf84a/superman-logo-logoblink.png')`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      color: '#FFFFFF'
+    };
+  },
+  'dc-wonderwoman': (design) => {
+    return {
+      backgroundImage: `url('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTzlEknBO_feRA-R9rqPTD7LSKzZBls6oCvJ7yqLh7fxA1GDFhSZQeNViE&s=10')`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      color: '#FFD700'
+    };
+  },
+  'dc-batman': (design) => {
+    return {
+      backgroundImage: `url('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTYQwfmOgnIAcrL50dA4c-M3bttCFkUXb0wOlhFV_SgQgfNhmN_qHqA6tI&s=10')`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      color: '#E5E7EB'
     };
   }
 };

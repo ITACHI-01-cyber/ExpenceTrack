@@ -29,4 +29,7 @@ public class Wallet {
     private String primaryColor;
     private String secondaryColor;
     private String textColor;
+    private String cardIcon;
+    private String backSignatureText;
+    private String backContactInfo;
 }
