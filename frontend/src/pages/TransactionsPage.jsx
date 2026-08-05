@@ -11,6 +11,8 @@ import walletService from '../services/walletService';
 import { formatDate } from '../utils/dateHelpers';
 import { formatCurrency } from '../utils/formatCurrency';
 import { Trash2, Plus } from 'lucide-react';
+import useAuthStore from '../store/authStore';
+import guestStorage from '../services/guestStorage';
 
 const toDateInputValue = (date) => date.toISOString().slice(0, 10);
 
@@ -53,6 +55,7 @@ const toTitleCase = (value) => value
   .replace(/\b\w/g, (letter) => letter.toUpperCase());
 
 const TransactionsPage = () => {
+  const { isGuest } = useAuthStore();
   const [transactions, setTransactions] = useState([]);
   const [wallets, setWallets] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -144,19 +147,30 @@ const TransactionsPage = () => {
 
   const fetchData = async () => {
     try {
-      const w = await walletService.getAll();
-      setWallets(w || []);
+      if (isGuest) {
+        setWallets(guestStorage.wallets.getAll());
+      } else {
+        const w = await walletService.getAll();
+        setWallets(w || []);
+      }
     } catch (err) {
       console.error('Failed to fetch wallets', err);
     }
 
     try {
-      const txRes = await api.get('/transactions', { params: buildTransactionParams() });
+      const params = buildTransactionParams();
 
-      if (txRes.data.success) {
-        const sortedTransactions = txRes.data.data.sort((a,b) => new Date(b.date) - new Date(a.date));
+      if (isGuest) {
+        const sortedTransactions = guestStorage.transactions.getAll(params);
         setTransactions(sortedTransactions);
         setCategoryHistory(rememberMany(sortedTransactions.map((transaction) => transaction.category)));
+      } else {
+        const txRes = await api.get('/transactions', { params });
+        if (txRes.data.success) {
+          const sortedTransactions = txRes.data.data.sort((a,b) => new Date(b.date) - new Date(a.date));
+          setTransactions(sortedTransactions);
+          setCategoryHistory(rememberMany(sortedTransactions.map((transaction) => transaction.category)));
+        }
       }
     } catch (err) {
       console.error(err);
@@ -176,9 +190,12 @@ const TransactionsPage = () => {
 
   const handleDelete = async (id) => {
     try {
-      await api.delete(`/transactions/${id}`);
+      if (isGuest) {
+        guestStorage.transactions.remove(id);
+      } else {
+        await api.delete(`/transactions/${id}`);
+      }
       setTransactions(prev => prev.filter(t => t.id !== id));
-      // In a real app, implement a toast with undo here
     } catch (err) {
       console.error(err);
     }
@@ -218,17 +235,25 @@ const TransactionsPage = () => {
         amount: parseFloat(formData.amount),
         category: normalizeCategory(formData.category)
       };
-      if (!payload.walletId) delete payload.walletId; // Don't send empty string if unselected
+      if (!payload.walletId) delete payload.walletId;
 
-      if (editingTransaction) {
-        await api.put(`/transactions/${editingTransaction.id}`, payload);
+      if (isGuest) {
+        if (editingTransaction) {
+          guestStorage.transactions.update(editingTransaction.id, payload);
+        } else {
+          guestStorage.transactions.create(payload);
+        }
       } else {
-        await api.post('/transactions', payload);
+        if (editingTransaction) {
+          await api.put(`/transactions/${editingTransaction.id}`, payload);
+        } else {
+          await api.post('/transactions', payload);
+        }
       }
 
       setCategoryHistory((prev) => rememberMany([...prev, payload.category]));
       closeTransactionModal();
-      fetchData(); // Refresh to get updated transactions and potentially wallets
+      fetchData();
     } catch (err) {
       console.error(err);
     }

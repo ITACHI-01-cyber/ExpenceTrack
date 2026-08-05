@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import Button from './Button';
 import Modal from './Modal';
 import api from '../../services/api';
+import guestStorage from '../../services/guestStorage';
 
-const EditGoalModal = ({ isOpen, onClose, onSaveSuccess, goal }) => {
+const EditGoalModal = ({ isOpen, onClose, onSaveSuccess, goal, isGuest }) => {
   const [formData, setFormData] = useState({
     title: '',
     amount: '',
@@ -41,10 +42,16 @@ const EditGoalModal = ({ isOpen, onClose, onSaveSuccess, goal }) => {
         medium: formData.medium
       };
 
-      const res = await api.put(`/goals/${goal.id}`, payload);
-      if (res.data.success) {
+      if (isGuest) {
+        guestStorage.goals.update(goal.id, payload);
         onSaveSuccess();
         onClose();
+      } else {
+        const res = await api.put(`/goals/${goal.id}`, payload);
+        if (res.data.success) {
+          onSaveSuccess();
+          onClose();
+        }
       }
     } catch (err) {
       console.error("Failed to update goal", err);

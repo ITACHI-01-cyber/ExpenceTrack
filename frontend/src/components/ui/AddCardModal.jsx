@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ArrowLeft, Check, X } from 'lucide-react';
+import { ArrowLeft, Check, X, Lock } from 'lucide-react';
 import WalletCard from '../dashboard/WalletCard';
 import { CARD_DESIGNS, UPI_DESIGNS, CASH_DESIGNS, SCENIC_DESIGNS, DC_DESIGNS, getCardBackground } from '../../utils/cardDesigns';
 import CARD_ICONS, { CardIconRenderer } from '../../utils/cardIcons';
@@ -47,7 +47,7 @@ const applyDesign = (formData, design) => ({
   textColor: design.textColor
 });
 
-const AddCardModal = ({ isOpen, onClose, onSave, initialData = null }) => {
+const AddCardModal = ({ isOpen, onClose, onSave, initialData = null, isGuest }) => {
   const [formData, setFormData] = useState(getDefaultFormData);
   const [step, setStep] = useState(1);
   const [error, setError] = useState('');
@@ -293,7 +293,9 @@ const AddCardModal = ({ isOpen, onClose, onSave, initialData = null }) => {
             </div>
 
             <p className="mt-5 rounded-xl bg-primary/5 p-3 text-xs text-neutral-muted">
-              For your security, CVV is never requested or stored.
+              {isGuest
+                ? 'Preview mode — card data is stored locally in your browser.'
+                : 'For your security, CVV is never requested or stored.'}
             </p>
             {error && <p className="mt-3 text-sm font-medium text-danger">{error}</p>}
 
@@ -355,24 +357,54 @@ const AddCardModal = ({ isOpen, onClose, onSave, initialData = null }) => {
               </div>
               {/* DC Superhero Cards Section */}
               <div className="mt-5">
-                <p className="mb-3 text-sm font-semibold text-neutral-text">🦸‍♂️ DC Superhero Cards</p>
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-2">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-sm font-semibold text-neutral-text">🦸‍♂️ DC Superhero Cards</p>
+                  {isGuest && (
+                    <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+                      Locked for Guests
+                    </span>
+                  )}
+                </div>
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-2 relative">
                   {DC_DESIGNS.map((design) => {
                     const dcBg = getCardBackground({ designPreset: design.id, primaryColor: design.primaryColor, secondaryColor: design.secondaryColor, textColor: design.textColor });
                     return (
                       <button
                         key={design.id}
                         type="button"
-                        onClick={() => selectDesign(design)}
-                        className={`relative h-24 overflow-hidden rounded-xl border-2 p-3 text-left transition-all ${formData.designPreset === design.id ? 'border-primary shadow-md ring-2 ring-primary/30' : 'border-transparent hover:border-primary/40'}`}
+                        onClick={() => {
+                          if (isGuest) {
+                            alert("Sign up to unlock DC Superhero card customizations!");
+                            return;
+                          }
+                          selectDesign(design);
+                        }}
+                        className={`relative h-24 overflow-hidden rounded-xl border-2 p-3 text-left transition-all ${
+                          isGuest 
+                            ? 'border-transparent opacity-60 cursor-not-allowed' 
+                            : formData.designPreset === design.id 
+                              ? 'border-primary shadow-md ring-2 ring-primary/30' 
+                              : 'border-transparent hover:border-primary/40'
+                        }`}
                         style={{ ...dcBg, backgroundSize: 'cover' }}
                       >
                         <span className="relative z-10 text-xs font-bold drop-shadow-[0_1px_3px_rgba(0,0,0,0.5)]">{design.name}</span>
-                        {formData.designPreset === design.id && <Check className="absolute right-2 top-2 drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]" size={16} />}
+                        {isGuest ? (
+                          <div className="absolute inset-0 bg-black/45 flex items-center justify-center backdrop-blur-[1px]">
+                            <Lock size={20} className="text-white drop-shadow-md" />
+                          </div>
+                        ) : (
+                          formData.designPreset === design.id && <Check className="absolute right-2 top-2 drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]" size={16} />
+                        )}
                       </button>
                     );
                   })}
                 </div>
+                {isGuest && (
+                  <p className="mt-2 text-xs font-medium text-amber-600 flex items-center gap-1.5">
+                    <Lock size={12} /> Sign up to unlock DC Superhero card customizations!
+                  </p>
+                )}
               </div>
 
               {/* Card Icon Picker */}

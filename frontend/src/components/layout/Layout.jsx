@@ -1,5 +1,6 @@
 import React from 'react';
 import Sidebar from './Sidebar';
+import GuestBanner from '../ui/GuestBanner';
 
 const Layout = ({ children }) => {
   return (
@@ -7,6 +8,7 @@ const Layout = ({ children }) => {
       <Sidebar />
       <main className="w-full flex-1 overflow-y-auto px-4 pb-24 pt-5 sm:px-6 md:px-8 md:py-6 md:pb-0">
         <div className="mx-auto w-full max-w-7xl">
+        <GuestBanner />
         {children}
         </div>
       </main>

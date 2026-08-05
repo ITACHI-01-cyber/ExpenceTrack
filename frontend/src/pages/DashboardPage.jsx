@@ -17,9 +17,12 @@ import { formatCurrency } from '../utils/formatCurrency';
 import { Settings2 } from 'lucide-react';
 import api from '../services/api';
 import walletService from '../services/walletService';
+import useAuthStore from '../store/authStore';
+import guestStorage from '../services/guestStorage';
 
 const DashboardPage = () => {
   const navigate = useNavigate();
+  const { isGuest } = useAuthStore();
   const [summary, setSummary] = useState(null);
   const [transactions, setTransactions] = useState([]);
   const [wallets, setWallets] = useState([]);
@@ -79,9 +82,14 @@ const DashboardPage = () => {
   const fetchGridTransactions = async (type, range) => {
     try {
       const query = getTransactionsQueryString(type, range);
-      const res = await api.get(`/transactions${query}`);
-      if (res.data.success) {
-        setGridTransactions(res.data.data);
+      if (isGuest) {
+        const params = Object.fromEntries(new URLSearchParams(query.replace('?', '')));
+        setGridTransactions(guestStorage.transactions.getAll(params));
+      } else {
+        const res = await api.get(`/transactions${query}`);
+        if (res.data.success) {
+          setGridTransactions(res.data.data);
+        }
       }
     } catch (err) {
       console.error("Failed to fetch grid transactions", err);
@@ -97,9 +105,14 @@ const DashboardPage = () => {
   };
 
   const fetchData = async () => {
+    // ── Wallets ──
     try {
-      const w = await walletService.getAll();
-      setWallets(w || []);
+      if (isGuest) {
+        setWallets(guestStorage.wallets.getAll());
+      } else {
+        const w = await walletService.getAll();
+        setWallets(w || []);
+      }
     } catch (err) {
       console.error('Failed to fetch wallets', err);
     }
@@ -108,28 +121,49 @@ const DashboardPage = () => {
       const now = new Date();
       const month = now.getMonth() + 1;
       const year = now.getFullYear();
-      const gridQuery = getTransactionsQueryString(gridFilterType, gridCustomRange);
 
-      const [summaryRes, txRes, goalsRes, gridTxRes] = await Promise.all([
-        api.get('/dashboard/summary'),
-        api.get(`/transactions?month=${month}&year=${year}`),
-        api.get(`/goals?month=${month}&year=${year}`),
-        api.get(`/transactions${gridQuery}`)
-      ]);
+      if (isGuest) {
+        // Guest: read directly from localStorage
+        const summaryData = guestStorage.budget.getSummary();
+        setSummary(summaryData);
 
-      if (summaryRes.data.success) {
-        setSummary(summaryRes.data.data);
-      }
-      if (txRes.data.success) {
-        const sorted = txRes.data.data.sort((a, b) => new Date(b.date) - new Date(a.date));
+        const allTx = guestStorage.transactions.getAll({ month, year });
+        const sorted = allTx.sort((a, b) => new Date(b.date) - new Date(a.date));
         setAllTransactions(sorted);
         setTransactions(sorted.slice(0, 4));
-      }
-      if (goalsRes && goalsRes.data && goalsRes.data.success) {
-        setGoals(goalsRes.data.data);
-      }
-      if (gridTxRes.data.success) {
-        setGridTransactions(gridTxRes.data.data);
+
+        const allGoals = guestStorage.goals.getAll({ month, year });
+        setGoals(allGoals);
+
+        // Grid transactions for the current filter
+        const gridQuery = getTransactionsQueryString(gridFilterType, gridCustomRange);
+        const gridParams = Object.fromEntries(new URLSearchParams(gridQuery.replace('?', '')));
+        const gridTx = guestStorage.transactions.getAll(gridParams);
+        setGridTransactions(gridTx);
+      } else {
+        const gridQuery = getTransactionsQueryString(gridFilterType, gridCustomRange);
+
+        const [summaryRes, txRes, goalsRes, gridTxRes] = await Promise.all([
+          api.get('/dashboard/summary'),
+          api.get(`/transactions?month=${month}&year=${year}`),
+          api.get(`/goals?month=${month}&year=${year}`),
+          api.get(`/transactions${gridQuery}`)
+        ]);
+
+        if (summaryRes.data.success) {
+          setSummary(summaryRes.data.data);
+        }
+        if (txRes.data.success) {
+          const sorted = txRes.data.data.sort((a, b) => new Date(b.date) - new Date(a.date));
+          setAllTransactions(sorted);
+          setTransactions(sorted.slice(0, 4));
+        }
+        if (goalsRes && goalsRes.data && goalsRes.data.success) {
+          setGoals(goalsRes.data.data);
+        }
+        if (gridTxRes.data.success) {
+          setGridTransactions(gridTxRes.data.data);
+        }
       }
     } catch (err) {
       console.error("Failed to fetch dashboard data", err);
@@ -188,13 +222,22 @@ const DashboardPage = () => {
     );
 
     try {
-      const res = await api.patch(`/goals/${goal.id}/status`, null, {
-        params: { completed }
-      });
-      if (res.data.success) {
-        setGoals((currentGoals) =>
-          currentGoals.map((item) => item.id === goal.id ? res.data.data : item)
-        );
+      if (isGuest) {
+        const result = guestStorage.goals.updateStatus(goal.id, completed);
+        if (result) {
+          setGoals((currentGoals) =>
+            currentGoals.map((item) => item.id === goal.id ? result : item)
+          );
+        }
+      } else {
+        const res = await api.patch(`/goals/${goal.id}/status`, null, {
+          params: { completed }
+        });
+        if (res.data.success) {
+          setGoals((currentGoals) =>
+            currentGoals.map((item) => item.id === goal.id ? res.data.data : item)
+          );
+        }
       }
     } catch (err) {
       console.error('Failed to update goal status', err);
@@ -212,9 +255,14 @@ const DashboardPage = () => {
   const handleDeleteGoal = async (goalId) => {
     if (!window.confirm("Are you sure you want to delete this target?")) return;
     try {
-      const res = await api.delete(`/goals/${goalId}`);
-      if (res.data.success) {
+      if (isGuest) {
+        guestStorage.goals.remove(goalId);
         fetchData();
+      } else {
+        const res = await api.delete(`/goals/${goalId}`);
+        if (res.data.success) {
+          fetchData();
+        }
       }
     } catch (err) {
       console.error("Failed to delete goal", err);
@@ -224,9 +272,14 @@ const DashboardPage = () => {
   const handleAddBalance = (amount) => {
     (async () => {
       try {
-        await walletService.addMoney(topUpWallet.id, amount);
-        const w = await walletService.getAll();
-        setWallets(w || []);
+        if (isGuest) {
+          guestStorage.wallets.addMoney(topUpWallet.id, amount);
+          setWallets(guestStorage.wallets.getAll());
+        } else {
+          await walletService.addMoney(topUpWallet.id, amount);
+          const w = await walletService.getAll();
+          setWallets(w || []);
+        }
       } catch (err) {
         console.error('Failed to top up wallet', err);
       }
@@ -325,12 +378,14 @@ const DashboardPage = () => {
         currentBudgetLimit={summary?.monthlyBudgetLimit}
         currentIncome={summary?.monthlyIncome}
         onSaveSuccess={fetchData}
+        isGuest={isGuest}
       />
 
       <AddGoalModal 
         isOpen={isAddGoalModalOpen}
         onClose={() => setIsAddGoalModalOpen(false)}
         onSaveSuccess={fetchData}
+        isGuest={isGuest}
       />
 
       <EditGoalModal
@@ -341,6 +396,7 @@ const DashboardPage = () => {
         }}
         goal={selectedGoalToEdit}
         onSaveSuccess={fetchData}
+        isGuest={isGuest}
       />
 
       <AddBalanceModal

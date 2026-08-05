@@ -1,10 +1,10 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, ArrowRightLeft, Wallet, LogOut, Star, Settings2 } from 'lucide-react';
+import { LayoutDashboard, ArrowRightLeft, Wallet, LogOut, Star, Settings2, Eye } from 'lucide-react';
 import useAuthStore from '../../store/authStore';
 
 const Sidebar = () => {
-  const { user, logout } = useAuthStore();
+  const { user, logout, isGuest } = useAuthStore();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -30,9 +30,20 @@ const Sidebar = () => {
         {user && (
           <div className="flex flex-col items-center gap-2 mb-4">
             <div className="w-16 h-16 rounded-full bg-primary-glow flex items-center justify-center text-primary font-bold text-xl overflow-hidden">
-               {user.profilePicture ? <img src={user.profilePicture} alt="User" className="h-full w-full object-cover" /> : user.name.charAt(0)}
+               {isGuest ? (
+                 <Eye size={28} />
+               ) : user.profilePicture ? (
+                 <img src={user.profilePicture} alt="User" className="h-full w-full object-cover" />
+               ) : (
+                 user.name.charAt(0)
+               )}
             </div>
             <span className="font-semibold text-primary text-sm text-center">{user.name}</span>
+            {isGuest && (
+              <span className="text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">
+                Preview Mode
+              </span>
+            )}
           </div>
         )}
       </div>
@@ -59,11 +70,17 @@ const Sidebar = () => {
         
         <button 
           onClick={handleLogout}
-          className="group flex flex-col md:flex-row flex-1 md:flex-none h-[60px] md:min-h-12 items-center justify-center md:justify-start gap-1 md:gap-3 rounded-[1.25rem] md:rounded-chip mx-0.5 md:mx-0 px-1 md:px-4 py-1.5 md:py-3 text-neutral-muted transition-all duration-300 hover:bg-danger/10 hover:text-danger md:mt-auto"
+          className={`group flex flex-col md:flex-row flex-1 md:flex-none h-[60px] md:min-h-12 items-center justify-center md:justify-start gap-1 md:gap-3 rounded-[1.25rem] md:rounded-chip mx-0.5 md:mx-0 px-1 md:px-4 py-1.5 md:py-3 text-neutral-muted transition-all duration-300 md:mt-auto ${
+            isGuest ? 'hover:bg-amber-100 hover:text-amber-700' : 'hover:bg-danger/10 hover:text-danger'
+          }`}
         >
           <div className="flex flex-col items-center justify-center md:flex-row md:gap-3 transition-transform duration-300 group-hover:scale-110 md:group-hover:scale-100">
-            <LogOut className="w-[22px] h-[22px] md:w-5 md:h-5 mb-0.5 md:mb-0" />
-            <span className="text-[10px] md:text-sm leading-tight block">Logout</span>
+            {isGuest ? (
+              <Eye className="w-[22px] h-[22px] md:w-5 md:h-5 mb-0.5 md:mb-0" />
+            ) : (
+              <LogOut className="w-[22px] h-[22px] md:w-5 md:h-5 mb-0.5 md:mb-0" />
+            )}
+            <span className="text-[10px] md:text-sm leading-tight block">{isGuest ? 'Exit' : 'Logout'}</span>
           </div>
         </button>
       </nav>

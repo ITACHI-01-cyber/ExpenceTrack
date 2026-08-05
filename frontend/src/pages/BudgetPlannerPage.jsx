@@ -5,6 +5,8 @@ import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveCo
 import { Wallet, TrendingUp, Receipt } from 'lucide-react';
 import AnimatedNumber from '../components/ui/AnimatedNumber';
 import api from '../services/api';
+import useAuthStore from '../store/authStore';
+import guestStorage from '../services/guestStorage';
 
 const COLORS = ['#A78BFA', '#7C5CBF', '#4C1D95', '#C4B5FD', '#1F2937', '#6B7280'];
 
@@ -25,6 +27,7 @@ const KPICard = ({ title, sub, value, icon, delay }) => (
 );
 
 const BudgetPlannerPage = () => {
+  const { isGuest } = useAuthStore();
   const [transactions, setTransactions] = useState([]);
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -36,16 +39,23 @@ const BudgetPlannerPage = () => {
         const month = now.getMonth() + 1;
         const year = now.getFullYear();
 
-        const [txRes, sumRes] = await Promise.all([
-          api.get(`/transactions?month=${month}&year=${year}`),
-          api.get('/dashboard/summary')
-        ]);
+        if (isGuest) {
+          const txs = guestStorage.transactions.getAll({ month, year });
+          setTransactions(txs);
+          const summaryData = guestStorage.budget.getSummary();
+          setSummary(summaryData);
+        } else {
+          const [txRes, sumRes] = await Promise.all([
+            api.get(`/transactions?month=${month}&year=${year}`),
+            api.get('/dashboard/summary')
+          ]);
 
-        if (txRes.data.success) {
-          setTransactions(txRes.data.data);
-        }
-        if (sumRes.data.success) {
-          setSummary(sumRes.data.data);
+          if (txRes.data.success) {
+            setTransactions(txRes.data.data);
+          }
+          if (sumRes.data.success) {
+            setSummary(sumRes.data.data);
+          }
         }
       } catch (err) {
         console.error("Failed to fetch budget data", err);

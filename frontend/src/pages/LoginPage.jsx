@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Lock, Mail } from 'lucide-react';
+import { Lock, Mail, Eye } from 'lucide-react';
 import useAuthStore from '../store/authStore';
 import api from '../services/api';
+import guestStorage from '../services/guestStorage';
 import OtpInput from 'react-otp-input';
 import AuthLayout from '../components/layout/AuthLayout';
 
@@ -12,8 +13,14 @@ const LoginPage = () => {
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login } = useAuthStore();
+  const { login, loginAsGuest } = useAuthStore();
   const navigate = useNavigate();
+
+  const handleGuestLogin = () => {
+    guestStorage.seedDemoData();
+    loginAsGuest();
+    navigate('/dashboard');
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -168,6 +175,24 @@ const LoginPage = () => {
             </button>
           </div>
         </div>
+
+        {/* Guest / Preview Mode */}
+        <div className="relative flex items-center justify-center pt-1">
+          <span className="absolute inset-x-0 top-1/2 h-px bg-slate-200/60" />
+          <span className="relative bg-white px-3 text-[10px] font-semibold uppercase tracking-widest text-slate-400">or</span>
+        </div>
+
+        <button
+          type="button"
+          onClick={handleGuestLogin}
+          className="w-full flex items-center justify-center gap-2 rounded-full border-2 border-dashed border-slate-300 bg-white py-3 text-sm font-semibold text-slate-600 hover:border-slate-500 hover:text-slate-800 hover:bg-slate-50 transition-all duration-200 shadow-sm"
+        >
+          <Eye size={16} />
+          Continue as Guest
+        </button>
+        <p className="text-center text-[10px] text-slate-400 -mt-1">
+          Preview the app — data is saved locally in your browser
+        </p>
       </div>
     </AuthLayout>
   );

@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import Button from './Button';
 import Modal from './Modal';
 import api from '../../services/api';
+import guestStorage from '../../services/guestStorage';
 
-const AddGoalModal = ({ isOpen, onClose, onSaveSuccess }) => {
+const AddGoalModal = ({ isOpen, onClose, onSaveSuccess, isGuest }) => {
   const [formData, setFormData] = useState({
     title: '',
     amount: '',
@@ -29,11 +30,18 @@ const AddGoalModal = ({ isOpen, onClose, onSaveSuccess }) => {
         year: now.getFullYear()
       };
 
-      const res = await api.post('/goals', payload);
-      if (res.data.success) {
+      if (isGuest) {
+        guestStorage.goals.create(payload);
         setFormData({ title: '', amount: '', medium: '', completed: 'false' });
         onSaveSuccess();
         onClose();
+      } else {
+        const res = await api.post('/goals', payload);
+        if (res.data.success) {
+          setFormData({ title: '', amount: '', medium: '', completed: 'false' });
+          onSaveSuccess();
+          onClose();
+        }
       }
     } catch (err) {
       console.error("Failed to add goal", err);

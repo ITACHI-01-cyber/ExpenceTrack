@@ -12,8 +12,8 @@ import WalletPage from './pages/WalletPage';
 import SettingsPage from './pages/SettingsPage';
 
 const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated, token } = useAuthStore();
-  if (!isAuthenticated || !token) return <Navigate to="/login" replace />;
+  const { isAuthenticated, token, isGuest } = useAuthStore();
+  if (!isAuthenticated || (!token && !isGuest)) return <Navigate to="/login" replace />;
   return children;
 };
 

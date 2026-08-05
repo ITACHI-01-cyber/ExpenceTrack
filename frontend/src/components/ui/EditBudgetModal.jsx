@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import Button from './Button';
 import api from '../../services/api';
+import guestStorage from '../../services/guestStorage';
 
-const EditBudgetModal = ({ isOpen, onClose, currentBudgetLimit, currentIncome, onSaveSuccess }) => {
+const EditBudgetModal = ({ isOpen, onClose, currentBudgetLimit, currentIncome, onSaveSuccess, isGuest }) => {
   const [formData, setFormData] = useState({
     budgetLimit: currentBudgetLimit || '',
     monthlyIncome: currentIncome || ''
@@ -36,10 +37,16 @@ const EditBudgetModal = ({ isOpen, onClose, currentBudgetLimit, currentIncome, o
         monthlyIncome: parseFloat(formData.monthlyIncome)
       };
 
-      const res = await api.post('/budget', payload);
-      if (res.data.success) {
+      if (isGuest) {
+        guestStorage.budget.save(payload);
         onSaveSuccess();
         onClose();
+      } else {
+        const res = await api.post('/budget', payload);
+        if (res.data.success) {
+          onSaveSuccess();
+          onClose();
+        }
       }
     } catch (err) {
       console.error("Failed to save budget", err);

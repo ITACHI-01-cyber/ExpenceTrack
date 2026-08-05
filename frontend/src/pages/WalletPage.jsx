@@ -9,6 +9,8 @@ import { Plus, CreditCard, Building2, User, Calendar, Banknote, ChevronRight, Sp
 import walletService from '../services/walletService';
 import { formatCurrency } from '../utils/formatCurrency';
 import { getCardBackground } from '../utils/cardDesigns';
+import useAuthStore from '../store/authStore';
+import guestStorage from '../services/guestStorage';
 
 const MiniCardPreview = ({ wallet, isSelected, onClick, index = 0 }) => {
   const bg = getCardBackground(wallet);
@@ -92,6 +94,7 @@ const SettingRow = ({ icon: Icon, title, subtitle, action }) => (
 
 
 const WalletPage = () => {
+  const { isGuest } = useAuthStore();
   const [wallets, setWallets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -103,8 +106,12 @@ const WalletPage = () => {
   const fetchWallets = async () => {
     setLoading(true);
     try {
-      const data = await walletService.getAll();
-      setWallets(data || []);
+      if (isGuest) {
+        setWallets(guestStorage.wallets.getAll());
+      } else {
+        const data = await walletService.getAll();
+        setWallets(data || []);
+      }
     } catch (err) {
       console.error('Failed to fetch wallets', err);
     } finally {
@@ -125,7 +132,11 @@ const WalletPage = () => {
 
   const handleSaveCard = async (cardData) => {
     try {
-      await walletService.save(cardData, editingWallet?.id);
+      if (isGuest) {
+        guestStorage.wallets.save(cardData, editingWallet?.id);
+      } else {
+        await walletService.save(cardData, editingWallet?.id);
+      }
       await fetchWallets();
       setEditingWallet(null);
     } catch (err) {
@@ -159,7 +170,11 @@ const WalletPage = () => {
 
   const handleAddMoney = async (amount) => {
     try {
-      await walletService.addMoney(topUpWallet.id, amount);
+      if (isGuest) {
+        guestStorage.wallets.addMoney(topUpWallet.id, amount);
+      } else {
+        await walletService.addMoney(topUpWallet.id, amount);
+      }
       await fetchWallets();
     } catch (err) {
       console.error('Failed to add money:', err);
@@ -173,7 +188,11 @@ const WalletPage = () => {
 
     try {
       setDeletingWalletId(wallet.id);
-      await walletService.remove(wallet.id);
+      if (isGuest) {
+        guestStorage.wallets.remove(wallet.id);
+      } else {
+        await walletService.remove(wallet.id);
+      }
       if (selectedWalletId === wallet.id) setSelectedWalletId(null);
       await fetchWallets();
     } catch (err) {
@@ -197,7 +216,9 @@ const WalletPage = () => {
       </div>
 
       <p className="-mt-4 mb-6 text-xs text-neutral-muted">
-        Cards are stored in your account and synchronized to the server.
+        {isGuest
+          ? 'Preview mode — cards are saved locally in your browser.'
+          : 'Cards are stored in your account and synchronized to the server.'}
       </p>
 
       {loading ? (
@@ -340,6 +361,7 @@ const WalletPage = () => {
         onClose={closeCardModal} 
         onSave={handleSaveCard} 
         initialData={editingWallet}
+        isGuest={isGuest}
       />
 
       <AddBalanceModal

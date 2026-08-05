@@ -7,7 +7,7 @@ import Button from '../components/ui/Button';
 import { UserCircle, Palette, CreditCard, Mail, Upload, X } from 'lucide-react';
 
 const SettingsPage = () => {
-  const { user, updateUser } = useAuthStore();
+  const { user, updateUser, isGuest } = useAuthStore();
   const [activeTab, setActiveTab] = useState('profile');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
@@ -53,17 +53,29 @@ const SettingsPage = () => {
     setLoading(true);
     setMessage('');
     try {
-      const res = await api.put('/users/settings', updates);
-      if (res.data.success) {
-        updateUser(res.data.data);
-        setMessage('Settings saved successfully!');
-        
-        // If theme or accent color changed, apply it globally
+      if (isGuest) {
+        // Guest: save locally only via zustand persist
+        updateUser(updates);
+        setMessage('Settings saved locally!');
+
         if (updates.theme) {
-            document.body.className = updates.theme;
+          document.body.className = updates.theme;
         }
         if (updates.accentColor) {
-            document.body.setAttribute('data-accent', updates.accentColor);
+          document.body.setAttribute('data-accent', updates.accentColor);
+        }
+      } else {
+        const res = await api.put('/users/settings', updates);
+        if (res.data.success) {
+          updateUser(res.data.data);
+          setMessage('Settings saved successfully!');
+          
+          if (updates.theme) {
+              document.body.className = updates.theme;
+          }
+          if (updates.accentColor) {
+              document.body.setAttribute('data-accent', updates.accentColor);
+          }
         }
       }
     } catch (err) {
@@ -128,12 +140,14 @@ const SettingsPage = () => {
           >
             <CreditCard size={18} /> Preferences
           </button>
-          <button 
-            onClick={() => setActiveTab('integrations')}
-            className={`flex shrink-0 items-center gap-2 px-4 py-3 rounded-xl transition-all text-sm font-medium md:gap-3 ${activeTab === 'integrations' ? 'bg-primary text-white shadow-md' : 'text-neutral-muted hover:bg-surface'}`}
-          >
-            <Mail size={18} /> Integrations
-          </button>
+          {!isGuest && (
+            <button 
+              onClick={() => setActiveTab('integrations')}
+              className={`flex shrink-0 items-center gap-2 px-4 py-3 rounded-xl transition-all text-sm font-medium md:gap-3 ${activeTab === 'integrations' ? 'bg-primary text-white shadow-md' : 'text-neutral-muted hover:bg-surface'}`}
+            >
+              <Mail size={18} /> Integrations
+            </button>
+          )}
         </div>
 
         {/* Content Area */}
