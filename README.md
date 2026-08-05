@@ -1,81 +1,74 @@
-# Expence rack - Expense Tracker & Budget Planner
+<div align="center">
+  <h1>ExpenceTrack</h1>
+  <p><i>Your personal finances, beautifully visualized.</i></p>
+</div>
 
-A full-stack web application designed for personal finance management, featuring a beautifully designed dashboard, intuitive budget planning, and seamless transaction tracking.
+---
 
-## Tech Stack
-- **Frontend**: React 18 (Vite), TailwindCSS v3, Recharts, Zustand, React Router v6
-- **Backend**: Java 21, Spring Boot 3.2, Spring Security (JWT)
-- **Database**: MongoDB Atlas (Spring Data MongoDB)
+## 💡 About
+ExpenceTrack is a modern, highly visual dashboard designed to make tracking your money intuitive and aesthetically pleasing. Say goodbye to cluttered spreadsheets and hello to highly customizable virtual cards, dynamic trend charts, and seamless expense management. 
 
-## Setup Instructions
+## 🚀 Live Preview & Guest Mode
+Experience the UI instantly without touching a backend database! ExpenceTrack features a fully functional **Guest Preview Mode** powered by local storage. Add mock transactions, and customize your wallet instantly.
 
-### Prerequisites
-- Java 21 & Maven 3.9+
-- Node.js 18+ & npm 9+
-- MongoDB local or Atlas connection string
+👉 **[Click here to access the Live Web Preview!](https://expence-track-nu.vercel.app/#/login)**
 
-### Backend
-1. Open a terminal and navigate to the backend directory:
-   ```bash
-   cd backend
-   ```
-2. Run the Spring Boot application:
-   ```bash
-   mvn spring-boot:run
-   ```
-3. The server will start on `http://localhost:8080`.
+---
 
-Backend environment variables:
+## ✨ Features & Walkthrough
+
+### 🎨 Welcoming Authentication
+A clean, beautiful entry point to your financial hub.
+<br/>
+<img src="https://i.ibb.co/tp4CNX2p/08.png" alt="Login Screen" width="100%" />
+
+### 📊 The Command Center
+Get a bird's-eye view of your financial health. Track active balances, monthly budgets, and ongoing savings goals at a glance.
+<br/>
+<img src="https://i.ibb.co/gbFp6Xdw/pasted-file.png" alt="Dashboard" width="100%" />
+
+### 💸 Smart Transactions & Analytics
+Monitor where every penny goes with dynamic line charts and category-based donut graphs.
+<br/>
+<img src="https://i.ibb.co/NdRf8WFm/02.png" alt="Transactions" width="100%" />
+
+### 💳 Your Wallet, Your Style
+Manage multiple payment methods in one place. **The standout feature:** Extensive customization. Choose from a gallery of striking themes, neon styles, and scenic backgrounds to personalize your virtual cards.
+<br/>
+<img src="https://i.ibb.co/6RSH7r2F/04.png" alt="Card Customization Gallery" width="100%" />
+<br/><br/>
+<img src="https://i.ibb.co/k6c1y5q8/03.png" alt="Wallet Layout" width="100%" />
+<br/><br/>
+<img src="https://i.ibb.co/k2hRz10k/05.png" alt="Wallet Details" width="100%" />
+
+### ⚙️ User Profiles
+Easily manage your identity, update your display name, and upload custom avatars.
+<br/>
+<img src="https://i.ibb.co/JRJhbZBL/06.png" alt="Profile Settings" width="100%" />
+
+---
+
+## 🛠️ Tech Stack
+Built with a robust full-stack architecture to ensure performance and scalability:
+* **Frontend:** React JS
+* **Backend:** Spring Boot
+* **Database:** MongoDB
+
+---
+
+## 💻 Quick Start
+
+Clone the project and get it running locally:
 
 ```bash
-MONGODB_URI=mongodb+srv://USER:PASSWORD@HOST/expense_tracker?appName=Portfolio
-MONGODB_DATABASE=expense_tracker
-JWT_SECRET=replace-with-a-long-secret
-CORS_ALLOWED_ORIGINS=http://localhost:5173,https://your-vercel-app.vercel.app
-SEED_DEMO_DATA=false
-```
+# 1. Clone the repository
+git clone [https://github.com/ITACHI-01-cyber/ExpenceTrack.git](https://github.com/ITACHI-01-cyber/ExpenceTrack.git)
 
-### Frontend
-1. Open a new terminal and navigate to the frontend directory:
-   ```bash
-   cd frontend
-   ```
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-3. Start the Vite development server:
-   ```bash
-   npm run dev
-   ```
-4. Access the application at `http://localhost:5173`.
+# 2. Navigate into the directory
+cd ExpenceTrack
 
-Frontend environment variables:
+# 3. Install dependencies
+npm install
 
-```bash
-VITE_API_BASE_URL=http://localhost:8080/api
-```
-
-For Vercel, set `VITE_API_BASE_URL` to your Render backend URL plus `/api`.
-
-### Deployment
-
-- **Render backend**: use `render.yaml` or create a Docker web service with root directory `backend`. Set the backend environment variables above in Render.
-- **Vercel frontend**: create a Vercel project with root directory `frontend`, build command `npm run build`, and output directory `dist`.
-- After Vercel deploys, add the Vercel URL to Render's `CORS_ALLOWED_ORIGINS`.
-
-## Features
-- **Authentication**: Secure JWT-based login and registration.
-- **Dashboard**: High-level overview with available balance, expense statistics (Area Chart), and recent transactions.
-- **Budget Planner**: Asymmetric bento grid dashboard featuring multiple chart types (Donut, Pie, Bar, Line) to analyze cash flow, bill summaries, and budget vs. actual expenses.
-- **Transactions**: Full CRUD capabilities for income and expense tracking.
-- **Wallet**: View associated payment methods and current balances.
-- **Dynamic Animations**: Smooth mounting animations, counting numbers, and chart reveals.
-
-## Screenshots
-
-*(Placeholders for future screenshots)*
-- Dashboard View
-- Budget Planner View
-- Transactions List
-- Mobile Navigation
+# 4. Start the development server
+npm run dev
