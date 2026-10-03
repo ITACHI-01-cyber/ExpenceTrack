@@ -29,7 +29,7 @@ const Modal = ({ isOpen, onClose, title, children }) => {
               leaveFrom="opacity-100 scale-100"
               leaveTo="opacity-0 scale-95"
             >
-              <Dialog.Panel className="max-h-[92vh] w-full max-w-md transform overflow-y-auto rounded-t-2xl border border-border bg-surface p-5 text-left align-middle shadow-xl transition-all sm:rounded-2xl sm:p-6">
+              <Dialog.Panel className="modal-panel max-h-[92vh] w-full max-w-md transform overflow-y-auto rounded-t-2xl border border-border bg-surface p-5 text-left align-middle shadow-xl transition-all sm:rounded-2xl sm:p-6">
                 <div className="mb-4 flex items-center justify-between">
                   <Dialog.Title as="h3" className="text-lg font-bold leading-6 text-neutral-text">
                     {title}

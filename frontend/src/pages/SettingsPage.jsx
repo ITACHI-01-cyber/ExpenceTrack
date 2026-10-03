@@ -4,18 +4,19 @@ import TopBar from '../components/layout/TopBar';
 import useAuthStore from '../store/authStore';
 import api from '../services/api';
 import Button from '../components/ui/Button';
-import { UserCircle, Palette, CreditCard, Mail, Upload, X } from 'lucide-react';
+import { UserCircle, Palette, CreditCard, Mail, Upload, X, Moon, Sun, Sparkles } from 'lucide-react';
+import useAppearanceStore from '../store/appearanceStore';
 
 const SettingsPage = () => {
   const { user, updateUser, isGuest } = useAuthStore();
   const [activeTab, setActiveTab] = useState('profile');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const { theme, glass, setTheme, setGlass } = useAppearanceStore();
 
   // Local state for forms
   const [name, setName] = useState(user?.name || '');
   const [profilePicture, setProfilePicture] = useState(user?.profilePicture || '');
-  const [theme, setTheme] = useState(user?.theme || 'light');
   const [accentColor, setAccentColor] = useState(user?.accentColor || 'purple');
   const [currency, setCurrency] = useState(user?.currency || 'INR');
   const [gmailConnected, setGmailConnected] = useState(user?.gmailConnected || false);
@@ -58,9 +59,6 @@ const SettingsPage = () => {
         updateUser(updates);
         setMessage('Settings saved locally!');
 
-        if (updates.theme) {
-          document.body.className = updates.theme;
-        }
         if (updates.accentColor) {
           document.body.setAttribute('data-accent', updates.accentColor);
         }
@@ -70,9 +68,6 @@ const SettingsPage = () => {
           updateUser(res.data.data);
           setMessage('Settings saved successfully!');
           
-          if (updates.theme) {
-              document.body.className = updates.theme;
-          }
           if (updates.accentColor) {
               document.body.setAttribute('data-accent', updates.accentColor);
           }
@@ -92,9 +87,9 @@ const SettingsPage = () => {
     saveSettings({ name, profilePicture });
   };
 
-  const handleAppearanceSave = (e) => {
+  const handleAccentSave = (e) => {
     e.preventDefault();
-    saveSettings({ theme, accentColor });
+    saveSettings({ accentColor });
   };
 
   const handlePreferencesSave = (e) => {
@@ -212,23 +207,59 @@ const SettingsPage = () => {
           {/* Appearance Tab */}
           {activeTab === 'appearance' && (
             <div className="animate-[fade-in_0.3s_ease-out_both]">
-              <h2 className="text-xl font-bold mb-6 text-neutral-text">Appearance</h2>
-              <form onSubmit={handleAppearanceSave} className="max-w-md space-y-6">
-                <div>
-                  <label className="block text-sm font-medium text-neutral-muted mb-2">Theme</label>
-                  <div className="flex gap-4">
-                    <label className={`flex-1 border p-4 rounded-xl cursor-pointer text-center transition-all ${theme === 'light' ? 'border-primary bg-primary/5 ring-2 ring-primary/20' : 'border-border bg-surface'}`}>
-                      <input type="radio" name="theme" value="light" checked={theme === 'light'} onChange={() => setTheme('light')} className="sr-only" />
-                      <span className="font-medium text-neutral-text">☀️ Light</span>
-                    </label>
-                    <label className={`flex-1 border p-4 rounded-xl cursor-pointer text-center transition-all ${theme === 'dark' ? 'border-primary bg-primary/5 ring-2 ring-primary/20' : 'border-border bg-surface'}`}>
-                      <input type="radio" name="theme" value="dark" checked={theme === 'dark'} onChange={() => setTheme('dark')} className="sr-only" />
-                      <span className="font-medium text-neutral-text">🌙 Dark</span>
-                    </label>
+              <h2 className="mb-2 text-xl font-bold text-neutral-text">Appearance</h2>
+              <p className="mb-6 max-w-lg text-sm text-neutral-muted">Choose a theme and optional glass surfaces. Changes apply immediately and are saved on this device.</p>
+              <div className="max-w-2xl space-y-6">
+                <fieldset>
+                  <legend className="mb-2 text-sm font-semibold text-neutral-text">Theme</legend>
+                  <div className="grid grid-cols-2 gap-3">
+                    {[
+                      { value: 'light', label: 'Light', Icon: Sun },
+                      { value: 'dark', label: 'Dark', Icon: Moon },
+                    ].map(({ value, label, Icon }) => (
+                      <label key={value} className={`flex min-h-14 cursor-pointer items-center justify-center gap-2 rounded-xl border p-3 text-sm font-semibold transition-colors focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 ${theme === value ? 'border-primary bg-primary/10 text-primary ring-2 ring-primary/20' : 'border-border bg-surface text-neutral-muted hover:border-primary/40'}`}>
+                        <input
+                          type="radio"
+                          name="appearance-theme"
+                          value={value}
+                          checked={theme === value}
+                          onChange={() => setTheme(value)}
+                          className="sr-only"
+                        />
+                        <Icon size={18} aria-hidden="true" />
+                        {label}
+                      </label>
+                    ))}
                   </div>
+                </fieldset>
+
+                <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-border bg-surface p-4">
+                  <div className="flex items-start gap-3">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                      <Sparkles size={18} aria-hidden="true" />
+                    </span>
+                    <span>
+                      <span className="block text-sm font-semibold text-neutral-text">Glassmorphism</span>
+                      <span className="mt-1 block text-xs text-neutral-muted">Soft translucent surfaces across the interface</span>
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={glass}
+                    aria-label="Glassmorphism"
+                    onClick={() => setGlass(!glass)}
+                    className={`relative inline-flex h-8 w-[74px] shrink-0 items-center rounded-full p-1 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${glass ? 'bg-primary' : 'bg-neutral-muted/40'}`}
+                  >
+                    <span className={`absolute left-2 text-[9px] font-bold text-white transition-opacity ${glass ? 'opacity-100' : 'opacity-0'}`}>ON</span>
+                    <span className={`absolute right-2 text-[9px] font-bold text-neutral-text transition-opacity ${glass ? 'opacity-0' : 'opacity-100'}`}>OFF</span>
+                    <span className={`relative z-10 h-6 w-6 rounded-full bg-white shadow transition-transform ${glass ? 'translate-x-[42px]' : 'translate-x-0'}`} />
+                  </button>
                 </div>
+
+                <form onSubmit={handleAccentSave} className="space-y-3">
                 <div>
-                  <label className="block text-sm font-medium text-neutral-muted mb-2">Accent Color</label>
+                  <label className="mb-2 block text-sm font-medium text-neutral-muted">Accent Color</label>
                   <div className="flex gap-4">
                     {['purple', 'blue', 'green'].map(color => (
                       <label key={color} className={`w-12 h-12 rounded-full cursor-pointer flex items-center justify-center ${accentColor === color ? 'ring-4 ring-offset-2 ring-neutral-300' : ''}`}>
@@ -240,8 +271,9 @@ const SettingsPage = () => {
                     ))}
                   </div>
                 </div>
-                <Button type="submit" disabled={loading}>{loading ? 'Saving...' : 'Save Appearance'}</Button>
-              </form>
+                <Button type="submit" disabled={loading}>{loading ? 'Saving...' : 'Save Accent Color'}</Button>
+                </form>
+              </div>
             </div>
           )}
 

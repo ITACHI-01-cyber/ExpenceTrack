@@ -43,28 +43,40 @@
   --text-muted: #77728a;
   --border-color: #e8e3f0;
   --divider-color: #e9e5f0;
-  --chart-grid: rgba(105, 83, 145, 0.13);
 
   --primary-main: #4f2a8a;
   --primary-light: #6d4bc3;
   --primary-glow: #ede7f8;
+  --chart-grid: rgba(105, 83, 145, 0.13);
+  --chart-axis: #77728a;
+  --chart-panel: linear-gradient(145deg, #fbfaff, #f2eef9);
+  --glass-surface: rgba(255, 255, 255, 0.76);
+  --glass-border: rgba(255, 255, 255, 0.78);
 }
 
 body.dark {
-  --bg-color: #0f0f14;
-  --card-bg: #1a1a24;
-  --surface-color: #1a1a24;
-  --surface-hover: #22222e;
-  --input-bg: #22222e;
-  --text-main: #F3F4F6;
-  --text-muted: #9CA3AF;
-  --border-color: rgba(255, 255, 255, 0.08);
-  --divider-color: rgba(255,255,255,0.06);
-  --chart-grid: rgba(210, 195, 238, 0.12);
-
+  color-scheme: dark;
+  --bg-color: #0f0d18;
+  --card-bg: #181523;
+  --surface-color: #181523;
+  --surface-hover: #211d30;
+  --input-bg: #211d30;
+  --text-main: #f4f0fb;
+  --text-muted: #aaa2bb;
+  --border-color: rgba(224, 211, 255, 0.11);
+  --divider-color: rgba(224, 211, 255, 0.08);
+  --chart-grid: rgba(210, 195, 238, 0.13);
+  --chart-axis: #c3b6df;
+  --chart-panel: linear-gradient(145deg, #21192f, #2a1d3c);
+  --glass-surface: rgba(31, 24, 45, 0.78);
+  --glass-border: rgba(210, 195, 238, 0.2);
   --primary-glow: rgba(109, 75, 195, 0.16);
   --shadow-card: 0 8px 30px rgba(0, 0, 0, 0.2);
   --shadow-hover: 0 14px 38px rgba(0, 0, 0, 0.28);
+}
+
+body:not(.dark) {
+  color-scheme: light;
 }
 
 body[data-accent="blue"] {
@@ -95,6 +107,17 @@ body[data-accent="purple"].dark {
 }
 
 body {
+  --color-background: var(--bg-color);
+  --color-card: var(--card-bg);
+  --color-surface: var(--surface-color);
+  --color-surface-hover: var(--surface-hover);
+  --color-input-bg: var(--input-bg);
+  --color-primary: var(--primary-main);
+  --color-primary-light: var(--primary-light);
+  --color-primary-glow: var(--primary-glow);
+  --color-neutral-text: var(--text-main);
+  --color-neutral-muted: var(--text-muted);
+  --color-border: var(--border-color);
   background-color: var(--bg-color);
   color: var(--text-main);
   -webkit-font-smoothing: antialiased;
@@ -288,4 +311,102 @@ textarea {
 
 .auth-content form button[type="submit"]:hover:not(:disabled) {
   background-color: #6d4bc3;
+}
+
+.expense-trend-chart {
+  background: var(--chart-panel);
+}
+
+body.dark .app-sidebar {
+  background: linear-gradient(145deg, #21192f, #171321 82%);
+  border-color: var(--border-color);
+}
+
+/* Optional glass treatment is limited to major surfaces, not individual controls. */
+body[data-glass="true"] .app-layout-shell {
+  background-image:
+    radial-gradient(ellipse at 16% 8%, rgba(151, 117, 220, 0.13), transparent 34%),
+    radial-gradient(ellipse at 88% 82%, rgba(116, 88, 190, 0.1), transparent 38%);
+  background-attachment: fixed;
+}
+
+body.dark[data-glass="true"] .app-layout-shell {
+  background-image:
+    radial-gradient(ellipse at 16% 8%, rgba(112, 76, 171, 0.18), transparent 34%),
+    radial-gradient(ellipse at 88% 82%, rgba(75, 53, 133, 0.16), transparent 38%);
+}
+
+body[data-glass="true"] .app-layout-shell [class*="rounded-card"],
+body[data-glass="true"] .app-layout-shell [class*="bg-surface"],
+body[data-glass="true"] .app-layout-shell [class*="shadow-sm"][class*="bg-white"],
+body[data-glass="true"] .app-layout-shell [class*="shadow-card"][class*="bg-white"],
+body[data-glass="true"] .app-layout-shell .modal-panel,
+body[data-glass="true"] .app-layout-shell .app-topbar {
+  background-color: var(--glass-surface) !important;
+  border-color: var(--glass-border);
+  box-shadow: 0 12px 32px rgba(46, 30, 79, 0.09), inset 0 1px 0 rgba(255, 255, 255, 0.34);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+body[data-glass="true"] .app-sidebar {
+  background: var(--glass-surface);
+  border-color: var(--glass-border);
+  box-shadow: 0 14px 38px rgba(42, 24, 77, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+}
+
+body:not(.dark)[data-glass="true"] .app-sidebar > div:first-child,
+body:not(.dark)[data-glass="true"] .app-sidebar > div:first-child > div:first-child > span:last-child,
+body:not(.dark)[data-glass="true"] .app-sidebar > div:first-child > div:nth-child(2) > span.text-white,
+body:not(.dark)[data-glass="true"] .app-sidebar > div:first-child > div:nth-child(2) > span.text-violet-100 {
+  color: #382453;
+}
+
+body:not(.dark)[data-glass="true"] .app-sidebar > div:first-child > div:nth-child(2) {
+  background-color: rgba(255, 255, 255, 0.45);
+  border-color: rgba(94, 65, 137, 0.14);
+}
+
+body:not(.dark)[data-glass="true"] .app-sidebar nav a:not([class*="bg-white/20"]),
+body:not(.dark)[data-glass="true"] .app-sidebar nav > button {
+  color: #594775;
+}
+
+body:not(.dark)[data-glass="true"] .app-sidebar nav a[class*="bg-white/20"] {
+  background-color: var(--primary-main);
+  color: #fff;
+}
+
+body.dark[data-glass="true"] [class*="bg-white"] {
+  background-color: var(--glass-surface) !important;
+}
+
+body[data-glass="true"] .expense-trend-chart {
+  background: var(--chart-panel);
+  border: 1px solid var(--glass-border);
+}
+
+body[data-glass="true"] .modal-panel {
+  background-color: var(--glass-surface) !important;
+}
+
+body.dark .auth-content form div:has(> input) {
+  background-color: var(--input-bg);
+  border-color: var(--border-color);
+}
+
+body.dark .auth-content input:not([type="checkbox"]):not([type="radio"]):not([type="file"]) {
+  background-color: var(--input-bg);
+  color: var(--text-main);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body[data-glass="true"] *,
+  body[data-glass="true"] *::before,
+  body[data-glass="true"] *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
 }

@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import useAuthStore from './store/authStore';
+import useAppearanceStore from './store/appearanceStore';
 import LoginPage from './pages/LoginPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ForgotUsernamePage from './pages/ForgotUsernamePage';
@@ -19,22 +20,14 @@ const ProtectedRoute = ({ children }) => {
 
 const App = () => {
   const { user } = useAuthStore();
+  const { theme, glass } = useAppearanceStore();
 
   useEffect(() => {
-    if (user) {
-      if (user.theme) {
-        document.body.className = user.theme;
-      } else {
-        document.body.className = 'light';
-      }
-
-      if (user.accentColor) {
-        document.body.setAttribute('data-accent', user.accentColor);
-      } else {
-        document.body.setAttribute('data-accent', 'purple');
-      }
-    }
-  }, [user?.theme, user?.accentColor]);
+    document.body.dataset.theme = theme;
+    document.body.dataset.glass = String(glass);
+    document.body.classList.toggle('dark', theme === 'dark');
+    document.body.dataset.accent = user?.accentColor || 'purple';
+  }, [theme, glass, user?.accentColor]);
 
   return (
     <Router>

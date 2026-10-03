@@ -12,7 +12,7 @@ const TopBar = ({ title, className = '' }) => {
   });
 
   return (
-    <header className={`mb-6 flex items-end justify-between gap-4 md:mb-8 ${className}`}>
+    <header className={`app-topbar mb-6 flex items-end justify-between gap-4 md:mb-8 ${className}`}>
       <div className="min-w-0">
         <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.18em] text-primary">
           Personal finance

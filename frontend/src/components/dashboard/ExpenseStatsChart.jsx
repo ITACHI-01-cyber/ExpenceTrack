@@ -118,7 +118,7 @@ const ExpenseStatsChart = ({ data, allTransactions = [] }) => {
       </div>
 
       {/* Chart */}
-      <div className="mt-3 min-h-[145px] w-full min-w-0 flex-1 overflow-hidden rounded-2xl bg-gradient-to-br from-[#211433] via-[#2c1a49] to-[#37205b] px-1 py-2 sm:min-h-[170px]">
+      <div className="expense-trend-chart mt-3 min-h-[145px] w-full min-w-0 flex-1 overflow-hidden rounded-2xl px-1 py-2 sm:min-h-[170px]">
         <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={145} initialDimension={{ width: 320, height: 170 }}>
           <AreaChart data={chartData} margin={{ top: 12, right: 12, left: 2, bottom: 0 }}>
             <defs>
@@ -132,26 +132,26 @@ const ExpenseStatsChart = ({ data, allTransactions = [] }) => {
                 <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
               </filter>
             </defs>
-            <CartesianGrid vertical={false} stroke="rgba(224, 211, 255, 0.12)" strokeDasharray="3 7" />
+            <CartesianGrid vertical={false} stroke="var(--chart-grid)" strokeDasharray="3 7" />
             <YAxis
               axisLine={false}
               tickLine={false}
               width={42}
-              tick={{ fill: '#c3b6df', fontSize: 9 }}
+              tick={{ fill: 'var(--chart-axis)', fontSize: 9 }}
               tickFormatter={(value) => value >= 1000 ? `${Math.round(value / 1000)}k` : value}
             />
             <XAxis
               dataKey="label"
               axisLine={false}
               tickLine={false}
-              tick={{ fill: '#c3b6df', fontSize: 9 }}
+              tick={{ fill: 'var(--chart-axis)', fontSize: 9 }}
               dy={8}
               interval="preserveStartEnd"
               minTickGap={40}
             />
             <Tooltip
               content={<FintechChartTooltip seriesLabels={{ value: 'Expenses' }} />}
-              cursor={{ stroke: 'rgba(224, 211, 255, 0.28)', strokeDasharray: '3 4' }}
+              cursor={{ stroke: 'var(--chart-grid)', strokeDasharray: '3 4' }}
             />
             <Area
               type="monotone"
