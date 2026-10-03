@@ -9,8 +9,8 @@
   --color-primary-light: var(--primary-light);
   --color-primary-glow: var(--primary-glow);
   
-  --color-success: #10B981;
-  --color-danger: #EF4444;
+  --color-success: #22A06B;
+  --color-danger: #E05252;
   
   --color-neutral-text: var(--text-main);
   --color-neutral-muted: var(--text-muted);
@@ -23,35 +23,34 @@
   
   --font-sans: "Plus Jakarta Sans", sans-serif;
   
-  --radius-card: 16px;
-  --radius-btn: 10px;
-  --radius-input: 10px;
+  --radius-card: 20px;
+  --radius-btn: 12px;
+  --radius-input: 12px;
   --radius-chip: 999px;
   
-  --shadow-card: 0 4px 24px rgba(124, 92, 191, 0.08);
-  --shadow-hover: 0 8px 32px rgba(124, 92, 191, 0.14);
+  --shadow-card: 0 8px 28px rgba(55, 38, 91, 0.06);
+  --shadow-hover: 0 14px 38px rgba(55, 38, 91, 0.12);
 }
 
 :root {
-  /* Matte off-white palette */
-  --bg-color: #EDE8DF; /* Page bg */
-  --card-bg: #F5F1EA; /* Card surface */
-  --surface-color: #F5F1EA; /* Panels */
-  --surface-hover: #F0F0EC; /* Slight hover */
-  --input-bg: #F5F1EA;
-  --left-panel-bg: #F0EBE2; /* Left panel area */
-  --text-main: #1A1A1A; /* Near-black headings */
-  --text-muted: #6B6560; /* Warm gray descriptions */
-  --border-color: #2B2B2B; /* Dark charcoal border */
-  --divider-color: #D4CEC4; /* Subtle warm line */
+  --bg-color: #f5f3fa;
+  --card-bg: #ffffff;
+  --surface-color: #ffffff;
+  --surface-hover: #f8f6fc;
+  --input-bg: #ffffff;
+  --left-panel-bg: #f0edf7;
+  --text-main: #1f1b2d;
+  --text-muted: #77728a;
+  --border-color: #e8e3f0;
+  --divider-color: #e9e5f0;
+  --chart-grid: rgba(105, 83, 145, 0.13);
 
-  --primary-main: #E8622A; /* CTA button orange */
-  --primary-light: #F79466;
-  --primary-glow: #FBD6C9;
+  --primary-main: #4f2a8a;
+  --primary-light: #6d4bc3;
+  --primary-glow: #ede7f8;
 }
 
 body.dark {
-  /* Dark mode fallback palette */
   --bg-color: #0f0f14;
   --card-bg: #1a1a24;
   --surface-color: #1a1a24;
@@ -61,8 +60,11 @@ body.dark {
   --text-muted: #9CA3AF;
   --border-color: rgba(255, 255, 255, 0.08);
   --divider-color: rgba(255,255,255,0.06);
+  --chart-grid: rgba(210, 195, 238, 0.12);
 
-  --primary-glow: rgba(232,98,42,0.12);
+  --primary-glow: rgba(109, 75, 195, 0.16);
+  --shadow-card: 0 8px 30px rgba(0, 0, 0, 0.2);
+  --shadow-hover: 0 14px 38px rgba(0, 0, 0, 0.28);
 }
 
 body[data-accent="blue"] {
@@ -84,12 +86,12 @@ body[data-accent="green"].dark {
 }
 
 body[data-accent="purple"] {
-  --primary-main: #7C5CBF;
-  --primary-light: #A78BFA;
-  --primary-glow: #C4B5FD;
+  --primary-main: #4F2A8A;
+  --primary-light: #6D4BC3;
+  --primary-glow: #EDE7F8;
 }
 body[data-accent="purple"].dark {
-  --primary-glow: rgba(167, 139, 250, 0.15);
+  --primary-glow: rgba(109, 75, 195, 0.16);
 }
 
 body {
@@ -98,6 +100,27 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   font-family: var(--font-sans);
+}
+
+::selection {
+  color: #fff;
+  background: var(--primary-main);
+}
+
+:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--primary-main) 45%, transparent);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 .tabular-nums {
@@ -179,7 +202,7 @@ body.dark tr {
 }
 
 /* Sidebar */
-body.dark aside {
+body.dark aside:not(.app-sidebar) {
   background-color: rgba(26, 26, 36, 0.95) !important;
   backdrop-filter: blur(20px);
 }
@@ -234,4 +257,35 @@ body.dark ::-webkit-scrollbar-thumb {
 
 .card-enter {
   animation: cardEnter 0.4s cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+
+input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+select,
+textarea {
+  accent-color: var(--primary-main);
+}
+
+@media (max-width: 767px) {
+  body {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+.auth-content form div:has(> input) {
+  background-color: #f4f1fa;
+  border-color: #e8e3f0;
+}
+
+.auth-content input:not([type="checkbox"]):not([type="radio"]):not([type="file"]) {
+  background-color: #f4f1fa;
+  color: #1f1b2d;
+}
+
+.auth-content form button[type="submit"] {
+  background-color: #4f2a8a;
+  color: #fff;
+}
+
+.auth-content form button[type="submit"]:hover:not(:disabled) {
+  background-color: #6d4bc3;
 }

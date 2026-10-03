@@ -234,7 +234,7 @@ const SettingsPage = () => {
                       <label key={color} className={`w-12 h-12 rounded-full cursor-pointer flex items-center justify-center ${accentColor === color ? 'ring-4 ring-offset-2 ring-neutral-300' : ''}`}>
                         <input type="radio" name="accentColor" value={color} checked={accentColor === color} onChange={() => setAccentColor(color)} className="sr-only" />
                         <span className="w-full h-full rounded-full" style={{
-                            backgroundColor: color === 'purple' ? '#4C1D95' : color === 'blue' ? '#1D4ED8' : '#15803D'
+                            backgroundColor: color === 'purple' ? '#4F2A8A' : color === 'blue' ? '#1D4ED8' : '#15803D'
                         }}></span>
                       </label>
                     ))}

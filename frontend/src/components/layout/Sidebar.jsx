@@ -20,16 +20,18 @@ const Sidebar = () => {
   ];
 
   return (
-    <aside className="fixed bottom-4 left-4 right-4 z-50 rounded-[2rem] bg-surface/90 p-2 shadow-[0_8px_30px_rgb(0,0,0,0.12)] backdrop-blur-md md:relative md:bottom-auto md:left-auto md:right-auto md:w-[220px] md:h-[calc(100vh-32px)] md:rounded-2xl md:bg-surface/95 md:p-4 md:py-8 md:shadow-card md:ml-4 md:flex md:flex-col md:justify-between border border-border">
-      <div className="hidden md:flex flex-col gap-8">
-        <div className="flex items-center gap-2 px-2 text-primary">
-          <Star fill="currentColor" size={24} />
-          <span className="text-xl font-bold">Expence rack</span>
+    <aside className="app-sidebar fixed bottom-3 left-3 right-3 z-50 rounded-[1.5rem] border border-white/15 bg-gradient-to-br from-[#4F2A8A] via-[#45247C] to-[#321C60] p-2 shadow-[0_14px_38px_rgba(42,24,77,0.28)] md:relative md:bottom-auto md:left-auto md:right-auto md:flex md:h-full md:w-[232px] md:flex-col md:justify-between md:rounded-[1.5rem] md:p-4 md:py-7">
+      <div className="hidden flex-col gap-7 md:flex">
+        <div className="flex items-center gap-3 px-2 text-white">
+          <span className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/15 bg-white/15 text-white shadow-sm">
+            <Star fill="currentColor" size={20} />
+          </span>
+          <span className="text-lg font-extrabold tracking-tight">ExpenceTrack</span>
         </div>
 
         {user && (
-          <div className="flex flex-col items-center gap-2 mb-4">
-            <div className="w-16 h-16 rounded-full bg-primary-glow flex items-center justify-center text-primary font-bold text-xl overflow-hidden">
+          <div className="mb-2 flex flex-col items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.06] py-4">
+            <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-full border border-white/20 bg-white/15 text-xl font-bold text-white">
                {isGuest ? (
                  <Eye size={28} />
                ) : user.profilePicture ? (
@@ -38,9 +40,9 @@ const Sidebar = () => {
                  user.name.charAt(0)
                )}
             </div>
-            <span className="font-semibold text-primary text-sm text-center">{user.name}</span>
+            <span className="text-center text-sm font-semibold text-white">{user.name}</span>
             {isGuest && (
-              <span className="text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">
+              <span className="rounded-full border border-white/20 bg-white/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-violet-100">
                 Preview Mode
               </span>
             )}
@@ -48,39 +50,37 @@ const Sidebar = () => {
         )}
       </div>
 
-      <nav className="flex w-full items-center justify-between px-1 md:flex md:flex-col md:gap-2 md:justify-start md:px-0">
+      <nav className="flex w-full items-center justify-between px-1 md:flex md:flex-col md:items-stretch md:justify-start md:gap-2 md:px-0">
         {navItems.map((item) => (
           <NavLink
             key={item.name}
             to={item.path}
             className={({ isActive }) =>
-              `group flex flex-col md:flex-row flex-1 md:flex-none h-[60px] md:min-h-12 items-center justify-center md:justify-start gap-1 md:gap-3 rounded-[1.25rem] md:rounded-chip mx-0.5 md:mx-0 px-1 md:px-4 py-1.5 md:py-3 transition-all duration-300 font-medium ${
+              `group flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-[1.1rem] px-1 py-1.5 font-medium transition-all duration-200 md:min-h-12 md:flex-none md:flex-row md:justify-start md:gap-3 md:rounded-xl md:px-4 md:py-3 ${
                 isActive 
-                  ? 'bg-primary/15 text-primary md:bg-primary md:text-white md:shadow-md' 
-                  : 'text-neutral-muted hover:bg-primary/5 hover:text-primary md:hover:bg-background'
+                  ? 'bg-white/20 text-white shadow-sm ring-1 ring-white/15'
+                  : 'text-violet-100/75 hover:bg-white/10 hover:text-white'
               }`
             }
           >
             <div className="flex flex-col items-center justify-center md:flex-row md:gap-3 transition-transform duration-300 group-hover:scale-110 md:group-hover:scale-100">
-               {React.cloneElement(item.icon, { className: "w-[22px] h-[22px] md:w-5 md:h-5 mb-0.5 md:mb-0" })}
-               <span className="text-[10px] md:text-sm leading-tight block">{item.name}</span>
+               {React.cloneElement(item.icon, { className: "mb-0.5 h-[21px] w-[21px] md:mb-0 md:h-5 md:w-5" })}
+               <span className="block text-[10px] leading-tight md:text-sm">{item.name}</span>
             </div>
           </NavLink>
         ))}
         
         <button 
           onClick={handleLogout}
-          className={`group flex flex-col md:flex-row flex-1 md:flex-none h-[60px] md:min-h-12 items-center justify-center md:justify-start gap-1 md:gap-3 rounded-[1.25rem] md:rounded-chip mx-0.5 md:mx-0 px-1 md:px-4 py-1.5 md:py-3 text-neutral-muted transition-all duration-300 md:mt-auto ${
-            isGuest ? 'hover:bg-amber-100 hover:text-amber-700' : 'hover:bg-danger/10 hover:text-danger'
-          }`}
+          className="group mt-auto flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-[1.1rem] px-1 py-1.5 text-violet-100/75 transition-colors duration-200 hover:bg-white/10 hover:text-white md:min-h-12 md:flex-none md:flex-row md:justify-start md:gap-3 md:rounded-xl md:px-4 md:py-3"
         >
           <div className="flex flex-col items-center justify-center md:flex-row md:gap-3 transition-transform duration-300 group-hover:scale-110 md:group-hover:scale-100">
             {isGuest ? (
-              <Eye className="w-[22px] h-[22px] md:w-5 md:h-5 mb-0.5 md:mb-0" />
+              <Eye className="mb-0.5 h-[21px] w-[21px] md:mb-0 md:h-5 md:w-5" />
             ) : (
-              <LogOut className="w-[22px] h-[22px] md:w-5 md:h-5 mb-0.5 md:mb-0" />
+              <LogOut className="mb-0.5 h-[21px] w-[21px] md:mb-0 md:h-5 md:w-5" />
             )}
-            <span className="text-[10px] md:text-sm leading-tight block">{isGuest ? 'Exit' : 'Logout'}</span>
+            <span className="block text-[10px] leading-tight md:text-sm">{isGuest ? 'Exit' : 'Logout'}</span>
           </div>
         </button>
       </nav>

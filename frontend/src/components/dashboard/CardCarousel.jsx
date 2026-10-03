@@ -3,7 +3,7 @@ import { Plus, ChevronRight } from 'lucide-react';
 import WalletCard from './WalletCard';
 import { getCardDesign } from '../../utils/cardDesigns';
 
-const CardCarousel = ({ wallets, onAddCard, onAddMoney }) => {
+const CardCarousel = ({ wallets, onAddCard, onAddMoney, onSelectionChange }) => {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const hasWallets = Array.isArray(wallets) && wallets.length > 0;
   const totalCards = hasWallets ? wallets.length : 0;
@@ -18,6 +18,10 @@ const CardCarousel = ({ wallets, onAddCard, onAddMoney }) => {
     }
   }, [hasWallets, selectedIndex, wallets]);
 
+  useEffect(() => {
+    onSelectionChange?.(hasWallets ? wallets[selectedIndex] : null);
+  }, [hasWallets, onSelectionChange, selectedIndex, wallets]);
+
   const handleNext = () => {
     if (totalCards > 1) {
       setSelectedIndex((prev) => (prev + 1) % totalCards);
@@ -30,13 +34,13 @@ const CardCarousel = ({ wallets, onAddCard, onAddMoney }) => {
 
   // Get color for the active card's chevron button gradient
   const activePreset = hasWallets ? getCardDesign(wallets[selectedIndex]) : null;
-  const primaryColor = activePreset?.primaryColor || '#7C3AED';
-  const secondaryColor = activePreset?.secondaryColor || '#EC4899';
+  const primaryColor = activePreset?.primaryColor || '#4F2A8A';
+  const secondaryColor = activePreset?.secondaryColor || '#6D4BC3';
 
   return (
-    <div className="w-full mb-6 relative select-none">
+    <div className="relative mb-2 w-full select-none">
       {/* Semicircular Carousel Wrapper */}
-      <div className="relative mx-auto w-full max-w-[480px] h-[340px] min-[360px]:h-[380px] sm:h-[400px] flex items-center justify-between overflow-hidden px-2">
+      <div className="relative mx-auto flex h-[270px] w-full items-center justify-between overflow-hidden px-1 sm:h-[285px]">
         
         {/* Left side: Card Fan Stack along a vertical arc */}
         <div className="relative w-[82%] h-full flex items-center justify-center">
@@ -99,11 +103,11 @@ const CardCarousel = ({ wallets, onAddCard, onAddMoney }) => {
         {/* Right side: Interactive Colored Dot Arc */}
         <div className="relative w-[18%] h-full flex flex-col justify-center items-center">
           {hasWallets && totalCards > 0 && (
-            <div className="relative flex flex-col items-center justify-center h-[260px] w-full">
+            <div className="relative flex h-[220px] w-full flex-col items-center justify-center">
               {/* SVG Arc track background */}
-              <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 100 260">
+              <svg className="pointer-events-none absolute inset-0 h-full w-full" viewBox="0 0 100 220">
                 <path
-                  d="M 10 10 Q 55 130 10 250"
+                  d="M 10 5 Q 55 110 10 215"
                   fill="none"
                   stroke="rgba(0, 0, 0, 0.03)"
                   strokeWidth="2"
@@ -124,7 +128,7 @@ const CardCarousel = ({ wallets, onAddCard, onAddMoney }) => {
                 // Normalized t value between 0 (top) and 1 (bottom)
                 const t = 0.5 + (diff / Math.max(totalCards, 3)) * 0.7;
                 // Bezier quadratic formula: B(t) = (1-t)^2 * P0 + 2(1-t)t * P1 + t^2 * P2
-                const y = (1 - t) * (1 - t) * 10 + 2 * (1 - t) * t * 130 + t * t * 250;
+                const y = (1 - t) * (1 - t) * 5 + 2 * (1 - t) * t * 110 + t * t * 215;
                 const x = (1 - t) * (1 - t) * 10 + 2 * (1 - t) * t * 48 + t * t * 10;
 
                 const preset = getCardDesign(wallet);
@@ -135,10 +139,10 @@ const CardCarousel = ({ wallets, onAddCard, onAddMoney }) => {
                       key={`dot-${idx}`}
                       type="button"
                       onClick={handleNext}
-                      className="absolute w-11 h-11 rounded-full flex items-center justify-center transition-all duration-500 scale-110 shadow-lg text-white z-30 cursor-pointer focus:outline-none hover:scale-115"
+                      className="absolute z-30 flex h-9 w-9 scale-110 cursor-pointer items-center justify-center rounded-full text-white shadow-lg transition-all duration-500 hover:scale-115 focus:outline-none"
                       style={{
-                        left: `${x - 22}px`,
-                        top: `${y - 22}px`,
+                        left: `${x - 18}px`,
+                        top: `${y - 18}px`,
                         background: `linear-gradient(135deg, ${primaryColor}, ${secondaryColor})`,
                         boxShadow: `0 8px 16px ${primaryColor}40`
                       }}
@@ -155,10 +159,10 @@ const CardCarousel = ({ wallets, onAddCard, onAddMoney }) => {
                     key={`dot-${idx}`}
                     type="button"
                     onClick={() => selectWallet(idx)}
-                    className="absolute w-3.5 h-3.5 rounded-full border border-white shadow-sm transition-all duration-300 hover:scale-125 z-20 cursor-pointer focus:outline-none"
+                    className="absolute z-20 h-3 w-3 cursor-pointer rounded-full border border-white shadow-sm transition-all duration-300 hover:scale-125 focus:outline-none"
                     style={{
-                      left: `${x - 7}px`,
-                      top: `${y - 7}px`,
+                      left: `${x - 6}px`,
+                      top: `${y - 6}px`,
                       backgroundColor: preset.primaryColor || '#CCC',
                       opacity: absDiff > 2 ? 0.25 : 0.65
                     }}

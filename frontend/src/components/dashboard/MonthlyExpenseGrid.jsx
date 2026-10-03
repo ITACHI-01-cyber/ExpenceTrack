@@ -95,7 +95,7 @@ const MonthlyExpenseGrid = ({ categories = [], filterType = 'month', customRange
         <div className="relative" ref={dropdownRef}>
           <button 
             onClick={() => setIsOpen(!isOpen)}
-            className="flex items-center gap-1 shrink-0 text-xs font-semibold text-neutral-muted transition-colors hover:text-primary bg-white border border-border/80 hover:border-primary/30 px-3 py-1.5 rounded-lg shadow-sm"
+            className="flex shrink-0 items-center gap-1 rounded-xl border border-border bg-surface px-3 py-2 text-xs font-semibold text-neutral-muted shadow-sm transition-colors hover:border-primary/40 hover:text-primary"
           >
             <Filter size={12} />
             <span>{filterLabels[filterType] || 'Filter'}</span>
@@ -103,7 +103,7 @@ const MonthlyExpenseGrid = ({ categories = [], filterType = 'month', customRange
           </button>
           
           {isOpen && (
-            <div className="absolute right-0 mt-1.5 w-64 bg-white border border-primary/20 rounded-xl shadow-xl z-50 p-3 animate-[fade-in_0.2s_ease-out]">
+            <div className="absolute right-0 z-50 mt-1.5 w-64 rounded-xl border border-border bg-surface p-3 shadow-xl animate-[fade-in_0.2s_ease-out]">
               <div className="space-y-1">
                 {Object.entries(filterLabels).map(([key, label]) => (
                   <button
@@ -155,7 +155,7 @@ const MonthlyExpenseGrid = ({ categories = [], filterType = 'month', customRange
       </div>
       
       {categories.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-8 text-neutral-muted border border-dashed border-border rounded-xl h-[120px] bg-white/50 animate-[fade-in_0.5s_ease-out_both]">
+        <div className="flex h-[120px] flex-col items-center justify-center rounded-xl border border-dashed border-border bg-surface/70 py-8 text-neutral-muted animate-[fade-in_0.5s_ease-out_both]">
           <p className="text-xs font-medium">No expenses found for this period</p>
         </div>
       ) : (
@@ -163,7 +163,7 @@ const MonthlyExpenseGrid = ({ categories = [], filterType = 'month', customRange
           {categories.map((cat, idx) => (
             <div 
               key={cat.name} 
-              className="bg-white border border-primary/20 rounded-xl p-3 flex flex-col items-center justify-center text-center shadow-sm hover:shadow-md transition-shadow animate-[fade-in_0.5s_ease-out_both]"
+              className="flex flex-col items-center justify-center rounded-xl border border-border bg-surface p-3 text-center shadow-sm transition-shadow hover:shadow-md animate-[fade-in_0.5s_ease-out_both]"
               style={{ animationDelay: `${idx * 80}ms` }}
             >
               <p className="text-xs text-neutral-muted mb-1">{cat.name}</p>

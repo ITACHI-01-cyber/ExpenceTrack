@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import Layout from '../components/layout/Layout';
 import TopBar from '../components/layout/TopBar';
 import Button from '../components/ui/Button';
@@ -10,7 +11,7 @@ import api from '../services/api';
 import walletService from '../services/walletService';
 import { formatDate } from '../utils/dateHelpers';
 import { formatCurrency } from '../utils/formatCurrency';
-import { Trash2, Plus } from 'lucide-react';
+import { ArrowDownLeft, ArrowUpRight, Trash2, Plus } from 'lucide-react';
 import useAuthStore from '../store/authStore';
 import guestStorage from '../services/guestStorage';
 
@@ -55,6 +56,8 @@ const toTitleCase = (value) => value
   .replace(/\b\w/g, (letter) => letter.toUpperCase());
 
 const TransactionsPage = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
   const { isGuest } = useAuthStore();
   const [transactions, setTransactions] = useState([]);
   const [wallets, setWallets] = useState([]);
@@ -207,6 +210,15 @@ const TransactionsPage = () => {
     setIsModalOpen(true);
   };
 
+  useEffect(() => {
+    if (location.state?.openAddTransaction) {
+      setEditingTransaction(null);
+      setFormData(getEmptyTransactionForm());
+      setIsModalOpen(true);
+      navigate(location.pathname, { replace: true, state: null });
+    }
+  }, [location.key, location.pathname, location.state, navigate]);
+
   const openEditModal = (transaction) => {
     setEditingTransaction(transaction);
     setFormData({
@@ -271,7 +283,7 @@ const TransactionsPage = () => {
       if (shouldShowDivider) {
         rows.push(
           <tr key={`week-${weekLabel}`} className="bg-background/25">
-            <td colSpan="6" className="px-6 py-2">
+            <td colSpan="3" className="px-5 py-2">
               <div className="flex items-center gap-3 text-[11px] font-semibold uppercase tracking-wide text-neutral-muted/70">
                 <span className="h-px flex-1 bg-border/70"></span>
                 <span>{weekLabel}</span>
@@ -289,16 +301,21 @@ const TransactionsPage = () => {
           className="cursor-pointer border-b border-border last:border-0 hover:bg-background/30 transition-colors animate-[fade-in_0.3s_ease-out_both]"
           style={{animationDelay: `${idx * 50}ms`}}
         >
-          <td className="px-6 py-4 text-sm text-neutral-muted">{formatDate(tx.date)}</td>
-          <td className="px-6 py-4 text-sm font-medium text-neutral-text">{tx.description}</td>
-          <td className="px-6 py-4 text-sm text-neutral-muted">{tx.category}</td>
-          <td className="px-6 py-4 text-sm">
-            <Badge type={tx.type}>{tx.type}</Badge>
+          <td className="px-5 py-3.5">
+            <div className="flex items-center gap-3">
+              <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${tx.type === 'income' ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger'}`}>
+                {tx.type === 'income' ? <ArrowDownLeft size={17} /> : <ArrowUpRight size={17} />}
+              </span>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-neutral-text">{tx.description || tx.category}</p>
+                <p className="mt-0.5 truncate text-xs text-neutral-muted">{tx.category} · {formatDate(tx.date)}</p>
+              </div>
+            </div>
           </td>
-          <td className={`px-6 py-4 text-sm font-semibold ${tx.type === 'income' ? 'text-success' : 'text-danger'}`}>
+          <td className={`px-5 py-3.5 text-right text-sm font-bold tabular-nums ${tx.type === 'income' ? 'text-success' : 'text-danger'}`}>
             {tx.type === 'income' ? '+' : '-'}{formatCurrency(tx.amount)}
           </td>
-          <td className="px-6 py-4 text-right">
+          <td className="px-5 py-3.5 text-right">
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -387,40 +404,49 @@ const TransactionsPage = () => {
 
   return (
     <Layout>
-      <div className="mb-5 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-center sm:justify-between">
-        <TopBar title="Transactions" />
-        <Button onClick={openAddModal} className="w-full gap-2 sm:w-auto">
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <TopBar title="Transactions" className="mb-0 flex-1" />
+        <Button onClick={openAddModal} className="w-full gap-2 shadow-md shadow-primary/20 sm:w-auto">
           <Plus size={18} /> Add Transaction
         </Button>
       </div>
 
       {/* 3D Stats Cards */}
-      <div className="mb-5 flex flex-col md:flex-row gap-5 items-stretch w-full">
-        <div className="w-full md:w-1/2 flex">
+      <div className="mb-5 grid w-full grid-cols-1 items-stretch gap-4 xl:grid-cols-2">
+        <div className="flex min-w-0">
           <TransactionStatsCard3D transactions={transactions} />
         </div>
-        <div className="w-full md:w-1/2 flex">
+        <div className="flex min-w-0">
           <CategoryStatsCard3D transactions={transactions} />
         </div>
       </div>
 
-      <div className="mb-4 flex flex-col gap-3 rounded-card border border-border bg-surface p-4 shadow-sm md:flex-row md:items-end md:justify-between">
-        <div className="flex flex-wrap gap-2">
-          {['week', 'month', 'year', 'custom'].map((mode) => (
-            <button
-              key={mode}
-              type="button"
-              onClick={() => setFilterMode(mode)}
-              className={`rounded-full px-4 py-2 text-sm font-medium capitalize transition-colors ${
-                filterMode === mode ? 'bg-primary text-white shadow-sm' : 'bg-background text-neutral-muted hover:text-primary'
-              }`}
-            >
-              {mode === 'week' ? 'This Week' : mode}
-            </button>
-          ))}
+      <section className="mb-4 rounded-card border border-border bg-surface p-4 shadow-card sm:p-5">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-sm font-bold text-neutral-text">Transaction history</h2>
+            <p className="mt-0.5 text-xs text-neutral-muted">Filter and review your activity</p>
+          </div>
+          <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold tabular-nums text-primary">
+            {transactions.length} {transactions.length === 1 ? 'transaction' : 'transactions'}
+          </span>
         </div>
-
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+          <div className="flex flex-wrap gap-2">
+            {['week', 'month', 'year', 'custom'].map((mode) => (
+              <button
+                key={mode}
+                type="button"
+                onClick={() => setFilterMode(mode)}
+                className={`rounded-xl px-3.5 py-2 text-xs font-semibold capitalize transition-colors sm:text-sm ${
+                  filterMode === mode ? 'bg-primary text-white shadow-sm shadow-primary/20' : 'bg-background text-neutral-muted hover:bg-primary/5 hover:text-primary'
+                }`}
+              >
+                {mode === 'week' ? 'This week' : mode}
+              </button>
+            ))}
+          </div>
+          <div className="flex flex-wrap gap-2">
           {(filterMode === 'month' || filterMode === 'year') && (
             <input
               type="number"
@@ -428,7 +454,8 @@ const TransactionsPage = () => {
               max="2100"
               value={filterYear}
               onChange={(e) => setFilterYear(Number(e.target.value))}
-              className="w-28 rounded-input border border-border bg-input-bg text-neutral-text px-3 py-2 text-sm"
+              aria-label="Filter year"
+              className="w-28 rounded-input border border-border bg-input-bg px-3 py-2 text-sm text-neutral-text focus:border-primary focus:outline-none"
             />
           )}
 
@@ -436,7 +463,8 @@ const TransactionsPage = () => {
             <select
               value={filterMonth}
               onChange={(e) => setFilterMonth(Number(e.target.value))}
-              className="rounded-input border border-border bg-input-bg text-neutral-text px-3 py-2 text-sm"
+              aria-label="Filter month"
+              className="rounded-input border border-border bg-input-bg px-3 py-2 text-sm text-neutral-text focus:border-primary focus:outline-none"
             >
               {Array.from({ length: 12 }, (_, index) => (
                 <option key={index + 1} value={index + 1}>
@@ -452,20 +480,23 @@ const TransactionsPage = () => {
                 type="date"
                 value={customStartDate}
                 onChange={(e) => setCustomStartDate(e.target.value)}
-                className="rounded-input border border-border bg-input-bg text-neutral-text px-3 py-2 text-sm"
+                aria-label="Start date"
+                className="rounded-input border border-border bg-input-bg px-3 py-2 text-sm text-neutral-text focus:border-primary focus:outline-none"
               />
               <input
                 type="date"
                 value={customEndDate}
                 onChange={(e) => setCustomEndDate(e.target.value)}
-                className="rounded-input border border-border bg-input-bg text-neutral-text px-3 py-2 text-sm"
+                aria-label="End date"
+                className="rounded-input border border-border bg-input-bg px-3 py-2 text-sm text-neutral-text focus:border-primary focus:outline-none"
               />
             </>
           )}
+          </div>
         </div>
-      </div>
+      </section>
 
-      <div className="rounded-card border border-border bg-surface p-3 shadow-sm md:hidden">
+      <div className="rounded-card border border-border bg-surface p-3 shadow-card md:hidden">
         {loading ? (
           <div className="p-6 text-center text-neutral-muted">Loading transactions...</div>
         ) : transactions.length === 0 ? (
@@ -477,27 +508,24 @@ const TransactionsPage = () => {
         )}
       </div>
 
-      <div className="hidden bg-surface rounded-card shadow-sm border border-border overflow-hidden md:block">
+      <div className="hidden overflow-hidden rounded-card border border-border bg-surface shadow-card md:block">
         {loading ? (
           <div className="p-8 text-center text-neutral-muted">Loading transactions...</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-background/50 text-neutral-muted text-sm border-b border-border">
-                  <th className="px-6 py-4 font-medium">Date</th>
-                  <th className="px-6 py-4 font-medium">Description</th>
-                  <th className="px-6 py-4 font-medium">Category</th>
-                  <th className="px-6 py-4 font-medium">Type</th>
-                  <th className="px-6 py-4 font-medium">Amount</th>
-                  <th className="px-6 py-4 font-medium text-right">Actions</th>
+                <tr className="border-b border-border bg-background/70 text-xs uppercase tracking-wide text-neutral-muted">
+                  <th className="px-5 py-3 font-semibold">Transaction</th>
+                  <th className="px-5 py-3 text-right font-semibold">Amount</th>
+                  <th className="px-5 py-3 text-right font-semibold">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {renderTransactionRows()}
                 {transactions.length === 0 && (
                   <tr>
-                    <td colSpan="6" className="px-6 py-8 text-center text-neutral-muted">
+                    <td colSpan="3" className="px-6 py-8 text-center text-neutral-muted">
                       No transactions found for this filter.
                     </td>
                   </tr>
@@ -527,16 +555,16 @@ const TransactionsPage = () => {
           
           <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className="block text-sm mb-1 text-neutral-muted">Amount</label>
-            <input type="number" step="0.01" required className="w-full border rounded-input p-2" value={formData.amount} onChange={e => setFormData({...formData, amount: e.target.value})} />
+            <label className="mb-1 block text-sm font-medium text-neutral-muted">Amount</label>
+            <input type="number" step="0.01" required className="w-full rounded-input border border-border bg-input-bg p-2.5 text-neutral-text focus:border-primary focus:outline-none" value={formData.amount} onChange={e => setFormData({...formData, amount: e.target.value})} />
           </div>
 
           <div>
-            <label className="block text-sm mb-1 text-neutral-muted">Transaction Date</label>
+            <label className="mb-1 block text-sm font-medium text-neutral-muted">Transaction date</label>
             <input
               type="datetime-local"
               required
-              className="w-full border rounded-input p-2"
+              className="w-full rounded-input border border-border bg-input-bg p-2.5 text-neutral-text focus:border-primary focus:outline-none"
               value={formData.date}
               onChange={e => setFormData({...formData, date: e.target.value})}
             />
@@ -544,13 +572,13 @@ const TransactionsPage = () => {
           </div>
 
           <div>
-            <label className="block text-sm mb-1 text-neutral-muted">Category</label>
+            <label className="mb-1 block text-sm font-medium text-neutral-muted">Category</label>
             <input
               type="text"
               required
               list="saved-transaction-categories"
               autoComplete="off"
-              className="w-full border rounded-input p-2"
+              className="w-full rounded-input border border-border bg-input-bg p-2.5 text-neutral-text focus:border-primary focus:outline-none"
               value={formData.category}
               onChange={e => setFormData({...formData, category: e.target.value})}
               onBlur={e => setFormData((current) => ({
@@ -570,9 +598,9 @@ const TransactionsPage = () => {
           </div>
 
           <div>
-            <label className="block text-sm mb-1 text-neutral-muted">Wallet/Card (Optional)</label>
+            <label className="mb-1 block text-sm font-medium text-neutral-muted">Wallet or card <span className="font-normal">(optional)</span></label>
             <select 
-              className="w-full border rounded-input p-2 bg-input-bg text-neutral-text"
+              className="w-full rounded-input border border-border bg-input-bg p-2.5 text-neutral-text focus:border-primary focus:outline-none"
               value={formData.walletId}
               onChange={e => setFormData({...formData, walletId: e.target.value})}
             >
@@ -586,8 +614,8 @@ const TransactionsPage = () => {
           </div>
 
           <div>
-            <label className="block text-sm mb-1 text-neutral-muted">Description</label>
-            <input type="text" className="w-full border rounded-input p-2" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} />
+            <label className="mb-1 block text-sm font-medium text-neutral-muted">Description</label>
+            <input type="text" className="w-full rounded-input border border-border bg-input-bg p-2.5 text-neutral-text focus:border-primary focus:outline-none" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} />
           </div>
 
           <Button type="submit" className="w-full mt-4">

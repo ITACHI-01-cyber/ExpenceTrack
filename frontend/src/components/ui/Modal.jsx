@@ -29,12 +29,12 @@ const Modal = ({ isOpen, onClose, title, children }) => {
               leaveFrom="opacity-100 scale-100"
               leaveTo="opacity-0 scale-95"
             >
-              <Dialog.Panel className="max-h-[92vh] w-full max-w-md transform overflow-y-auto rounded-t-2xl bg-white p-5 text-left align-middle shadow-xl transition-all sm:rounded-2xl sm:p-6">
-                <div className="flex justify-between items-center mb-4">
+              <Dialog.Panel className="max-h-[92vh] w-full max-w-md transform overflow-y-auto rounded-t-2xl border border-border bg-surface p-5 text-left align-middle shadow-xl transition-all sm:rounded-2xl sm:p-6">
+                <div className="mb-4 flex items-center justify-between">
                   <Dialog.Title as="h3" className="text-lg font-bold leading-6 text-neutral-text">
                     {title}
                   </Dialog.Title>
-                  <button onClick={onClose} className="text-neutral-muted hover:text-danger transition-colors">
+                  <button onClick={onClose} className="rounded-full p-2 text-neutral-muted transition-colors hover:bg-danger/10 hover:text-danger" aria-label="Close dialog">
                     <X size={20} />
                   </button>
                 </div>

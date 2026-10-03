@@ -5,16 +5,23 @@ import TopBar from '../components/layout/TopBar';
 import CardCarousel from '../components/dashboard/CardCarousel';
 import BudgetProgress from '../components/dashboard/BudgetProgress';
 import ExpenseStatsChart from '../components/dashboard/ExpenseStatsChart';
-import RecentPayments from '../components/dashboard/RecentPayments';
 import MonthlyExpenseGrid from '../components/dashboard/MonthlyExpenseGrid';
 import SavingsGoalsGrid from '../components/dashboard/SavingsGoalsGrid';
-import SavingsCard3D from '../components/dashboard/SavingsCard3D';
 import EditBudgetModal from '../components/ui/EditBudgetModal';
 import AddGoalModal from '../components/ui/AddGoalModal';
 import EditGoalModal from '../components/ui/EditGoalModal';
 import AddBalanceModal from '../components/ui/AddBalanceModal';
 import { formatCurrency } from '../utils/formatCurrency';
-import { Settings2 } from 'lucide-react';
+import {
+  ArrowDownLeft,
+  ArrowUpRight,
+  CreditCard,
+  Plus,
+  ReceiptText,
+  Settings2,
+  Target,
+  Wallet,
+} from 'lucide-react';
 import api from '../services/api';
 import walletService from '../services/walletService';
 import useAuthStore from '../store/authStore';
@@ -22,7 +29,7 @@ import guestStorage from '../services/guestStorage';
 
 const DashboardPage = () => {
   const navigate = useNavigate();
-  const { isGuest } = useAuthStore();
+  const { isGuest, user } = useAuthStore();
   const [summary, setSummary] = useState(null);
   const [transactions, setTransactions] = useState([]);
   const [wallets, setWallets] = useState([]);
@@ -35,6 +42,7 @@ const DashboardPage = () => {
   const [topUpWallet, setTopUpWallet] = useState(null);
 
   const [allTransactions, setAllTransactions] = useState([]);
+  const [selectedWallet, setSelectedWallet] = useState(null);
   const [gridTransactions, setGridTransactions] = useState([]);
   const [gridFilterType, setGridFilterType] = useState('month'); // 'week' | 'month' | 'lastMonth' | 'year' | 'custom'
   const [gridCustomRange, setGridCustomRange] = useState({ startDate: '', endDate: '' });
@@ -212,6 +220,28 @@ const DashboardPage = () => {
     return mapped;
   }, [gridTransactions]);
 
+  const monthlyExpenseTotal = allTransactions.reduce(
+    (total, transaction) => total + (transaction.type === 'expense' ? Number(transaction.amount) || 0 : 0),
+    0
+  );
+  const monthlyIncomeTotal = Number(summary?.monthlyIncome) || allTransactions.reduce(
+    (total, transaction) => total + (transaction.type === 'income' ? Number(transaction.amount) || 0 : 0),
+    0
+  );
+  const savingsGoalTotal = goals.reduce((total, goal) => total + (Number(goal.amount) || 0), 0);
+  const completedSavingsTotal = goals.reduce(
+    (total, goal) => total + (goal.completed ? Number(goal.amount) || 0 : 0),
+    0
+  );
+  const savingsProgress = savingsGoalTotal > 0
+    ? Math.min((completedSavingsTotal / savingsGoalTotal) * 100, 100)
+    : 0;
+  const cardNumber = String(selectedWallet?.cardNumber || '');
+  const maskedCardNumber = cardNumber
+    ? `•••• •••• •••• ${cardNumber.slice(-4)}`
+    : 'Not available';
+  const cardStatus = selectedWallet?.status || (Number(selectedWallet?.balance) > 0 ? 'Active' : 'Empty');
+
   const handleGoalStatusChange = async (goal, completed) => {
     if (goal.completed === completed) return;
 
@@ -299,77 +329,182 @@ const DashboardPage = () => {
     <Layout>
       <TopBar />
       
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-8">
-        
-        {/* LEFT COLUMN (now wider for card carousel) */}
-        <div className="lg:col-span-8 flex flex-col w-full overflow-hidden">
-          {/* Samsung Wallet Style Carousel */}
-          <CardCarousel
-            wallets={wallets}
-            onAddCard={() => navigate('/wallet')}
-            onAddMoney={setTopUpWallet}
-          />
-          
-          <div className="mt-4 flex justify-between items-center rounded-xl border border-border bg-white p-4 shadow-sm group relative md:mt-6">
-            <span className="text-neutral-muted text-sm font-medium">Monthly Income</span>
-            <span className="text-success font-semibold tabular-nums">{formatCurrency(summary?.monthlyIncome)}</span>
-            <button 
-              onClick={() => setIsBudgetModalOpen(true)}
-              className="absolute right-2 top-2 p-1.5 bg-background rounded-full text-neutral-muted hover:text-primary opacity-0 group-hover:opacity-100 transition-opacity"
-              title="Edit Limits"
-            >
-              <Settings2 size={16} />
-            </button>
-          </div>
-
-          <div className="relative group mt-4">
-            <BudgetProgress 
-              limit={summary?.monthlyBudgetLimit || 0} 
-              spent={summary?.monthlySpent || 0} 
+      <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="flex min-w-0 flex-col gap-4">
+          <section className="grid min-w-0 grid-cols-1 items-center gap-3 overflow-hidden rounded-card border border-border bg-surface p-3 shadow-card sm:p-4 lg:grid-cols-[minmax(0,1.25fr)_minmax(220px,0.75fr)]">
+            <CardCarousel
+              wallets={wallets}
+              onAddCard={() => navigate('/wallet')}
+              onAddMoney={setTopUpWallet}
+              onSelectionChange={setSelectedWallet}
             />
-            <button 
-              onClick={() => setIsBudgetModalOpen(true)}
-              className="absolute right-4 top-4 p-1.5 bg-background rounded-full text-neutral-muted hover:text-primary opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
-              title="Edit Limits"
-            >
-              <Settings2 size={16} />
-            </button>
-          </div>
 
-          <RecentPayments transactions={transactions} />
-        </div>
+            <div className="rounded-2xl border border-border bg-background/70 p-4 sm:p-5">
+              <div className="mb-4 flex items-center justify-between gap-2">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-neutral-muted">Card information</p>
+                  <h2 className="mt-1 truncate text-base font-bold text-neutral-text">
+                    {selectedWallet?.bankName || selectedWallet?.cardType || 'Your card'}
+                  </h2>
+                </div>
+                <CreditCard size={19} className="shrink-0 text-primary" />
+              </div>
+              <dl className="grid grid-cols-2 gap-x-3 gap-y-4">
+                <div>
+                  <dt className="text-[10px] font-medium text-neutral-muted">Status</dt>
+                  <dd className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold ${cardStatus.toLowerCase() === 'active' ? 'bg-success/10 text-success' : 'bg-primary/10 text-primary'}`}>
+                    {cardStatus}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-[10px] font-medium text-neutral-muted">Card type</dt>
+                  <dd className="mt-1 truncate text-xs font-semibold capitalize text-neutral-text">
+                    {selectedWallet?.cardType || '—'}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-[10px] font-medium text-neutral-muted">Card number</dt>
+                  <dd className="mt-1 truncate font-mono text-[11px] font-semibold text-neutral-text">{maskedCardNumber}</dd>
+                </div>
+                <div>
+                  <dt className="text-[10px] font-medium text-neutral-muted">Currency · expiry</dt>
+                  <dd className="mt-1 truncate text-xs font-semibold text-neutral-text">
+                    {user?.currency || 'INR'} · {selectedWallet?.expiryDate || '—'}
+                  </dd>
+                </div>
+              </dl>
+              <button
+                type="button"
+                onClick={() => navigate('/wallet')}
+                className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-primary transition-colors hover:text-primary-light"
+              >
+                Manage wallet <ArrowUpRight size={14} />
+              </button>
+            </div>
+          </section>
 
-        {/* RIGHT COLUMN (now narrower for graph) */}
-        <div className="lg:col-span-4 flex flex-col gap-6 w-full overflow-hidden lg:gap-8">
-          
-          <div className="h-[360px] sm:h-[380px]">
-            <ExpenseStatsChart data={chartData} allTransactions={allTransactions} />
-          </div>
+          <section aria-label="Quick actions" className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            {[
+              { label: 'Add transaction', icon: Plus, action: () => navigate('/transactions', { state: { openAddTransaction: true } }) },
+              { label: 'Wallet', icon: Wallet, action: () => navigate('/wallet') },
+              { label: 'Savings goal', icon: Target, action: () => setIsAddGoalModalOpen(true) },
+              { label: 'Edit budget', icon: Settings2, action: () => setIsBudgetModalOpen(true) },
+            ].map(({ label, icon: Icon, action }) => (
+              <button
+                key={label}
+                type="button"
+                onClick={action}
+                className="flex min-w-0 items-center gap-2.5 rounded-2xl border border-border bg-surface px-3 py-3 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-card sm:px-4"
+              >
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary-glow text-primary">
+                  <Icon size={17} />
+                </span>
+                <span className="text-[11px] font-semibold leading-tight text-neutral-text sm:text-xs">{label}</span>
+              </button>
+            ))}
+          </section>
 
-          <div className="grid grid-cols-1 gap-6">
-            <div className="w-full">
-              <MonthlyExpenseGrid 
-                categories={expenseCategories} 
+          <section aria-label="Monthly financial summary" className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {[
+              { label: 'Monthly income', value: monthlyIncomeTotal, icon: ArrowDownLeft, tone: 'text-success bg-success/10' },
+              { label: 'Expenses', value: Number(summary?.monthlySpent) || monthlyExpenseTotal, icon: ArrowUpRight, tone: 'text-danger bg-danger/10' },
+              { label: 'Budget limit', value: Number(summary?.monthlyBudgetLimit) || 0, icon: ReceiptText, tone: 'text-primary bg-primary/10' },
+              { label: 'Budget left', value: (Number(summary?.monthlyBudgetLimit) || 0) - (Number(summary?.monthlySpent) || monthlyExpenseTotal), icon: Wallet, tone: 'text-primary bg-primary/10' },
+            ].map(({ label, value, icon: Icon, tone }) => (
+              <div key={label} className="min-w-0 rounded-2xl border border-border bg-surface p-3.5 shadow-sm sm:p-4">
+                <span className={`mb-3 flex h-8 w-8 items-center justify-center rounded-xl ${tone}`}><Icon size={16} /></span>
+                <p className="truncate text-[10px] font-semibold uppercase tracking-wide text-neutral-muted">{label}</p>
+                <p className="mt-1 truncate text-sm font-bold tabular-nums text-neutral-text sm:text-base">{formatCurrency(value)}</p>
+              </div>
+            ))}
+          </section>
+
+          <div className="grid min-w-0 grid-cols-1 gap-4 2xl:grid-cols-[minmax(0,1.5fr)_minmax(240px,0.8fr)]">
+            <div className="h-[300px] min-w-0 sm:h-[320px]">
+              <ExpenseStatsChart data={chartData} allTransactions={allTransactions} />
+            </div>
+            <div className="min-w-0 rounded-card border border-border bg-surface p-4 shadow-card sm:p-5">
+              <MonthlyExpenseGrid
+                categories={expenseCategories}
                 filterType={gridFilterType}
                 customRange={gridCustomRange}
                 onFilterChange={handleGridFilterChange}
               />
             </div>
-            <div className="w-full">
-              <div className="mb-4 w-full">
-                <SavingsCard3D goals={goals} />
-              </div>
-              <SavingsGoalsGrid
-                goals={goals}
-                onAddClick={() => setIsAddGoalModalOpen(true)}
-                onStatusChange={handleGoalStatusChange}
-                onEditClick={handleEditGoalClick}
-                onDeleteClick={handleDeleteGoal}
-              />
-            </div>
           </div>
 
+          <section className="rounded-card border border-border bg-surface p-4 shadow-card sm:p-5">
+            <SavingsGoalsGrid
+              goals={goals}
+              onAddClick={() => setIsAddGoalModalOpen(true)}
+              onStatusChange={handleGoalStatusChange}
+              onEditClick={handleEditGoalClick}
+              onDeleteClick={handleDeleteGoal}
+            />
+          </section>
         </div>
+
+        <aside className="flex min-w-0 flex-col gap-4">
+          <section className="rounded-card border border-border bg-surface p-5 shadow-card">
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-neutral-muted">This month</p>
+                <h2 className="mt-1 text-sm font-bold text-neutral-text">Expense summary</h2>
+              </div>
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary-glow text-primary"><ReceiptText size={17} /></span>
+            </div>
+            <p className="text-2xl font-extrabold tracking-tight text-neutral-text tabular-nums">{formatCurrency(monthlyExpenseTotal)}</p>
+            <div className="mt-4 flex items-center justify-between border-t border-border pt-3 text-xs">
+              <span className="text-neutral-muted">Expense transactions</span>
+              <span className="font-bold tabular-nums text-neutral-text">
+                {allTransactions.filter((transaction) => transaction.type === 'expense').length}
+              </span>
+            </div>
+          </section>
+
+          <section className="rounded-card border border-border bg-surface p-5 shadow-card">
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-neutral-muted">Savings</p>
+                <h2 className="mt-1 text-sm font-bold text-neutral-text">Completed goals</h2>
+              </div>
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-success/10 text-success"><Target size={17} /></span>
+            </div>
+            <p className="text-2xl font-extrabold tracking-tight text-neutral-text tabular-nums">{formatCurrency(completedSavingsTotal)}</p>
+            <div className="mt-4 flex items-center justify-between text-xs">
+              <span className="text-neutral-muted">Goal target</span>
+              <span className="font-semibold tabular-nums text-neutral-text">{formatCurrency(savingsGoalTotal)}</span>
+            </div>
+            <div className="mt-2 h-2 overflow-hidden rounded-full bg-primary/10" role="progressbar" aria-label="Completed savings goals" aria-valuenow={Math.round(savingsProgress)} aria-valuemin={0} aria-valuemax={100}>
+              <div className="h-full rounded-full bg-success transition-all duration-700" style={{ width: `${savingsProgress}%` }} />
+            </div>
+            <button type="button" onClick={() => setIsAddGoalModalOpen(true)} className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary-light">
+              Add savings goal <Plus size={14} />
+            </button>
+          </section>
+
+          <div className="relative">
+            <div className="absolute right-4 top-4 z-10">
+              <button
+                type="button"
+                onClick={() => setIsBudgetModalOpen(true)}
+                className="rounded-full bg-background p-2 text-neutral-muted transition-colors hover:text-primary"
+                aria-label="Edit monthly budget"
+              >
+                <Settings2 size={15} />
+              </button>
+            </div>
+            <div className="mb-4">
+              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-neutral-muted">Budget</p>
+              <p className="mt-1 text-sm font-bold text-neutral-text">Monthly progress</p>
+            </div>
+            <BudgetProgress
+              limit={summary?.monthlyBudgetLimit || 0}
+              spent={summary?.monthlySpent || monthlyExpenseTotal}
+              remaining={(Number(summary?.monthlyBudgetLimit) || 0) - (Number(summary?.monthlySpent) || monthlyExpenseTotal)}
+            />
+          </div>
+        </aside>
       </div>
 
       <EditBudgetModal 

@@ -107,7 +107,7 @@ const SavingsCard3D = ({ goals = [] }) => {
           <div className="flex items-center gap-4">
             {/* Mini donut chart */}
             <div className="w-[80px] h-[80px] sm:w-[90px] sm:h-[90px] shrink-0">
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" initialDimension={{ width: 160, height: 160 }}>
                 <PieChart>
                   <Pie
                     data={pieData}

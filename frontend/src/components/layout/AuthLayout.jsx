@@ -3,25 +3,29 @@ import { ArrowLeft } from 'lucide-react';
 
 const AuthLayout = ({ title = 'Welcome back', subtitle = 'Sign in to continue', leftTitle, leftSubtitle, heroImage, children, back }) => {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-black text-slate-800 p-2 sm:p-4 relative overflow-y-auto">
+    <div className="relative flex min-h-screen items-center justify-center overflow-y-auto bg-[#21123d] p-2 text-slate-800 sm:p-4">
       {/* Viewport background: blurred and dimmed hero image */}
       <div 
         className="absolute inset-0 bg-cover bg-center pointer-events-none transition-all duration-500"
         style={{
-          backgroundImage: heroImage ? `url(${heroImage})` : 'none',
-          filter: 'blur(24px) brightness(0.6)',
+          backgroundImage: heroImage
+            ? `linear-gradient(135deg, rgba(49, 25, 87, 0.75), rgba(31, 18, 57, 0.88)), url(${heroImage})`
+            : 'radial-gradient(circle at 20% 20%, #6d4bc3, #21123d 65%)',
+          filter: 'blur(24px) brightness(0.75)',
           transform: 'scale(1.1)',
           opacity: 0.75
         }}
       />
       
       {/* Main Container */}
-      <div className="relative z-10 flex w-full max-w-[1000px] min-h-fit md:min-h-[620px] md:h-[650px] overflow-hidden rounded-[32px] md:rounded-[40px] border border-white/10 bg-[#d5e3ec] shadow-[0_24px_80px_rgba(0,0,0,0.5)] md:flex-row flex-col">
+      <div className="relative z-10 flex min-h-fit w-full max-w-[1000px] flex-col overflow-hidden rounded-[28px] border border-white/15 bg-white shadow-[0_24px_80px_rgba(0,0,0,0.32)] md:h-[650px] md:min-h-[620px] md:flex-row md:rounded-[36px]">
         
         {/* Left Side: Hero Image (visible on md+) */}
         <div 
           className="hidden md:block md:w-[45%] h-full relative bg-cover bg-center shrink-0" 
-          style={heroImage ? { backgroundImage: `url(${heroImage})` } : { backgroundColor: '#1e293b' }}
+          style={heroImage
+            ? { backgroundImage: `linear-gradient(145deg, rgba(79,42,138,0.55), rgba(31,18,57,0.72)), url(${heroImage})` }
+            : { background: 'linear-gradient(145deg, #6d4bc3, #321c60)' }}
         >
           {/* Subtle overlay to blend */}
           <div className="absolute inset-0 bg-black/5" />
@@ -29,7 +33,7 @@ const AuthLayout = ({ title = 'Welcome back', subtitle = 'Sign in to continue', 
 
         {/* Wavy Divider SVG (visible on md+) */}
         <div className="hidden md:block absolute left-[45%] top-0 bottom-0 w-[40px] h-full z-20 pointer-events-none translate-x-[-39.5px]">
-          <svg className="w-full h-full text-[#d5e3ec] fill-current" viewBox="0 0 40 100" preserveAspectRatio="none">
+          <svg className="h-full w-full fill-current text-white" viewBox="0 0 40 100" preserveAspectRatio="none">
             <path d="M40,0 C15,15 -10,35 25,50 C50,60 15,85 40,100 Z" />
           </svg>
         </div>
@@ -37,9 +41,11 @@ const AuthLayout = ({ title = 'Welcome back', subtitle = 'Sign in to continue', 
         {/* Mobile top image banner */}
         <div 
           className="block md:hidden w-full h-[180px] bg-cover bg-center relative"
-          style={heroImage ? { backgroundImage: `url(${heroImage})` } : { backgroundColor: '#1e293b' }}
+          style={heroImage
+            ? { backgroundImage: `linear-gradient(145deg, rgba(79,42,138,0.55), rgba(31,18,57,0.72)), url(${heroImage})` }
+            : { background: 'linear-gradient(145deg, #6d4bc3, #321c60)' }}
         >
-          <div className="absolute inset-0 bg-black/15" />
+          <div className="absolute inset-0 bg-[#321c60]/25" />
           {back && (
             <button 
               onClick={back} 
@@ -61,17 +67,17 @@ const AuthLayout = ({ title = 'Welcome back', subtitle = 'Sign in to continue', 
             </button>
           )}
           
-          <div className="w-full max-w-[380px] mx-auto space-y-6 py-4">
+          <div className="mx-auto w-full max-w-[380px] space-y-6 py-4">
             <div className="text-center md:text-left">
-              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-800 leading-tight">
+              <h1 className="text-2xl font-bold leading-tight tracking-tight text-[#1f1b2d] sm:text-3xl">
                 {title}
               </h1>
-              <p className="mt-1 text-sm font-medium text-slate-500">
+              <p className="mt-1 text-sm font-medium text-[#77728a]">
                 {subtitle}
               </p>
             </div>
             
-            <div className="text-slate-800">
+            <div className="auth-content text-slate-800">
               {children}
             </div>
           </div>

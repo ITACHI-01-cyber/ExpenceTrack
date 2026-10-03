@@ -1,14 +1,17 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Layout from '../components/layout/Layout';
 import TopBar from '../components/layout/TopBar';
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, LineChart, Line } from 'recharts';
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid } from 'recharts';
 import { Wallet, TrendingUp, Receipt } from 'lucide-react';
 import AnimatedNumber from '../components/ui/AnimatedNumber';
+import FintechChartTooltip from '../components/ui/FintechChartTooltip';
 import api from '../services/api';
 import useAuthStore from '../store/authStore';
 import guestStorage from '../services/guestStorage';
+import useReducedMotion from '../utils/useReducedMotion';
+import { formatCurrency } from '../utils/formatCurrency';
 
-const COLORS = ['#A78BFA', '#7C5CBF', '#4C1D95', '#C4B5FD', '#1F2937', '#6B7280'];
+const COLORS = ['#6D4BC3', '#4F2A8A', '#8A73D1', '#B3A4E8', '#C7B7F2'];
 
 const KPICard = ({ title, sub, value, icon, delay }) => (
   <div 
@@ -28,6 +31,7 @@ const KPICard = ({ title, sub, value, icon, delay }) => (
 
 const BudgetPlannerPage = () => {
   const { isGuest } = useAuthStore();
+  const prefersReducedMotion = useReducedMotion();
   const [transactions, setTransactions] = useState([]);
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -192,19 +196,47 @@ const BudgetPlannerPage = () => {
           <KPICard title="Bills" sub="Recurring Bills" value={totalBills} icon={<Receipt />} delay="200ms" />
         </div>
 
-        <div className="md:col-span-6 bg-white rounded-xl shadow-sm border border-border p-4">
-          <h3 className="font-bold text-center text-sm mb-1">Allocation Summary</h3>
-          <p className="text-center text-xs text-neutral-muted mb-4">Actual Allocation Of The Income</p>
-          <div className="h-48">
-            <ResponsiveContainer width="100%" height="100%">
+        <div className="md:col-span-6 min-w-0 rounded-card border border-border bg-surface p-4 shadow-card sm:p-5">
+          <h3 className="text-sm font-bold text-neutral-text">Allocation summary</h3>
+          <p className="mt-1 text-xs text-neutral-muted">Actual allocation of income</p>
+          <div className="grid h-48 min-w-0 grid-cols-[minmax(0,1fr)_minmax(115px,0.8fr)] items-center gap-2">
+            <div className="relative h-full min-w-0">
+              <ResponsiveContainer width="100%" height="100%" initialDimension={{ width: 200, height: 200 }}>
               <PieChart>
-                <Pie data={allocationData} innerRadius={60} outerRadius={80} paddingAngle={2} dataKey="value" label={({name, percent}) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false}>
+                <Tooltip content={<FintechChartTooltip />} />
+                <Pie
+                  data={allocationData}
+                  innerRadius="58%"
+                  outerRadius="82%"
+                  paddingAngle={4}
+                  cornerRadius={6}
+                  dataKey="value"
+                  stroke="var(--surface-color)"
+                  strokeWidth={3}
+                  animationDuration={prefersReducedMotion ? 0 : 700}
+                  isAnimationActive={!prefersReducedMotion}
+                >
                   {allocationData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
               </PieChart>
-            </ResponsiveContainer>
+              </ResponsiveContainer>
+              <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+                <span className="text-[9px] font-semibold uppercase tracking-wide text-neutral-muted">Allocated</span>
+                <span className="max-w-[90%] truncate text-xs font-bold tabular-nums text-neutral-text">
+                  {formatCurrency(allocationData.reduce((sum, item) => sum + item.value, 0))}
+                </span>
+              </div>
+            </div>
+            <div className="space-y-3">
+              {allocationData.map((item, index) => (
+                <div key={item.name} className="flex min-w-0 items-center gap-2">
+                  <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
+                  <span className="truncate text-[10px] font-medium text-neutral-muted">{item.name}</span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -215,67 +247,91 @@ const BudgetPlannerPage = () => {
         </div>
 
         {/* ROW 2 */}
-        <div className="md:col-span-3 bg-white rounded-xl shadow-sm border border-border p-4">
-          <h3 className="font-bold text-sm mb-1">Bill Summary</h3>
-          <p className="text-xs text-neutral-muted mb-4">Actual Bill Payments</p>
+        <div className="md:col-span-3 min-w-0 rounded-card border border-border bg-surface p-4 shadow-card">
+          <h3 className="text-sm font-bold text-neutral-text">Bill summary</h3>
+          <p className="mb-4 mt-1 text-xs text-neutral-muted">Actual bill payments</p>
           <div className="h-48">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={billSummaryData}>
-                <XAxis dataKey="name" tick={{fontSize: 10}} interval={0} />
-                <YAxis tick={{fontSize: 10}} />
-                <Tooltip />
-                <Bar dataKey="value" fill="#4C1D95" barSize={15} />
+            <ResponsiveContainer width="100%" height="100%" initialDimension={{ width: 320, height: 220 }}>
+              <BarChart data={billSummaryData} margin={{ top: 12, right: 4, left: -20, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="billBars" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#a98af1" />
+                    <stop offset="100%" stopColor="#563290" />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid vertical={false} stroke="var(--chart-grid)" strokeDasharray="3 6" />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: 'var(--text-muted)', fontSize: 9 }} interval="preserveStartEnd" />
+                <YAxis hide domain={[0, 'dataMax + 10%']} />
+                <Tooltip content={<FintechChartTooltip seriesLabels={{ value: 'Bills' }} />} cursor={{ fill: 'rgba(109,75,195,0.08)' }} />
+                <Bar dataKey="value" fill="url(#billBars)" background={{ fill: 'var(--chart-grid)', radius: [7, 7, 0, 0] }} radius={[7, 7, 0, 0]} maxBarSize={28} animationDuration={prefersReducedMotion ? 0 : 700} isAnimationActive={!prefersReducedMotion} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        <div className="md:col-span-4 bg-[#4C1D95] rounded-xl shadow-sm p-4 text-white">
+        <div className="md:col-span-4 min-w-0 rounded-card bg-gradient-to-br from-[#211433] via-[#352052] to-[#4F2A8A] p-4 text-white shadow-card">
           <div className="flex justify-between items-start mb-4">
             <div>
               <h3 className="font-bold text-sm mb-1 flex items-center gap-2"><span className="w-2 h-2 bg-white rounded-full"></span> Cashflow Summary</h3>
               <p className="text-xs text-white/70">Actual Vs Budget</p>
             </div>
             <div className="text-[10px] flex flex-col gap-1">
-              <span className="flex items-center gap-1"><span className="w-2 h-2 bg-white"></span> Actual</span>
-              <span className="flex items-center gap-1"><span className="w-2 h-2 bg-[#A78BFA]"></span> Budget</span>
+              <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-white"></span> Actual</span>
+              <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-[#B3A4E8]"></span> Budget</span>
             </div>
           </div>
           <div className="h-48">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={cashflowData} layout="vertical" margin={{top:0, right:0, left: 10, bottom:0}}>
-                <XAxis type="number" tick={{fontSize: 10, fill: '#fff'}} />
-                <YAxis dataKey="name" type="category" tick={{fontSize: 10, fill: '#fff'}} axisLine={false} tickLine={false} />
-                <Tooltip contentStyle={{color: '#000'}} />
-                <Bar dataKey="actual" fill="#FFFFFF" barSize={8} />
-                <Bar dataKey="budget" fill="#A78BFA" barSize={8} />
+            <ResponsiveContainer width="100%" height="100%" initialDimension={{ width: 320, height: 220 }}>
+              <BarChart data={cashflowData} layout="vertical" margin={{ top: 2, right: 8, left: 8, bottom: 0 }} barGap={3}>
+                <CartesianGrid horizontal={false} stroke="rgba(255,255,255,0.12)" strokeDasharray="3 6" />
+                <XAxis type="number" tick={{ fontSize: 9, fill: 'rgba(255,255,255,0.62)' }} axisLine={false} tickLine={false} />
+                <YAxis dataKey="name" type="category" width={58} tick={{ fontSize: 9, fill: '#fff' }} axisLine={false} tickLine={false} />
+                <Tooltip content={<FintechChartTooltip seriesLabels={{ actual: 'Actual', budget: 'Budget' }} />} cursor={{ fill: 'rgba(255,255,255,0.08)' }} />
+                <Bar dataKey="actual" fill="#FFFFFF" barSize={8} radius={[0, 5, 5, 0]} animationDuration={prefersReducedMotion ? 0 : 700} isAnimationActive={!prefersReducedMotion} />
+                <Bar dataKey="budget" fill="#B3A4E8" barSize={8} radius={[0, 5, 5, 0]} animationDuration={prefersReducedMotion ? 0 : 700} isAnimationActive={!prefersReducedMotion} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        <div className="md:col-span-3 bg-white rounded-xl shadow-sm border border-border p-4">
-          <h3 className="font-bold text-sm mb-1 flex items-center gap-2"><span className="w-2 h-2 bg-neutral-muted rounded-full"></span> Expense Summary</h3>
-          <p className="text-xs text-neutral-muted mb-4">Actual Expenses by Category</p>
-          <div className="flex items-center h-48">
-            <div className="w-1/2 text-[10px] space-y-1">
-               {expenseData.map((d, i) => (
-                 <div key={i} className="flex items-center gap-1 truncate" title={d.name}>
-                   <span className="w-2 h-2 shrink-0" style={{backgroundColor: COLORS[i%COLORS.length]}}></span>
-                   <span className="truncate">{d.name}</span>
-                 </div>
-               ))}
-            </div>
-            <div className="w-1/2 h-full">
-              <ResponsiveContainer width="100%" height="100%">
+        <div className="md:col-span-3 min-w-0 rounded-card border border-border bg-surface p-4 shadow-card">
+          <h3 className="text-sm font-bold text-neutral-text">Expense summary</h3>
+          <p className="mb-3 mt-1 text-xs text-neutral-muted">Actual expenses by category</p>
+          <div className="flex h-48 min-w-0 items-center">
+            <div className="relative h-full w-1/2 min-w-0">
+              <ResponsiveContainer width="100%" height="100%" initialDimension={{ width: 160, height: 180 }}>
                 <PieChart>
-                  <Pie data={expenseData} innerRadius={30} outerRadius={50} dataKey="value" stroke="none">
+                  <Tooltip content={<FintechChartTooltip />} />
+                  <Pie
+                    data={expenseData}
+                    innerRadius="56%"
+                    outerRadius="82%"
+                    paddingAngle={3}
+                    cornerRadius={5}
+                    dataKey="value"
+                    stroke="var(--surface-color)"
+                    strokeWidth={2}
+                    animationDuration={prefersReducedMotion ? 0 : 700}
+                    isAnimationActive={!prefersReducedMotion}
+                  >
                     {expenseData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
                 </PieChart>
               </ResponsiveContainer>
+              <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+                <span className="text-[8px] font-semibold uppercase tracking-wide text-neutral-muted">Expenses</span>
+                <span className="max-w-[90%] truncate text-[10px] font-bold tabular-nums text-neutral-text">{formatCurrency(totalExpense)}</span>
+              </div>
+            </div>
+            <div className="max-h-full min-w-0 flex-1 space-y-2 overflow-y-auto pl-2">
+              {expenseData.filter((item) => item.value > 0).map((item, index) => (
+                <div key={item.name} className="flex min-w-0 items-center gap-1.5" title={item.name}>
+                  <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
+                  <span className="truncate text-[9px] font-medium text-neutral-muted">{item.name}</span>
+                </div>
+              ))}
             </div>
           </div>
         </div>
@@ -309,32 +365,48 @@ const BudgetPlannerPage = () => {
         </div>
 
         {/* ROW 3 */}
-        <div className="md:col-span-3 bg-white rounded-xl shadow-sm border border-border p-4">
-          <h3 className="font-bold text-sm mb-1 flex items-center gap-2"><span className="w-2 h-2 bg-neutral-muted rounded-full"></span> Income Source</h3>
-          <p className="text-xs text-neutral-muted mb-4">Actual Income Streams</p>
+        <div className="md:col-span-3 min-w-0 rounded-card border border-border bg-surface p-4 shadow-card">
+          <h3 className="text-sm font-bold text-neutral-text">Income source</h3>
+          <p className="mb-4 mt-1 text-xs text-neutral-muted">Actual income streams</p>
           <div className="h-48">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={incomeSourceData}>
-                <XAxis dataKey="name" tick={{fontSize: 10}} />
-                <YAxis tick={{fontSize: 10}} />
-                <Tooltip />
-                <Bar dataKey="actual" fill="#1F2937" barSize={10} />
+            <ResponsiveContainer width="100%" height="100%" initialDimension={{ width: 320, height: 220 }}>
+              <BarChart data={incomeSourceData} margin={{ top: 12, right: 4, left: -20, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="incomeBars" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#b9a3ff" />
+                    <stop offset="100%" stopColor="#6D4BC3" />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid vertical={false} stroke="var(--chart-grid)" strokeDasharray="3 6" />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: 'var(--text-muted)', fontSize: 9 }} interval="preserveStartEnd" />
+                <YAxis hide domain={[0, 'dataMax + 10%']} />
+                <Tooltip content={<FintechChartTooltip seriesLabels={{ actual: 'Income' }} />} cursor={{ fill: 'rgba(109,75,195,0.08)' }} />
+                <Bar dataKey="actual" fill="url(#incomeBars)" background={{ fill: 'var(--chart-grid)', radius: [7, 7, 0, 0] }} radius={[7, 7, 0, 0]} maxBarSize={28} animationDuration={prefersReducedMotion ? 0 : 700} isAnimationActive={!prefersReducedMotion} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        <div className="md:col-span-7 bg-white rounded-xl shadow-sm border border-border p-4">
-          <h3 className="font-bold text-sm mb-1 flex items-center gap-2"><span className="w-2 h-2 bg-neutral-muted rounded-full"></span> Actual Vs Budget</h3>
-          <p className="text-xs text-neutral-muted mb-4">Expenses by Category</p>
+        <div className="md:col-span-7 min-w-0 rounded-card border border-border bg-surface p-4 shadow-card">
+          <div className="mb-3 flex items-start justify-between gap-2">
+            <div>
+              <h3 className="text-sm font-bold text-neutral-text">Actual vs budget</h3>
+              <p className="mt-1 text-xs text-neutral-muted">Expenses by category</p>
+            </div>
+            <div className="flex shrink-0 items-center gap-3 pt-1 text-[10px] font-medium text-neutral-muted">
+              <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-primary-light" />Actual</span>
+              <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-[#B3A4E8]" />Budget</span>
+            </div>
+          </div>
           <div className="h-48 mt-2">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={actualVsBudgetData}>
-                <XAxis dataKey="name" tick={{fontSize: 10}} axisLine={{stroke: '#e5e7eb'}} tickLine={false} />
-                <YAxis tick={{fontSize: 10}} axisLine={false} tickLine={false} />
-                <Tooltip />
-                <Line type="monotone" dataKey="actual" stroke="#1F2937" strokeWidth={2} dot={true} />
-                <Line type="monotone" dataKey="budget" stroke="#9CA3AF" strokeWidth={1} dot={false} strokeDasharray="3 3" />
+            <ResponsiveContainer width="100%" height="100%" initialDimension={{ width: 320, height: 220 }}>
+              <LineChart data={actualVsBudgetData} margin={{ top: 10, right: 10, left: -18, bottom: 0 }}>
+                <CartesianGrid vertical={false} stroke="var(--chart-grid)" strokeDasharray="3 6" />
+                <XAxis dataKey="name" tick={{ fill: 'var(--text-muted)', fontSize: 9 }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
+                <YAxis hide />
+                <Tooltip content={<FintechChartTooltip seriesLabels={{ actual: 'Actual', budget: 'Budget' }} />} />
+                <Line type="monotone" dataKey="actual" stroke="#6D4BC3" strokeWidth={3} dot={{ r: 3, fill: '#6D4BC3', stroke: 'var(--surface-color)', strokeWidth: 2 }} activeDot={{ r: 6, fill: '#fff', stroke: '#6D4BC3', strokeWidth: 3 }} animationDuration={prefersReducedMotion ? 0 : 800} isAnimationActive={!prefersReducedMotion} />
+                <Line type="monotone" dataKey="budget" stroke="#A78BFA" strokeWidth={2} dot={false} activeDot={{ r: 5, fill: '#fff', stroke: '#A78BFA', strokeWidth: 3 }} strokeDasharray="5 5" animationDuration={prefersReducedMotion ? 0 : 800} isAnimationActive={!prefersReducedMotion} />
               </LineChart>
             </ResponsiveContainer>
           </div>

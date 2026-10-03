@@ -242,7 +242,7 @@ const WalletPage = () => {
                   className="absolute top-4 left-1/2 -translate-x-1/2 w-[75%] h-[200px] sm:h-[220px] rounded-3xl blur-3xl pointer-events-none"
                   style={{
                     background: selected
-                      ? `linear-gradient(135deg, ${selected.primaryColor || '#7C3AED'}, ${selected.secondaryColor || '#EC4899'})`
+                      ? `linear-gradient(135deg, ${selected.primaryColor || '#4F2A8A'}, ${selected.secondaryColor || '#6D4BC3'})`
                       : 'transparent',
                     opacity: 0.18,
                     transition: 'background 0.6s ease',
@@ -264,7 +264,7 @@ const WalletPage = () => {
 
             {/* Right Column — Card Details & Settings */}
             <div className="w-full lg:w-[45%] xl:w-[48%]">
-              <div className="rounded-2xl border border-border bg-white p-5 sm:p-6 shadow-sm">
+              <div className="rounded-2xl border border-border bg-surface p-5 shadow-card sm:p-6">
                 <div className="flex items-center gap-2.5 mb-5">
                   <Sparkles size={16} className="text-primary" />
                   <h2 className="text-sm font-bold uppercase tracking-[0.16em] text-primary">Card Details</h2>

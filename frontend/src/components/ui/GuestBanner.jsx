@@ -21,9 +21,9 @@ const GuestBanner = () => {
   };
 
   return (
-    <div className="guest-banner relative flex flex-wrap items-center justify-center gap-x-4 gap-y-2 rounded-2xl border border-amber-200/60 bg-gradient-to-r from-amber-50 via-orange-50 to-amber-50 px-4 py-2.5 text-xs font-medium text-amber-800 shadow-sm mb-4 animate-[fade-in_0.4s_ease-out_both]">
+    <div className="guest-banner relative mb-5 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 rounded-2xl border border-primary/15 bg-gradient-to-r from-primary-glow via-white to-primary-glow px-4 py-3 text-xs font-medium text-neutral-text shadow-sm animate-[fade-in_0.4s_ease-out_both]">
       <div className="flex items-center gap-2">
-        <Eye size={14} className="text-amber-600 shrink-0" />
+        <Eye size={14} className="shrink-0 text-primary" />
         <span>
           You&apos;re in <strong>preview mode</strong> &mdash; your data is saved locally in your browser.
         </span>
@@ -33,7 +33,7 @@ const GuestBanner = () => {
         <button
           type="button"
           onClick={handleSignUp}
-          className="inline-flex items-center gap-1 rounded-full bg-amber-600 px-3 py-1 text-[11px] font-bold text-white shadow-sm hover:bg-amber-700 transition-colors"
+          className="inline-flex items-center gap-1 rounded-full bg-primary px-3 py-1 text-[11px] font-bold text-white shadow-sm transition-colors hover:bg-primary-light"
         >
           <UserPlus size={12} />
           Sign Up
@@ -41,7 +41,7 @@ const GuestBanner = () => {
         <button
           type="button"
           onClick={handleExit}
-          className="inline-flex items-center gap-1 rounded-full border border-amber-300 bg-white px-3 py-1 text-[11px] font-semibold text-amber-700 hover:bg-amber-100 transition-colors"
+          className="inline-flex items-center gap-1 rounded-full border border-primary/20 bg-white px-3 py-1 text-[11px] font-semibold text-primary transition-colors hover:bg-primary-glow"
         >
           Exit Preview
         </button>
@@ -50,7 +50,7 @@ const GuestBanner = () => {
       <button
         type="button"
         onClick={() => setDismissed(true)}
-        className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-full text-amber-400 hover:text-amber-700 hover:bg-amber-100 transition-colors"
+        className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-neutral-muted transition-colors hover:bg-primary/10 hover:text-primary"
         aria-label="Dismiss banner"
       >
         <X size={14} />

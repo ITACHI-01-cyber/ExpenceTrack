@@ -1,6 +1,8 @@
 import React, { useState, useMemo } from 'react';
-import { AreaChart, Area, XAxis, Tooltip, ResponsiveContainer, ReferenceDot } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceDot, CartesianGrid } from 'recharts';
 import { TrendingUp, TrendingDown } from 'lucide-react';
+import FintechChartTooltip from '../ui/FintechChartTooltip';
+import useReducedMotion from '../../utils/useReducedMotion';
 
 const PERIODS = [
   { label: '7d', days: 7 },
@@ -10,6 +12,7 @@ const PERIODS = [
 
 const ExpenseStatsChart = ({ data, allTransactions = [] }) => {
   const [activePeriod, setActivePeriod] = useState(1); // default 14d
+  const prefersReducedMotion = useReducedMotion();
 
   // Build daily expense data based on selected period from real transactions
   const chartData = useMemo(() => {
@@ -71,18 +74,6 @@ const ExpenseStatsChart = ({ data, allTransactions = [] }) => {
     return chartData[chartData.length - 1];
   }, [chartData]);
 
-  const CustomTooltip = ({ active, payload }) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-white px-3 py-2 rounded-lg shadow-lg border border-gray-100 text-xs">
-          <p className="text-gray-500 mb-0.5">{payload[0].payload.label}</p>
-          <p className="font-bold text-gray-900">₹{payload[0].value.toLocaleString()}</p>
-        </div>
-      );
-    }
-    return null;
-  };
-
   const formatTotal = (num) => {
     if (num >= 100000) return `${(num / 100000).toFixed(1)}L`;
     if (num >= 1000) return num.toLocaleString();
@@ -90,11 +81,11 @@ const ExpenseStatsChart = ({ data, allTransactions = [] }) => {
   };
 
   return (
-    <div className="bg-surface rounded-2xl shadow-sm border border-border p-5 h-full flex flex-col sm:p-6">
+    <div className="flex h-full flex-col rounded-card border border-border bg-surface p-5 shadow-card sm:p-6">
       {/* Header with period toggle */}
       <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center mb-4">
-        <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">Expenses</p>
-        <div className="flex bg-background rounded-full p-0.5">
+        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-neutral-muted">Expense trend</p>
+        <div className="flex rounded-full border border-border bg-background p-0.5">
           {PERIODS.map((period, idx) => (
             <button
               key={period.label}
@@ -113,7 +104,7 @@ const ExpenseStatsChart = ({ data, allTransactions = [] }) => {
 
       {/* Big number + percentage */}
       <div className="flex items-baseline gap-3 mb-1">
-        <h2 className="text-3xl sm:text-4xl font-bold text-neutral-text tabular-nums tracking-tight">
+        <h2 className="text-3xl font-extrabold tracking-tight text-neutral-text tabular-nums sm:text-4xl">
           ₹{formatTotal(total)}
         </h2>
         {total > 0 && (
@@ -127,43 +118,63 @@ const ExpenseStatsChart = ({ data, allTransactions = [] }) => {
       </div>
 
       {/* Chart */}
-      <div className="flex-1 min-h-[120px] w-full mt-2 -mx-2">
-        <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
+      <div className="mt-3 min-h-[145px] w-full min-w-0 flex-1 overflow-hidden rounded-2xl bg-gradient-to-br from-[#211433] via-[#2c1a49] to-[#37205b] px-1 py-2 sm:min-h-[170px]">
+        <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={145} initialDimension={{ width: 320, height: 170 }}>
+          <AreaChart data={chartData} margin={{ top: 12, right: 12, left: 2, bottom: 0 }}>
             <defs>
               <linearGradient id="expenseGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#10b981" stopOpacity={0.2} />
-                <stop offset="100%" stopColor="#10b981" stopOpacity={0} />
+                <stop offset="0%" stopColor="#b9a3ff" stopOpacity={0.32} />
+                <stop offset="65%" stopColor="#8c6be5" stopOpacity={0.12} />
+                <stop offset="100%" stopColor="#8c6be5" stopOpacity={0} />
               </linearGradient>
+              <filter id="expensePointGlow" x="-150%" y="-150%" width="400%" height="400%">
+                <feGaussianBlur stdDeviation="3" result="blur" />
+                <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+              </filter>
             </defs>
+            <CartesianGrid vertical={false} stroke="rgba(224, 211, 255, 0.12)" strokeDasharray="3 7" />
+            <YAxis
+              axisLine={false}
+              tickLine={false}
+              width={42}
+              tick={{ fill: '#c3b6df', fontSize: 9 }}
+              tickFormatter={(value) => value >= 1000 ? `${Math.round(value / 1000)}k` : value}
+            />
             <XAxis
               dataKey="label"
               axisLine={false}
               tickLine={false}
-              tick={{ fill: '#9CA3AF', fontSize: 10 }}
+              tick={{ fill: '#c3b6df', fontSize: 9 }}
               dy={8}
               interval="preserveStartEnd"
               minTickGap={40}
             />
-            <Tooltip content={<CustomTooltip />} cursor={false} />
+            <Tooltip
+              content={<FintechChartTooltip seriesLabels={{ value: 'Expenses' }} />}
+              cursor={{ stroke: 'rgba(224, 211, 255, 0.28)', strokeDasharray: '3 4' }}
+            />
             <Area
               type="monotone"
               dataKey="value"
-              stroke="#10b981"
-              strokeWidth={2}
+              stroke="#b9a3ff"
+              strokeWidth={3}
               fillOpacity={1}
               fill="url(#expenseGradient)"
-              animationDuration={1200}
+              dot={{ r: 3, fill: '#ddd2ff', stroke: '#6e51b2', strokeWidth: 2 }}
+              activeDot={{ r: 6, fill: '#ffffff', stroke: '#a78bfa', strokeWidth: 4, style: { filter: 'drop-shadow(0 0 6px rgba(185, 163, 255, 0.9))' } }}
+              animationDuration={prefersReducedMotion ? 0 : 900}
               animationEasing="ease-out"
+              isAnimationActive={!prefersReducedMotion}
             />
             {lastDataPoint && lastDataPoint.value > 0 && (
               <ReferenceDot
                 x={lastDataPoint.label}
                 y={lastDataPoint.value}
-                r={5}
-                fill="#10b981"
-                stroke="white"
-                strokeWidth={2}
+                r={7}
+                fill="#ffffff"
+                stroke="#a78bfa"
+                strokeWidth={3}
+                style={{ filter: 'drop-shadow(0 0 7px rgba(185, 163, 255, 0.85))' }}
               />
             )}
           </AreaChart>
@@ -173,7 +184,7 @@ const ExpenseStatsChart = ({ data, allTransactions = [] }) => {
       {/* Bottom stats */}
       <div className="flex justify-between items-center mt-3 pt-3 border-t border-border">
         <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-emerald-400"></div>
+          <div className="w-2 h-2 rounded-full bg-primary-light"></div>
           <span className="text-xs text-neutral-muted">Avg/day</span>
           <span className="text-xs font-semibold text-neutral-text tabular-nums">₹{Math.round(avgDaily).toLocaleString()}</span>
         </div>

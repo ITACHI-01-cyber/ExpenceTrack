@@ -225,6 +225,13 @@ const WalletCard = ({
                 borderRadius: cardRadius,
               }}
             >
+              <div
+                className="pointer-events-none absolute inset-0"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(79,42,138,0.26), rgba(109,75,195,0.08) 55%, rgba(36,20,67,0.18))',
+                  borderRadius: cardRadius,
+                }}
+              />
               {/* Animated shimmer sweep */}
               <div
                 className="absolute inset-0 pointer-events-none"
