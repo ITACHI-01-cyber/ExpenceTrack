@@ -1,90 +1,69 @@
 import React from 'react';
 import { ArrowLeft } from 'lucide-react';
 
-const AuthLayout = ({ title = 'Welcome back', subtitle = 'Sign in to continue', leftTitle, leftSubtitle, heroImage, children, back }) => {
-  return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-y-auto bg-[#21123d] p-2 text-slate-800 sm:p-4">
-      {/* Viewport background: blurred and dimmed hero image */}
-      <div 
-        className="absolute inset-0 bg-cover bg-center pointer-events-none transition-all duration-500"
-        style={{
-          backgroundImage: heroImage
-            ? `linear-gradient(135deg, rgba(49, 25, 87, 0.75), rgba(31, 18, 57, 0.88)), url(${heroImage})`
-            : 'radial-gradient(circle at 20% 20%, #6d4bc3, #21123d 65%)',
-          filter: 'blur(24px) brightness(0.75)',
-          transform: 'scale(1.1)',
-          opacity: 0.75
-        }}
-      />
-      
-      {/* Main Container */}
-      <div className="relative z-10 flex min-h-fit w-full max-w-[1000px] flex-col overflow-hidden rounded-[28px] border border-white/15 bg-white shadow-[0_24px_80px_rgba(0,0,0,0.32)] md:h-[650px] md:min-h-[620px] md:flex-row md:rounded-[36px]">
-        
-        {/* Left Side: Hero Image (visible on md+) */}
-        <div 
-          className="hidden md:block md:w-[45%] h-full relative bg-cover bg-center shrink-0" 
-          style={heroImage
-            ? { backgroundImage: `linear-gradient(145deg, rgba(79,42,138,0.55), rgba(31,18,57,0.72)), url(${heroImage})` }
-            : { background: 'linear-gradient(145deg, #6d4bc3, #321c60)' }}
-        >
-          {/* Subtle overlay to blend */}
-          <div className="absolute inset-0 bg-black/5" />
-        </div>
+const AuthLayout = ({
+  title = 'Welcome back',
+  subtitle = 'Sign in to continue',
+  leftTitle = 'Take control of your money.',
+  leftSubtitle = 'Track. Plan. Save.',
+  heroImage,
+  children,
+  back,
+}) => {
+  const heroStyle = heroImage
+    ? { backgroundImage: `linear-gradient(145deg, rgba(42, 22, 76, 0.48), rgba(21, 13, 38, 0.72)), url(${heroImage})` }
+    : { backgroundImage: 'linear-gradient(145deg, #6d4bc3, #21123d)' };
 
-        {/* Wavy Divider SVG (visible on md+) */}
-        <div className="hidden md:block absolute left-[45%] top-0 bottom-0 w-[40px] h-full z-20 pointer-events-none translate-x-[-39.5px]">
-          <svg className="h-full w-full fill-current text-white" viewBox="0 0 40 100" preserveAspectRatio="none">
-            <path d="M40,0 C15,15 -10,35 25,50 C50,60 15,85 40,100 Z" />
+  return (
+    <main className="auth-shell relative flex min-h-screen items-center justify-center overflow-y-auto p-0 sm:p-5 lg:p-8">
+      <div className="auth-backdrop pointer-events-none absolute inset-0" />
+
+      <div className="auth-frame relative z-10 flex min-h-screen w-full flex-col overflow-hidden sm:min-h-0 sm:rounded-[30px] md:min-h-[min(760px,calc(100vh-40px))] md:max-w-[1160px] md:flex-row md:shadow-[0_30px_100px_rgba(31,18,57,0.2)]">
+        <section
+          className="auth-hero relative hidden shrink-0 bg-cover bg-center md:flex md:w-[43%] md:flex-col md:justify-between md:p-10 lg:p-12"
+          style={heroStyle}
+          aria-label="ExpenseTrack introduction"
+        >
+          <div className="relative z-10 max-w-sm pb-5 text-white">
+            <p className="mb-3 text-xs font-bold uppercase tracking-[0.2em] text-white/75">Personal finance, in focus</p>
+            <h2 className="text-3xl font-bold leading-tight tracking-tight lg:text-4xl">{leftTitle}</h2>
+            <p className="mt-3 text-sm font-medium tracking-wide text-white/75">{leftSubtitle}</p>
+          </div>
+          <div className="absolute inset-0 bg-gradient-to-t from-[#171024]/55 via-transparent to-[#24143f]/10" />
+        </section>
+
+        <div className="auth-divider pointer-events-none absolute bottom-0 left-[43%] top-0 z-10 hidden w-12 md:block" aria-hidden="true">
+          <svg className="h-full w-full" viewBox="0 0 48 100" preserveAspectRatio="none">
+            <path className="auth-divider-shape" d="M48,0 C16,17 3,31 26,48 C49,65 9,83 48,100 Z" />
           </svg>
         </div>
 
-        {/* Mobile top image banner */}
-        <div 
-          className="block md:hidden w-full h-[180px] bg-cover bg-center relative"
-          style={heroImage
-            ? { backgroundImage: `linear-gradient(145deg, rgba(79,42,138,0.55), rgba(31,18,57,0.72)), url(${heroImage})` }
-            : { background: 'linear-gradient(145deg, #6d4bc3, #321c60)' }}
-        >
-          <div className="absolute inset-0 bg-[#321c60]/25" />
-          {back && (
-            <button 
-              onClick={back} 
-              className="absolute top-4 left-4 inline-flex items-center gap-1.5 text-xs font-semibold text-white bg-black/40 backdrop-blur-sm px-3 py-1.5 rounded-full"
-            >
-              <ArrowLeft size={12} /> Back
-            </button>
-          )}
-        </div>
+        <section className="auth-form-panel relative flex min-h-screen w-full flex-1 flex-col justify-center overflow-y-auto px-5 py-8 sm:px-10 md:min-h-0 md:w-[57%] md:px-12 lg:px-16">
+          <div
+            className="auth-mobile-hero relative -mx-5 -mt-8 mb-7 h-[104px] shrink-0 bg-cover bg-center md:hidden"
+            style={heroStyle}
+          />
 
-        {/* Right Side: Form Content */}
-        <div className="w-full md:w-[55%] flex-1 overflow-y-auto p-6 sm:p-8 md:p-10 flex flex-col justify-center relative">
           {back && (
-            <button 
-              onClick={back} 
-              className="hidden md:inline-flex absolute top-6 left-8 items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-800 transition-colors"
+            <button
+              type="button"
+              onClick={back}
+              className="auth-back-button mb-5 inline-flex w-fit items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-semibold transition-colors hover:text-primary md:absolute md:left-10 md:top-7 md:mb-0 lg:left-12"
             >
               <ArrowLeft size={14} /> Back
             </button>
           )}
-          
-          <div className="mx-auto w-full max-w-[380px] space-y-6 py-4">
-            <div className="text-center md:text-left">
-              <h1 className="text-2xl font-bold leading-tight tracking-tight text-[#1f1b2d] sm:text-3xl">
-                {title}
-              </h1>
-              <p className="mt-1 text-sm font-medium text-[#77728a]">
-                {subtitle}
-              </p>
-            </div>
-            
-            <div className="auth-content text-slate-800">
-              {children}
-            </div>
-          </div>
-        </div>
 
+          <div className="mx-auto w-full max-w-[430px] py-2">
+            <div className="mb-7">
+              <h1 className="text-2xl font-bold leading-tight tracking-tight text-neutral-text sm:text-3xl">{title}</h1>
+              <p className="mt-2 text-sm font-medium text-neutral-muted">{subtitle}</p>
+            </div>
+            <div className="auth-content">{children}</div>
+          </div>
+        </section>
       </div>
-    </div>
+    </main>
   );
 };
 

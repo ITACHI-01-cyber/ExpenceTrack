@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Mail, Lock, KeyRound, Eye, EyeOff } from 'lucide-react';
+import { User, Mail, Lock, KeyRound, Eye, EyeOff, LoaderCircle } from 'lucide-react';
 import api from '../services/api';
 import useAuthStore from '../store/authStore';
 import AuthLayout from '../components/layout/AuthLayout';
@@ -114,8 +114,8 @@ const SignupPage = () => {
     }
   };
 
-  const heroTitle = 'Hello ! Welcome Aboard';
-  const heroSubtitle = 'We are glad to see you 😊';
+  const heroTitle = step === 1 ? 'Create your account' : 'Verify your email';
+  const heroSubtitle = step === 1 ? 'Start managing your finances.' : 'A quick check to keep your account secure.';
 
   return (
     <AuthLayout
@@ -124,11 +124,11 @@ const SignupPage = () => {
       heroImage="https://w.wallhaven.cc/full/qr/wallhaven-qrm855.jpg"
       back={() => navigate('/login')}
     >
-      <div className="space-y-6 text-slate-800">
+      <div className="space-y-5">
 
 
         {error && (
-          <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-600 font-medium">
+          <div role="alert" className="auth-error rounded-xl border px-4 py-3 text-xs font-medium">
             {error}
           </div>
         )}
@@ -137,32 +137,32 @@ const SignupPage = () => {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+                <label className="auth-label mb-1.5 ml-1 block text-xs font-semibold uppercase tracking-wider">
                   Name
                 </label>
-                <div className="flex items-center gap-3 rounded-full bg-[#f5ebe6] px-5 py-3 transition focus-within:ring-2 focus-within:ring-primary/20">
-                  <User size={15} className="text-slate-400" />
+                <div className="auth-field-shell flex items-center gap-3 rounded-[14px] border px-4 py-3 transition">
+                  <User size={16} className="auth-field-icon shrink-0" />
                   <input
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     placeholder="Your name"
-                    className="w-full bg-transparent text-slate-800 outline-none placeholder:text-slate-400/80 text-sm"
+                    className="auth-field-input w-full bg-transparent text-sm outline-none"
                     required
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+                <label className="auth-label mb-1.5 ml-1 block text-xs font-semibold uppercase tracking-wider">
                   Username
                 </label>
-                <div className="flex items-center gap-3 rounded-full bg-[#f5ebe6] px-5 py-3 transition focus-within:ring-2 focus-within:ring-primary/20">
-                  <KeyRound size={15} className="text-slate-400" />
+                <div className="auth-field-shell flex items-center gap-3 rounded-[14px] border px-4 py-3 transition">
+                  <KeyRound size={16} className="auth-field-icon shrink-0" />
                   <input
                     value={formData.username}
                     onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                     placeholder="Username"
-                    className="w-full bg-transparent text-slate-800 outline-none placeholder:text-slate-400/80 text-sm"
+                    className="auth-field-input w-full bg-transparent text-sm outline-none"
                     required
                   />
                 </div>
@@ -170,17 +170,17 @@ const SignupPage = () => {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+              <label className="auth-label mb-1.5 ml-1 block text-xs font-semibold uppercase tracking-wider">
                 Email Address
               </label>
-              <div className="flex items-center gap-3 rounded-full bg-[#f5ebe6] px-5 py-3 transition focus-within:ring-2 focus-within:ring-primary/20">
-                <Mail size={15} className="text-slate-400" />
+              <div className="auth-field-shell flex items-center gap-3 rounded-[14px] border px-4 py-3 transition">
+                <Mail size={16} className="auth-field-icon shrink-0" />
                 <input
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   placeholder="you@example.com"
-                  className="w-full bg-transparent text-slate-800 outline-none placeholder:text-slate-400/80 text-sm"
+                  className="auth-field-input w-full bg-transparent text-sm outline-none"
                   required
                 />
               </div>
@@ -188,40 +188,40 @@ const SignupPage = () => {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+                <label className="auth-label mb-1.5 ml-1 block text-xs font-semibold uppercase tracking-wider">
                   Password
                 </label>
-                <div className="flex items-center gap-3 rounded-full bg-[#f5ebe6] px-5 py-3 transition focus-within:ring-2 focus-within:ring-primary/20">
-                  <Lock size={15} className="text-slate-400" />
+                <div className="auth-field-shell flex items-center gap-3 rounded-[14px] border px-4 py-3 transition">
+                  <Lock size={16} className="auth-field-icon shrink-0" />
                   <input
                     type={showPassword ? 'text' : 'password'}
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                     placeholder="Password"
-                    className="w-full bg-transparent text-slate-800 outline-none placeholder:text-slate-400/80 text-sm"
+                    className="auth-field-input w-full bg-transparent text-sm outline-none"
                     required
                   />
-                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="text-slate-400 hover:text-slate-600 transition">
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="auth-password-toggle rounded-lg p-1.5 transition" aria-label={showPassword ? 'Hide password' : 'Show password'}>
                     {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
                   </button>
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+                <label className="auth-label mb-1.5 ml-1 block text-xs font-semibold uppercase tracking-wider">
                   Confirm Password
                 </label>
-                <div className="flex items-center gap-3 rounded-full bg-[#f5ebe6] px-5 py-3 transition focus-within:ring-2 focus-within:ring-primary/20">
-                  <Lock size={15} className="text-slate-400" />
+                <div className="auth-field-shell flex items-center gap-3 rounded-[14px] border px-4 py-3 transition">
+                  <Lock size={16} className="auth-field-icon shrink-0" />
                   <input
                     type={showConfirmPassword ? 'text' : 'password'}
                     value={formData.confirmPassword}
                     onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                     placeholder="Confirm"
-                    className="w-full bg-transparent text-slate-800 outline-none placeholder:text-slate-400/80 text-sm"
+                    className="auth-field-input w-full bg-transparent text-sm outline-none"
                     required
                   />
-                  <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="text-slate-400 hover:text-slate-600 transition">
+                  <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="auth-password-toggle rounded-lg p-1.5 transition" aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}>
                     {showConfirmPassword ? <EyeOff size={15} /> : <Eye size={15} />}
                   </button>
                 </div>
@@ -229,7 +229,7 @@ const SignupPage = () => {
             </div>
 
             <div className="py-1">
-              <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-500">
+              <label className="auth-policy flex cursor-pointer items-center gap-2 text-xs font-semibold">
                 <input 
                   type="checkbox" 
                   required
@@ -242,14 +242,15 @@ const SignupPage = () => {
             <button 
               type="submit" 
               disabled={loading} 
-              className="w-full rounded-full bg-[#f5ebe6] py-3.5 text-sm font-semibold text-slate-800 hover:bg-[#ebdcd4] transition shadow-sm disabled:opacity-60 mt-1"
+              className="auth-submit mt-1 flex min-h-[52px] w-full items-center justify-center gap-2 rounded-[14px] py-3 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-60"
             >
+              {loading && <LoaderCircle size={17} className="animate-spin" />}
               {loading ? 'Sending code…' : 'Sign up'}
             </button>
 
-            <div className="text-center text-xs text-slate-500 font-medium pt-2 border-t border-slate-200/50">
+            <div className="auth-links border-t pt-4 text-center text-xs font-medium">
               Already have an account?{' '}
-              <button type="button" onClick={() => navigate('/login')} className="text-slate-800 font-semibold hover:underline">
+              <button type="button" onClick={() => navigate('/login')} className="auth-link font-bold hover:underline">
                 Log in
               </button>
             </div>
@@ -257,8 +258,8 @@ const SignupPage = () => {
         ) : (
           <form onSubmit={handleVerify} className="space-y-5">
             <div>
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1 ml-1">Verify Email</p>
-              <p className="text-xs text-slate-400 font-medium">We sent a verification code to <span className="font-semibold text-slate-600">{sentEmail}</span></p>
+              <p className="auth-label mb-1 ml-1 text-xs font-semibold uppercase tracking-wider">Verify Email</p>
+              <p className="auth-description text-xs font-medium">We sent a verification code to <span className="auth-emphasis font-semibold">{sentEmail}</span></p>
             </div>
 
             <div className="grid grid-cols-6 gap-2">
@@ -272,7 +273,7 @@ const SignupPage = () => {
                   value={digit}
                   onChange={(e) => handleOtpChange(index, e.target.value)}
                   onKeyDown={(e) => handleOtpKeyDown(index, e)}
-                  className="h-12 rounded-full border-none bg-[#f5ebe6] text-center text-lg font-semibold text-slate-800 outline-none"
+                  className="auth-otp-input h-12 rounded-xl border text-center text-lg font-semibold outline-none"
                 />
               ))}
             </div>
@@ -280,14 +281,15 @@ const SignupPage = () => {
             <button 
               type="submit" 
               disabled={loading || otp.join('').length !== 6} 
-              className="w-full rounded-full bg-[#f5ebe6] py-3.5 text-sm font-semibold text-slate-800 hover:bg-[#ebdcd4] transition disabled:opacity-60 shadow-sm mt-1"
+              className="auth-submit mt-1 flex min-h-[52px] w-full items-center justify-center gap-2 rounded-[14px] py-3 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-60"
             >
+              {loading && <LoaderCircle size={17} className="animate-spin" />}
               {loading ? 'Verifying…' : 'Verify & continue'}
             </button>
 
-            <div className="text-center text-xs text-slate-500 font-medium pt-2 border-t border-slate-200/50">
+            <div className="auth-links border-t pt-4 text-center text-xs font-medium">
               Didn’t receive the code?{' '}
-              <button type="button" onClick={handleResend} className="text-slate-800 font-semibold hover:underline">
+              <button type="button" onClick={handleResend} className="auth-link font-semibold hover:underline">
                 Resend code
               </button>
             </div>
