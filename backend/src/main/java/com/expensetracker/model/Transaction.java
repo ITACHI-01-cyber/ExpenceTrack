@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
@@ -14,6 +15,11 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Document(collection = "transactions")
+@CompoundIndex(
+        name = "uniq_transaction_user_idempotency",
+        def = "{'userId': 1, 'idempotencyKey': 1}",
+        unique = true,
+        partialFilter = "{'idempotencyKey': {$type: 'string'}}")
 public class Transaction {
     @Id
     private String id;
@@ -27,5 +33,12 @@ public class Transaction {
     private Boolean isRecurring;
     private String paymentMethod;
     private String walletId; // link to specific wallet/card
+    private String transactionKind; // "standard", "purchase", or "refund"
+    private String idempotencyKey;
+    private String relatedTransactionId;
     private LocalDateTime createdAt;
+
+    public String getTransactionKind() {
+        return transactionKind == null ? "standard" : transactionKind;
+    }
 }

@@ -5,15 +5,24 @@ import { CARD_DESIGNS, UPI_DESIGNS, CASH_DESIGNS, SCENIC_DESIGNS, DC_DESIGNS, ge
 import CARD_ICONS, { CardIconRenderer } from '../../utils/cardIcons';
 import Button from './Button';
 import AddBalanceModal from './AddBalanceModal';
+import { formatCurrency } from '../../utils/formatCurrency';
 
 const getDefaultFormData = () => ({
   cardType: 'debit',
   cardBrand: 'visa',
   bankName: '',
+  cardName: '',
   cardHolderName: '',
   cardNumber: '',
   expiryDate: '',
   balance: '',
+  creditLimit: '',
+  outstandingBalance: '',
+  statementClosingDay: '',
+  paymentDueDay: '',
+  minimumPaymentAmount: '',
+  creditTermsConfigured: false,
+  timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
   designPreset: 'midnight',
   primaryColor: '#4F2A8A',
   secondaryColor: '#6D4BC3',
@@ -63,6 +72,8 @@ const AddCardModal = ({ isOpen, onClose, onSave, initialData = null, isGuest }) 
       cardNumber: initialData.cardType === 'upi'
         ? initialData.cardNumber || ''
         : formatCardNumber(initialData.cardNumber || ''),
+      creditTermsConfigured: Boolean(initialData.creditTermsConfigured),
+      timezone: initialData.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
       expiryDate: formatExpiryDate(initialData.expiryDate || ''),
       cvv: undefined
     } : getDefaultFormData());
@@ -92,6 +103,7 @@ const AddCardModal = ({ isOpen, onClose, onSave, initialData = null, isGuest }) 
         ...current,
         cardType: value,
         cardNumber: '',
+        creditTermsConfigured: value === 'credit',
         expiryDate: value === 'upi' ? '' : current.expiryDate
       }, nextDesign));
       setError('');
@@ -133,6 +145,24 @@ const AddCardModal = ({ isOpen, onClose, onSave, initialData = null, isGuest }) 
       }
     }
 
+    if (formData.cardType === 'credit' && formData.creditTermsConfigured) {
+      if (!Number.isFinite(Number(formData.creditLimit)) || Number(formData.creditLimit) <= 0
+          || formData.outstandingBalance === '' || !Number.isFinite(Number(formData.outstandingBalance)) || Number(formData.outstandingBalance) < 0
+          || Number(formData.outstandingBalance) > Number(formData.creditLimit)) {
+        setError('Enter a positive credit limit and an outstanding balance between zero and that limit.');
+        return false;
+      }
+      if (!Number.isInteger(Number(formData.statementClosingDay)) || Number(formData.statementClosingDay) < 1 || Number(formData.statementClosingDay) > 31
+          || !Number.isInteger(Number(formData.paymentDueDay)) || Number(formData.paymentDueDay) < 1 || Number(formData.paymentDueDay) > 31
+          || !formData.timezone.trim()) {
+        setError('Enter statement and due days (1–31) and a valid timezone.');
+        return false;
+      }
+      if (formData.minimumPaymentAmount !== '' && (!Number.isFinite(Number(formData.minimumPaymentAmount)) || Number(formData.minimumPaymentAmount) <= 0)) {
+        setError('The issuer-supplied minimum payment must be positive, or leave it unavailable.');
+        return false;
+      }
+    }
     return true;
   };
 
@@ -157,8 +187,16 @@ const AddCardModal = ({ isOpen, onClose, onSave, initialData = null, isGuest }) 
     try {
       await onSave({
         ...formData,
-        cardNumber: formData.cardNumber.trim(),
-        balance: Number(formData.balance || 0),
+        cardNumber: isUpi ? formData.cardNumber.trim() : formData.cardNumber.replace(/\D/g, '').slice(-4),
+        balance: formData.cardType === 'credit' && formData.creditTermsConfigured
+          ? null : Number(formData.balance || 0),
+        creditLimit: formData.creditTermsConfigured ? Number(formData.creditLimit) : null,
+        outstandingBalance: formData.creditTermsConfigured ? Number(formData.outstandingBalance) : null,
+        statementClosingDay: formData.creditTermsConfigured ? Number(formData.statementClosingDay) : null,
+        paymentDueDay: formData.creditTermsConfigured ? Number(formData.paymentDueDay) : null,
+        minimumPaymentAmount: formData.minimumPaymentAmount === '' ? null : Number(formData.minimumPaymentAmount),
+        creditTermsConfigured: formData.cardType === 'credit' && Boolean(formData.creditTermsConfigured),
+        timezone: formData.creditTermsConfigured ? formData.timezone : null,
         cvv: null
       });
       onClose();
@@ -222,6 +260,13 @@ const AddCardModal = ({ isOpen, onClose, onSave, initialData = null, isGuest }) 
                 <input name="bankName" value={formData.bankName} onChange={handleChange} className={inputClass} placeholder={isUpi ? 'Google Pay or bank' : 'Your bank'} />
               </div>
 
+              {!isUpi && !isCash && (
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium">Card Name (optional)</label>
+                  <input name="cardName" value={formData.cardName || ''} onChange={handleChange} className={inputClass} placeholder="e.g. Travel Rewards" />
+                </div>
+              )}
+
               <div>
                 <label className="mb-1.5 block text-sm font-medium">{isUpi ? 'Account Name' : 'Cardholder Name'}</label>
                 <input name="cardHolderName" value={formData.cardHolderName} onChange={handleChange} className={inputClass} placeholder="Name shown on card" />
@@ -237,7 +282,7 @@ const AddCardModal = ({ isOpen, onClose, onSave, initialData = null, isGuest }) 
                     className={inputClass}
                     placeholder={isUpi ? 'name@bank' : '0000-0000-0000-0000'}
                     inputMode={isUpi ? 'text' : 'numeric'}
-                    autoComplete={isUpi ? 'off' : 'cc-number'}
+                    autoComplete="off"
                     maxLength={isUpi ? undefined : 23}
                   />
                 </div>
@@ -259,10 +304,115 @@ const AddCardModal = ({ isOpen, onClose, onSave, initialData = null, isGuest }) 
                 </div>
               )}
 
+              {formData.cardType !== 'credit' && (
               <div>
                 <label className="mb-1.5 block text-sm font-medium">Current Balance</label>
                 <input type="number" name="balance" value={formData.balance} onChange={handleChange} className={inputClass} min="0" step="0.01" placeholder="0.00" />
               </div>
+              )}
+
+              {formData.cardType === 'credit' && (
+                <div className="sm:col-span-2 rounded-xl border border-primary/15 bg-primary/5 p-4">
+                  <label className="flex items-center gap-2 text-sm font-semibold">
+                    <input
+                      type="checkbox"
+                      checked={Boolean(formData.creditTermsConfigured)}
+                      disabled={Boolean(initialData?.creditTermsConfigured)}
+                      onChange={(event) => updateField('creditTermsConfigured', event.target.checked)}
+                    />
+                    Configure credit limit and cycle terms
+                  </label>
+                  {formData.creditTermsConfigured ? (
+                    <div className="mt-4 space-y-4">
+                      {/* Live Calculated Available Credit Display */}
+                      {(() => {
+                        const limit = parseFloat(formData.creditLimit) || 0;
+                        const debt = parseFloat(formData.outstandingBalance) || 0;
+                        const avail = Math.max(0, limit - debt);
+                        const util = limit > 0 ? (debt / limit) * 100 : 0;
+                        return (
+                          <div className="rounded-xl border border-primary/20 bg-background/80 p-3.5 space-y-2">
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="font-semibold text-neutral-muted uppercase tracking-wider text-[10px]">
+                                Available Credit & Utilization Preview
+                              </span>
+                              <span className="font-bold text-neutral-text">
+                                Utilization: {limit > 0 ? util.toFixed(1) : 0}%
+                              </span>
+                            </div>
+                            <div className="grid grid-cols-2 gap-3 text-xs">
+                              <div>
+                                <span className="text-neutral-muted">Available Credit (Auto):</span>
+                                <p className="text-base font-extrabold text-emerald-600 dark:text-emerald-400">
+                                  {formatCurrency(avail)}
+                                </p>
+                              </div>
+                              <div>
+                                <span className="text-neutral-muted">Calculation:</span>
+                                <p className="text-[11px] font-medium text-neutral-muted">
+                                  Limit ({formatCurrency(limit)}) − Debt ({formatCurrency(debt)})
+                                </p>
+                              </div>
+                            </div>
+                            <div className="h-2 w-full overflow-hidden rounded-full bg-border">
+                              <div
+                                className={`h-full transition-all duration-300 ${
+                                  util > 80 ? 'bg-danger' : util > 50 ? 'bg-amber-500' : 'bg-primary'
+                                }`}
+                                style={{ width: `${Math.min(100, Math.max(0, util))}%` }}
+                              />
+                            </div>
+                            {debt > limit && limit > 0 && (
+                              <p className="text-xs font-semibold text-danger">
+                                ⚠️ Outstanding balance cannot exceed configured credit limit!
+                              </p>
+                            )}
+                          </div>
+                        );
+                      })()}
+
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        {[
+                          ['creditLimit', 'Credit limit (user configurable)', 'e.g. 50000'],
+                          ['outstandingBalance', initialData?.creditTermsConfigured ? 'Current outstanding balance' : 'Opening outstanding balance', 'e.g. 0'],
+                          ['statementClosingDay', 'Statement closing day (1–31)', 'e.g. 30'],
+                          ['paymentDueDay', 'Payment due day (next month, 1–31)', 'e.g. 20'],
+                          ['minimumPaymentAmount', 'Issuer-supplied minimum (optional)', 'Leave blank if unavailable'],
+                          ['timezone', 'Timezone (IANA)', 'e.g. Asia/Kolkata'],
+                        ].map(([name, label, placeholder]) => (
+                          <label key={name} className="text-xs font-medium text-neutral-text">
+                            {label}
+                            <input
+                              name={name}
+                              type={name === 'timezone' ? 'text' : 'number'}
+                              min={name.includes('Day') ? 1 : name === 'outstandingBalance' ? 0 : undefined}
+                              max={name.includes('Day') ? 31 : undefined}
+                              step={name.includes('Day') ? 1 : '0.01'}
+                              disabled={name === 'outstandingBalance' && Boolean(initialData?.creditTermsConfigured)}
+                              value={formData[name] ?? ''}
+                              onChange={handleChange}
+                              className={`${inputClass} mt-1`}
+                              placeholder={placeholder}
+                            />
+                          </label>
+                        ))}
+                        {initialData?.creditTermsConfigured && (
+                          <p className="text-xs text-neutral-muted sm:col-span-2">
+                            Outstanding balance changes only through confirmed purchases and repayments.
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="mt-2 text-xs text-neutral-muted">
+                      This card remains unconfigured and cannot record purchases until explicit terms are provided.
+                    </p>
+                  )}
+                  <p className="mt-3 text-xs text-neutral-muted">
+                    Interest, fees and minimum due are not estimated; leave the issuer minimum blank if unavailable. Available credit is never treated as cash.
+                  </p>
+                </div>
+              )}
 
               {/* Back side customization section */}
               <div className="sm:col-span-2 border-t border-border pt-4 mt-2">

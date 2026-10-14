@@ -11,7 +11,7 @@ import api from '../services/api';
 import walletService from '../services/walletService';
 import { formatDate } from '../utils/dateHelpers';
 import { formatCurrency } from '../utils/formatCurrency';
-import { ArrowDownLeft, ArrowUpRight, Trash2, Plus } from 'lucide-react';
+import { ArrowDownLeft, ArrowUpRight, Trash2, Plus, CreditCard, RotateCcw } from 'lucide-react';
 import useAuthStore from '../store/authStore';
 import guestStorage from '../services/guestStorage';
 
@@ -149,12 +149,15 @@ const TransactionsPage = () => {
   };
 
   const fetchData = async () => {
+    let loadedWallets = [];
     try {
       if (isGuest) {
-        setWallets(guestStorage.wallets.getAll());
+        loadedWallets = guestStorage.wallets.getAll();
+        setWallets(loadedWallets);
       } else {
         const w = await walletService.getAll();
-        setWallets(w || []);
+        loadedWallets = w || [];
+        setWallets(loadedWallets);
       }
     } catch (err) {
       console.error('Failed to fetch wallets', err);
@@ -162,19 +165,45 @@ const TransactionsPage = () => {
 
     try {
       const params = buildTransactionParams();
+      let txList = [];
+      let repayments = [];
 
       if (isGuest) {
-        const sortedTransactions = guestStorage.transactions.getAll(params);
-        setTransactions(sortedTransactions);
-        setCategoryHistory(rememberMany(sortedTransactions.map((transaction) => transaction.category)));
+        txList = guestStorage.transactions.getAll(params);
+        repayments = guestStorage.transactions.getAllRepayments(params);
       } else {
         const txRes = await api.get('/transactions', { params });
         if (txRes.data.success) {
-          const sortedTransactions = txRes.data.data.sort((a,b) => new Date(b.date) - new Date(a.date));
-          setTransactions(sortedTransactions);
-          setCategoryHistory(rememberMany(sortedTransactions.map((transaction) => transaction.category)));
+          txList = txRes.data.data;
+        }
+        try {
+          repayments = await walletService.getAllRepayments(params);
+        } catch (e) {
+          console.warn('Could not load repayments', e);
         }
       }
+
+      // Convert repayments into displayable transaction items (type: 'transfer')
+      const repaymentTxs = (repayments || []).map((r) => {
+        const targetCard = loadedWallets.find((w) => w.id === r.walletId);
+        const sourceWallet = loadedWallets.find((w) => w.id === r.sourceWalletId);
+        return {
+          id: r.id,
+          type: 'transfer',
+          transactionKind: 'repayment',
+          amount: Number(r.amount),
+          category: 'Debt Repayment',
+          description: `Credit Card Repayment: ${sourceWallet?.bankName || sourceWallet?.cardType || 'Funding Account'} → ${targetCard?.cardName || targetCard?.bankName || 'Credit Card'}`,
+          date: r.date,
+          walletId: r.walletId,
+          sourceWalletId: r.sourceWalletId,
+          isRepayment: true
+        };
+      });
+
+      const combined = [...txList, ...repaymentTxs].sort((a, b) => new Date(b.date) - new Date(a.date));
+      setTransactions(combined);
+      setCategoryHistory(rememberMany(txList.map((transaction) => transaction.category)));
     } catch (err) {
       console.error(err);
     } finally {
@@ -249,6 +278,19 @@ const TransactionsPage = () => {
       };
       if (!payload.walletId) delete payload.walletId;
 
+      const targetWallet = wallets.find(w => w.id === payload.walletId);
+      if (targetWallet && targetWallet.cardType?.toLowerCase() === 'credit') {
+        const avail = Math.max(0, Number(targetWallet.creditLimit || 0) - Number(targetWallet.outstandingBalance || 0));
+        if (payload.type === 'expense' && payload.amount > avail) {
+          alert(`Purchase amount (${formatCurrency(payload.amount)}) exceeds available credit (${formatCurrency(avail)}).`);
+          return;
+        }
+        if (payload.type === 'income') {
+          alert('Credit cards only record expenses / purchases. To record repayments, use the Pay Credit Card feature in your Wallet.');
+          return;
+        }
+      }
+
       if (isGuest) {
         if (editingTransaction) {
           guestStorage.transactions.update(editingTransaction.id, payload);
@@ -268,6 +310,7 @@ const TransactionsPage = () => {
       fetchData();
     } catch (err) {
       console.error(err);
+      alert(err.response?.data?.message || err.message || 'Failed to save transaction');
     }
   };
 
@@ -297,36 +340,77 @@ const TransactionsPage = () => {
       rows.push(
         <tr
           key={tx.id || idx}
-          onClick={() => openEditModal(tx)}
-          className="cursor-pointer border-b border-border last:border-0 hover:bg-background/30 transition-colors animate-[fade-in_0.3s_ease-out_both]"
+          onClick={() => {
+            if (!tx.isRepayment) openEditModal(tx);
+          }}
+          className={`border-b border-border last:border-0 hover:bg-background/30 transition-colors animate-[fade-in_0.3s_ease-out_both] ${tx.isRepayment ? 'cursor-default bg-primary/[0.02]' : 'cursor-pointer'}`}
           style={{animationDelay: `${idx * 50}ms`}}
         >
           <td className="px-5 py-3.5">
             <div className="flex items-center gap-3">
-              <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${tx.type === 'income' ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger'}`}>
-                {tx.type === 'income' ? <ArrowDownLeft size={17} /> : <ArrowUpRight size={17} />}
+              <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${
+                tx.type === 'transfer'
+                  ? 'bg-primary/10 text-primary'
+                  : tx.type === 'income' || tx.transactionKind === 'refund'
+                    ? 'bg-success/10 text-success'
+                    : 'bg-danger/10 text-danger'
+              }`}>
+                {tx.type === 'transfer' ? (
+                  <RotateCcw size={16} />
+                ) : tx.type === 'income' || tx.transactionKind === 'refund' ? (
+                  <ArrowDownLeft size={17} />
+                ) : (
+                  <ArrowUpRight size={17} />
+                )}
               </span>
               <div className="min-w-0">
-                <p className="truncate text-sm font-semibold text-neutral-text">{tx.description || tx.category}</p>
+                <div className="flex items-center gap-2">
+                  <p className="truncate text-sm font-semibold text-neutral-text">{tx.description || tx.category}</p>
+                  {tx.transactionKind === 'purchase' && (
+                    <span className="rounded-md bg-purple-100 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider">
+                      Credit
+                    </span>
+                  )}
+                  {tx.transactionKind === 'repayment' && (
+                    <span className="rounded-md bg-primary/15 text-primary px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider">
+                      Settlement
+                    </span>
+                  )}
+                  {tx.transactionKind === 'refund' && (
+                    <span className="rounded-md bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider">
+                      Refund
+                    </span>
+                  )}
+                </div>
                 <p className="mt-0.5 truncate text-xs text-neutral-muted">{tx.category} · {formatDate(tx.date)}</p>
               </div>
             </div>
           </td>
-          <td className={`px-5 py-3.5 text-right text-sm font-bold tabular-nums ${tx.type === 'income' ? 'text-success' : 'text-danger'}`}>
-            {tx.type === 'income' ? '+' : '-'}{formatCurrency(tx.amount)}
+          <td className={`px-5 py-3.5 text-right text-sm font-bold tabular-nums ${
+            tx.type === 'transfer'
+              ? 'text-primary'
+              : tx.type === 'income' || tx.transactionKind === 'refund'
+                ? 'text-success'
+                : 'text-danger'
+          }`}>
+            {tx.type === 'transfer' ? '↔ ' : tx.type === 'income' || tx.transactionKind === 'refund' ? '+' : '-'}{formatCurrency(Math.abs(tx.amount))}
           </td>
           <td className="px-5 py-3.5 text-right">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleDelete(tx.id);
-              }}
-              className="p-2 text-neutral-muted hover:text-danger hover:bg-danger/10 rounded-full transition-colors"
-              title="Delete transaction"
-              aria-label="Delete transaction"
-            >
-              <Trash2 size={18} />
-            </button>
+            {!tx.isRepayment ? (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDelete(tx.id);
+                }}
+                className="p-2 text-neutral-muted hover:text-danger hover:bg-danger/10 rounded-full transition-colors"
+                title="Delete transaction"
+                aria-label="Delete transaction"
+              >
+                <Trash2 size={18} />
+              </button>
+            ) : (
+              <span className="text-[11px] text-neutral-muted/60 italic">Wallet repayment</span>
+            )}
           </td>
         </tr>
       );
@@ -597,30 +681,119 @@ const TransactionsPage = () => {
             </p>
           </div>
 
+          {/* Wallet Selector with Groups and Live Available Credit Check */}
           <div>
-            <label className="mb-1 block text-sm font-medium text-neutral-muted">Wallet or card <span className="font-normal">(optional)</span></label>
+            <label className="mb-1 block text-sm font-medium text-neutral-muted">Wallet or payment method <span className="font-normal">(optional)</span></label>
             <select 
               className="w-full rounded-input border border-border bg-input-bg p-2.5 text-neutral-text focus:border-primary focus:outline-none"
               value={formData.walletId}
               onChange={e => setFormData({...formData, walletId: e.target.value})}
             >
-              <option value="">No Card Selected</option>
-              {wallets.map(w => (
-                <option key={w.id} value={w.id}>
-                  {w.bankName || w.cardType} (...{w.cardNumber ? w.cardNumber.slice(-4) : ''})
-                </option>
-              ))}
+              <option value="">No Card Selected (Cash / Untracked)</option>
+              
+              {wallets.some(w => w.cardType?.toLowerCase() === 'credit') && (
+                <optgroup label="Credit Cards">
+                  {wallets.filter(w => w.cardType?.toLowerCase() === 'credit').map(w => {
+                    const avail = Math.max(0, Number(w.creditLimit || 0) - Number(w.outstandingBalance || 0));
+                    return (
+                      <option key={w.id} value={w.id}>
+                        💳 {w.cardName || w.bankName} (•••• {String(w.cardNumber || '').slice(-4)}) — Available: {formatCurrency(avail)}
+                      </option>
+                    );
+                  })}
+                </optgroup>
+              )}
+
+              {wallets.some(w => ['debit', 'personal'].includes(w.cardType?.toLowerCase())) && (
+                <optgroup label="Debit Cards & Bank Accounts">
+                  {wallets.filter(w => ['debit', 'personal'].includes(w.cardType?.toLowerCase())).map(w => (
+                    <option key={w.id} value={w.id}>
+                      🏦 {w.cardName || w.bankName || 'Bank'} (•••• {String(w.cardNumber || '').slice(-4)}) — Balance: {formatCurrency(w.balance || 0)}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+
+              {wallets.some(w => w.cardType?.toLowerCase() === 'upi') && (
+                <optgroup label="UPI Accounts">
+                  {wallets.filter(w => w.cardType?.toLowerCase() === 'upi').map(w => (
+                    <option key={w.id} value={w.id}>
+                      📱 {w.bankName || 'UPI'} ({w.cardNumber}) — Balance: {formatCurrency(w.balance || 0)}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+
+              {wallets.some(w => w.cardType?.toLowerCase() === 'cash') && (
+                <optgroup label="Cash">
+                  {wallets.filter(w => w.cardType?.toLowerCase() === 'cash').map(w => (
+                    <option key={w.id} value={w.id}>
+                      💵 {w.cardName || 'Cash'} — Balance: {formatCurrency(w.balance || 0)}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
             </select>
           </div>
+
+          {/* Credit Card Selected Info Banner */}
+          {(() => {
+            const selectedWallet = wallets.find(w => w.id === formData.walletId);
+            if (!selectedWallet || selectedWallet.cardType?.toLowerCase() !== 'credit') return null;
+            const limit = Number(selectedWallet.creditLimit || 0);
+            const debt = Number(selectedWallet.outstandingBalance || 0);
+            const avail = Math.max(0, limit - debt);
+            const requestedAmount = parseFloat(formData.amount) || 0;
+            const exceedsCredit = formData.type === 'expense' && requestedAmount > avail;
+
+            return (
+              <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 space-y-1.5 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-neutral-text flex items-center gap-1.5">
+                    <CreditCard size={14} className="text-primary" />
+                    {selectedWallet.cardName || selectedWallet.bankName || 'Credit Card'}
+                  </span>
+                  <span className={`font-bold tabular-nums ${exceedsCredit ? 'text-danger' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                    Available Credit: {formatCurrency(avail)}
+                  </span>
+                </div>
+                <div className="flex justify-between text-[11px] text-neutral-muted">
+                  <span>Credit Limit: {formatCurrency(limit)}</span>
+                  <span>Outstanding: {formatCurrency(debt)}</span>
+                </div>
+                {exceedsCredit && (
+                  <p className="text-danger font-semibold text-[11px] pt-1 border-t border-danger/20">
+                    ⚠️ Expense amount ({formatCurrency(requestedAmount)}) exceeds available credit ({formatCurrency(avail)})!
+                  </p>
+                )}
+                {formData.type === 'income' && (
+                  <p className="text-amber-600 dark:text-amber-400 font-semibold text-[11px] pt-1 border-t border-amber-300">
+                    ℹ️ Credit cards only accept expenses. To record repayments or refunds, use the Wallet page.
+                  </p>
+                )}
+              </div>
+            );
+          })()}
 
           <div>
             <label className="mb-1 block text-sm font-medium text-neutral-muted">Description</label>
             <input type="text" className="w-full rounded-input border border-border bg-input-bg p-2.5 text-neutral-text focus:border-primary focus:outline-none" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} />
           </div>
 
-          <Button type="submit" className="w-full mt-4">
-            {editingTransaction ? 'Update Transaction' : 'Save Transaction'}
-          </Button>
+          {(() => {
+            const selectedWallet = wallets.find(w => w.id === formData.walletId);
+            const isCredit = selectedWallet?.cardType?.toLowerCase() === 'credit';
+            const avail = isCredit ? Math.max(0, Number(selectedWallet.creditLimit || 0) - Number(selectedWallet.outstandingBalance || 0)) : Infinity;
+            const requestedAmount = parseFloat(formData.amount) || 0;
+            const isOverLimit = isCredit && formData.type === 'expense' && requestedAmount > avail;
+            const isCreditIncome = isCredit && formData.type === 'income';
+
+            return (
+              <Button type="submit" disabled={isOverLimit || isCreditIncome} className="w-full mt-4">
+                {editingTransaction ? 'Update Transaction' : 'Save Transaction'}
+              </Button>
+            );
+          })()}
         </form>
       </Modal>
     </Layout>

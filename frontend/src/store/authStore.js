@@ -20,7 +20,7 @@ const useAuthStore = create(persist((set) => ({
     // Clear guest localStorage keys if in guest mode
     const state = useAuthStore.getState();
     if (state.isGuest) {
-      ['guest-wallets', 'guest-transactions', 'guest-goals', 'guest-budget', 'guest-seeded'].forEach(
+      ['guest-wallets', 'guest-transactions', 'guest-goals', 'guest-budget', 'guest-credit-repayments', 'guest-credit-statements', 'guest-seeded'].forEach(
         (key) => localStorage.removeItem(key)
       );
     }

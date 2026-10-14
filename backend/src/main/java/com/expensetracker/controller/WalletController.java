@@ -1,17 +1,27 @@
 package com.expensetracker.controller;
 
 import com.expensetracker.dto.ApiResponse;
+import com.expensetracker.dto.CreditActivityItem;
+import com.expensetracker.dto.CreditRepaymentRequest;
+import com.expensetracker.dto.CreditRepaymentResponse;
+import com.expensetracker.dto.CreditStatementRequest;
+import com.expensetracker.model.CreditRepayment;
+import com.expensetracker.model.CreditStatement;
 import com.expensetracker.model.User;
 import com.expensetracker.model.Wallet;
 import com.expensetracker.repository.UserRepository;
 import com.expensetracker.service.WalletService;
+import com.expensetracker.service.CreditCardService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
+import java.time.LocalDate;
 
 @RestController
 @RequestMapping("/api/wallet")
@@ -19,6 +29,7 @@ import java.util.List;
 public class WalletController {
 
     private final WalletService walletService;
+    private final CreditCardService creditCardService;
     private final UserRepository userRepository;
 
     private String getUserId() {
@@ -34,6 +45,16 @@ public class WalletController {
         return ResponseEntity.ok(ApiResponse.success(wallets, "Wallets fetched"));
     }
 
+    @GetMapping("/repayments")
+    public ResponseEntity<ApiResponse<List<CreditRepayment>>> getAllRepayments(
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate) {
+        LocalDateTime start = startDate != null ? LocalDate.parse(startDate).atStartOfDay() : null;
+        LocalDateTime end = endDate != null ? LocalDate.parse(endDate).atTime(LocalTime.MAX) : null;
+        List<CreditRepayment> repayments = creditCardService.getRepayments(getUserId(), start, end);
+        return ResponseEntity.ok(ApiResponse.success(repayments, "Credit repayments fetched"));
+    }
+
     @PostMapping
     public ResponseEntity<ApiResponse<Wallet>> addWallet(@RequestBody Wallet wallet) {
         Wallet created = walletService.addWallet(getUserId(), wallet);
@@ -44,6 +65,40 @@ public class WalletController {
     public ResponseEntity<ApiResponse<Wallet>> addMoney(@PathVariable String id, @RequestParam Double amount) {
         Wallet updated = walletService.addMoney(id, getUserId(), amount);
         return ResponseEntity.ok(ApiResponse.success(updated, "Money added to wallet"));
+    }
+
+    @PostMapping("/{id}/repayments")
+    public ResponseEntity<ApiResponse<CreditRepaymentResponse>> repay(
+            @PathVariable String id, @RequestBody CreditRepaymentRequest request) {
+        CreditRepaymentResponse result = creditCardService.repay(getUserId(), id, request);
+        return ResponseEntity.ok(ApiResponse.success(result, "Internal repayment recorded"));
+    }
+
+    @DeleteMapping("/{id}/repayments/{repaymentId}")
+    public ResponseEntity<ApiResponse<Void>> reverseRepayment(
+            @PathVariable String id, @PathVariable String repaymentId) {
+        creditCardService.reverseRepayment(getUserId(), id, repaymentId);
+        return ResponseEntity.ok(ApiResponse.success(null, "Repayment reversed successfully"));
+    }
+
+    @GetMapping("/{id}/statements")
+    public ResponseEntity<ApiResponse<List<CreditStatement>>> getStatements(@PathVariable String id) {
+        return ResponseEntity.ok(ApiResponse.success(
+                creditCardService.getStatements(getUserId(), id), "Credit statements fetched"));
+    }
+
+    @PostMapping("/{id}/statements/generate")
+    public ResponseEntity<ApiResponse<CreditStatement>> generateStatement(
+            @PathVariable String id, @RequestBody(required = false) CreditStatementRequest request) {
+        LocalDate asOfDate = request == null ? null : request.getAsOfDate();
+        return ResponseEntity.ok(ApiResponse.success(
+                creditCardService.generateStatement(getUserId(), id, asOfDate), "Credit statement generated"));
+    }
+
+    @GetMapping("/{id}/activity")
+    public ResponseEntity<ApiResponse<List<CreditActivityItem>>> getCreditActivity(@PathVariable String id) {
+        return ResponseEntity.ok(ApiResponse.success(
+                creditCardService.getActivity(getUserId(), id), "Credit card activity fetched"));
     }
 
     @PutMapping("/{id}")

@@ -11,11 +11,18 @@ import EditBudgetModal from '../components/ui/EditBudgetModal';
 import AddGoalModal from '../components/ui/AddGoalModal';
 import EditGoalModal from '../components/ui/EditGoalModal';
 import AddBalanceModal from '../components/ui/AddBalanceModal';
+import PayCreditCardModal from '../components/ui/PayCreditCardModal';
 import { formatCurrency } from '../utils/formatCurrency';
+import { calculateNextDueDate } from '../utils/dateHelpers';
 import {
+  AlertTriangle,
   ArrowDownLeft,
+  ArrowRight,
   ArrowUpRight,
+  CheckCircle,
+  Clock,
   CreditCard,
+  Percent,
   Plus,
   ReceiptText,
   Settings2,
@@ -33,6 +40,8 @@ const DashboardPage = () => {
   const [summary, setSummary] = useState(null);
   const [transactions, setTransactions] = useState([]);
   const [wallets, setWallets] = useState([]);
+  const [creditActivity, setCreditActivity] = useState([]);
+  const [creditActivityError, setCreditActivityError] = useState('');
   const [goals, setGoals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false);
@@ -40,6 +49,8 @@ const DashboardPage = () => {
   const [isEditGoalModalOpen, setIsEditGoalModalOpen] = useState(false);
   const [selectedGoalToEdit, setSelectedGoalToEdit] = useState(null);
   const [topUpWallet, setTopUpWallet] = useState(null);
+  const [isPayModalOpen, setIsPayModalOpen] = useState(false);
+  const [selectedCardForPayment, setSelectedCardForPayment] = useState(null);
 
   const [allTransactions, setAllTransactions] = useState([]);
   const [selectedWallet, setSelectedWallet] = useState(null);
@@ -185,6 +196,38 @@ const DashboardPage = () => {
     return undefined;
   }, []);
 
+  useEffect(() => {
+    const cards = wallets.filter(
+      (wallet) => wallet.cardType?.toLowerCase() === 'credit' && wallet.creditTermsConfigured
+    );
+    if (cards.length === 0) {
+      setCreditActivity([]);
+      setCreditActivityError('');
+      return undefined;
+    }
+    let cancelled = false;
+    Promise.all(cards.map(async (card) => {
+      const items = isGuest
+        ? guestStorage.transactions.getCreditActivity(card.id)
+        : await walletService.getCreditActivity(card.id);
+      return items || [];
+    }))
+      .then((lists) => {
+        if (!cancelled) {
+          setCreditActivity(lists.flat());
+          setCreditActivityError('');
+        }
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          setCreditActivityError(error.message || 'Credit repayment activity could not be loaded.');
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [wallets, isGuest]);
+
   const chartData = React.useMemo(() => {
     const expensesByDay = {};
     allTransactions.forEach(tx => {
@@ -228,6 +271,60 @@ const DashboardPage = () => {
     (total, transaction) => total + (transaction.type === 'income' ? Number(transaction.amount) || 0 : 0),
     0
   );
+  const configuredCreditCards = wallets.filter(
+    (wallet) => wallet.cardType?.toLowerCase() === 'credit' && wallet.creditTermsConfigured
+  );
+  const outstandingCreditTotal = configuredCreditCards.reduce(
+    (total, wallet) => total + (Number(wallet.outstandingBalance) || 0),
+    0
+  );
+  const totalCreditLimit = configuredCreditCards.reduce(
+    (total, wallet) => total + (Number(wallet.creditLimit) || 0),
+    0
+  );
+  const availableCreditTotal = configuredCreditCards.reduce(
+    (total, wallet) => total + Math.max(0, (Number(wallet.creditLimit) || 0) - (Number(wallet.outstandingBalance) || 0)),
+    0
+  );
+  const overallUtilization = totalCreditLimit > 0
+    ? Math.min(100, Math.round((outstandingCreditTotal / totalCreditLimit) * 100))
+    : 0;
+  const currentMonthPrefix = new Date().toISOString().slice(0, 7);
+  const paymentsThisMonth = creditActivity
+    .filter((item) => item.transactionKind === 'repayment' && String(item.paymentDate || item.date || '').startsWith(currentMonthPrefix))
+    .reduce((total, item) => total + (Number(item.amount) || 0), 0);
+  const totalCreditRepayments = creditActivity
+    .filter((item) => item.transactionKind === 'repayment')
+    .reduce((total, item) => total + (Number(item.amount) || 0), 0);
+
+  const creditCardBills = configuredCreditCards.map((card) => {
+    const due = calculateNextDueDate(card);
+    const balance = Number(card.outstandingBalance || 0);
+    return {
+      ...card,
+      due,
+      hasBalance: balance > 0,
+    };
+  });
+  const overdueCount = creditCardBills.filter((b) => b.hasBalance && b.due?.status === 'overdue').length;
+  const upcomingCount = creditCardBills.filter((b) => b.hasBalance && (b.due?.status === 'upcoming' || b.due?.status === 'due_today')).length;
+
+  const handleOpenPayModal = (card) => {
+    setSelectedCardForPayment(card);
+    setIsPayModalOpen(true);
+  };
+
+  const handlePayCreditCardSubmit = async (cardId, request) => {
+    if (isGuest) {
+      const res = guestStorage.transactions.repay(cardId, request);
+      await fetchData();
+      return res;
+    } else {
+      const res = await walletService.repay(cardId, request);
+      await fetchData();
+      return res;
+    }
+  };
   const savingsGoalTotal = goals.reduce((total, goal) => total + (Number(goal.amount) || 0), 0);
   const completedSavingsTotal = goals.reduce(
     (total, goal) => total + (goal.completed ? Number(goal.amount) || 0 : 0),
@@ -419,6 +516,148 @@ const DashboardPage = () => {
             ))}
           </section>
 
+          {configuredCreditCards.length > 0 && (
+            <section aria-label="Credit liabilities and repayments" className="rounded-2xl border border-border bg-surface p-4 shadow-card sm:p-5">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-3">
+                <div>
+                  <h2 className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-muted">Credit Liabilities & Payments</h2>
+                  <p className="mt-0.5 text-xs text-neutral-muted">
+                    Credit limits represent debt liabilities, not bank cash. Repayments settle balances without duplicating expenses.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  {overdueCount > 0 && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-danger/10 px-2.5 py-1 text-[11px] font-bold text-danger">
+                      <AlertTriangle size={12} /> {overdueCount} Overdue Bill{overdueCount > 1 ? 's' : ''}
+                    </span>
+                  )}
+                  {upcomingCount > 0 && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-bold text-primary">
+                      <Clock size={12} /> {upcomingCount} Due Soon
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <div className="min-w-0 rounded-2xl border border-border bg-background/70 p-3.5">
+                  <span className="mb-3 flex h-8 w-8 items-center justify-center rounded-xl bg-danger/10 text-danger">
+                    <CreditCard size={16} />
+                  </span>
+                  <p className="truncate text-[10px] font-semibold uppercase tracking-wide text-neutral-muted">Total Debt Liability</p>
+                  <p className="mt-1 truncate text-sm font-bold tabular-nums text-danger">{formatCurrency(outstandingCreditTotal)}</p>
+                </div>
+
+                <div className="min-w-0 rounded-2xl border border-border bg-background/70 p-3.5">
+                  <span className="mb-3 flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                    <CreditCard size={16} />
+                  </span>
+                  <p className="truncate text-[10px] font-semibold uppercase tracking-wide text-neutral-muted">Available Credit</p>
+                  <p className="mt-1 truncate text-sm font-bold tabular-nums text-primary">{formatCurrency(availableCreditTotal)}</p>
+                </div>
+
+                <div className="min-w-0 rounded-2xl border border-border bg-background/70 p-3.5">
+                  <span className="mb-3 flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                    <Percent size={16} />
+                  </span>
+                  <p className="truncate text-[10px] font-semibold uppercase tracking-wide text-neutral-muted">Credit Utilization</p>
+                  <div className="mt-1 flex items-baseline gap-2">
+                    <p className={`text-sm font-bold tabular-nums ${overallUtilization > 70 ? 'text-danger' : overallUtilization > 30 ? 'text-amber-500' : 'text-neutral-text'}`}>
+                      {overallUtilization}%
+                    </p>
+                    <span className="text-[10px] text-neutral-muted">of {formatCurrency(totalCreditLimit)}</span>
+                  </div>
+                  <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-border">
+                    <div
+                      className={`h-full rounded-full transition-all duration-500 ${
+                        overallUtilization > 70 ? 'bg-danger' : overallUtilization > 30 ? 'bg-amber-500' : 'bg-primary'
+                      }`}
+                      style={{ width: `${overallUtilization}%` }}
+                    />
+                  </div>
+                </div>
+
+                <div className="min-w-0 rounded-2xl border border-border bg-background/70 p-3.5">
+                  <span className="mb-3 flex h-8 w-8 items-center justify-center rounded-xl bg-success/10 text-success">
+                    <ArrowUpRight size={16} />
+                  </span>
+                  <p className="truncate text-[10px] font-semibold uppercase tracking-wide text-neutral-muted">Paid This Month</p>
+                  <p className="mt-1 truncate text-sm font-bold tabular-nums text-success">{formatCurrency(paymentsThisMonth)}</p>
+                </div>
+              </div>
+
+              {/* Individual Card Due Dates and Quick Pay Action */}
+              <div className="mt-4 divide-y divide-border rounded-xl border border-border bg-background/50">
+                {creditCardBills.map((item) => {
+                  const cardLimit = Number(item.creditLimit || 0);
+                  const cardBalance = Number(item.outstandingBalance || 0);
+                  const cardAvail = Math.max(0, cardLimit - cardBalance);
+                  const cardUtil = cardLimit > 0 ? Math.min(100, Math.round((cardBalance / cardLimit) * 100)) : 0;
+                  const isOverdue = item.due?.status === 'overdue';
+                  const isDueToday = item.due?.status === 'due_today';
+
+                  return (
+                    <div key={item.id} className="flex flex-col gap-3 p-3.5 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-neutral-text text-xs sm:text-sm">
+                            {item.cardName || item.bankName || 'Credit Card'}
+                          </span>
+                          {item.cardNumber && (
+                            <span className="font-mono text-[11px] text-neutral-muted">
+                              •••• {String(item.cardNumber).slice(-4)}
+                            </span>
+                          )}
+                          {item.hasBalance ? (
+                            isOverdue ? (
+                              <span className="rounded-full bg-danger/10 px-2 py-0.5 text-[10px] font-bold text-danger">
+                                Overdue by {Math.abs(item.due?.diffDays)}d
+                              </span>
+                            ) : isDueToday ? (
+                              <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-bold text-amber-500">
+                                Due Today
+                              </span>
+                            ) : (
+                              <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
+                                Due in {item.due?.diffDays}d ({item.due?.dateStr})
+                              </span>
+                            )
+                          ) : (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-[10px] font-bold text-success">
+                              <CheckCircle size={10} /> Fully Paid
+                            </span>
+                          )}
+                        </div>
+                        <div className="mt-1 flex flex-wrap items-center gap-3 text-[11px] text-neutral-muted">
+                          <span>Balance: <strong className="text-neutral-text font-semibold">{formatCurrency(cardBalance)}</strong></span>
+                          <span>Available: <strong className="text-primary font-semibold">{formatCurrency(cardAvail)}</strong></span>
+                          <span>Limit: <strong>{formatCurrency(cardLimit)}</strong></span>
+                          <span>Util: <strong className={cardUtil > 70 ? 'text-danger' : cardUtil > 30 ? 'text-amber-500' : 'text-neutral-text'}>{cardUtil}%</strong></span>
+                        </div>
+                      </div>
+
+                      <div className="flex shrink-0 items-center gap-2">
+                        {item.hasBalance ? (
+                          <button
+                            type="button"
+                            onClick={() => handleOpenPayModal(item)}
+                            className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-primary-light active:scale-95"
+                          >
+                            <CreditCard size={13} /> Pay Bill
+                          </button>
+                        ) : (
+                          <span className="text-[11px] font-medium text-neutral-muted italic">No payment due</span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {creditActivityError && <p role="alert" className="mt-2 text-xs text-danger">{creditActivityError}</p>}
+            </section>
+          )}
+
           <div className="grid min-w-0 grid-cols-1 gap-4 2xl:grid-cols-[minmax(0,1.5fr)_minmax(240px,0.8fr)]">
             <div className="h-[300px] min-w-0 sm:h-[320px]">
               <ExpenseStatsChart data={chartData} allTransactions={allTransactions} />
@@ -539,6 +778,18 @@ const DashboardPage = () => {
         isOpen={Boolean(topUpWallet)}
         onClose={() => setTopUpWallet(null)}
         onConfirm={handleAddBalance}
+      />
+
+      <PayCreditCardModal
+        isOpen={isPayModalOpen}
+        onClose={() => {
+          setIsPayModalOpen(false);
+          setSelectedCardForPayment(null);
+        }}
+        card={selectedCardForPayment}
+        allWallets={wallets}
+        onPay={handlePayCreditCardSubmit}
+        isGuest={isGuest}
       />
     </Layout>
   );

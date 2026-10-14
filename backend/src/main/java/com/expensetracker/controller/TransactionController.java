@@ -1,6 +1,7 @@
 package com.expensetracker.controller;
 
 import com.expensetracker.dto.ApiResponse;
+import com.expensetracker.dto.CreditRefundRequest;
 import com.expensetracker.model.Transaction;
 import com.expensetracker.model.User;
 import com.expensetracker.repository.UserRepository;
@@ -61,6 +62,14 @@ public class TransactionController {
     public ResponseEntity<ApiResponse<Transaction>> addTransaction(@RequestBody Transaction transaction) {
         Transaction created = transactionService.addTransaction(getUserId(), transaction);
         return ResponseEntity.ok(ApiResponse.success(created, "Transaction added"));
+    }
+
+    @PostMapping("/{id}/refunds")
+    public ResponseEntity<ApiResponse<Transaction>> recordCreditRefund(
+            @PathVariable String id,
+            @RequestBody CreditRefundRequest request) {
+        Transaction refund = transactionService.recordCreditRefund(getUserId(), id, request);
+        return ResponseEntity.ok(ApiResponse.success(refund, "Credit card refund recorded"));
     }
 
     @PutMapping("/{id}")

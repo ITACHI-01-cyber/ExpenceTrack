@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { Eye, EyeOff, Pencil, Plus, Trash2, Wifi, Zap, RotateCcw } from 'lucide-react';
+import { Eye, EyeOff, Pencil, Plus, Trash2, Wifi, Zap, RotateCcw, CreditCard } from 'lucide-react';
 import { formatCurrency } from '../../utils/formatCurrency';
 import { getCardBackground } from '../../utils/cardDesigns';
 import { CardIconRenderer } from '../../utils/cardIcons';
@@ -110,6 +110,7 @@ const WalletCard = ({
   onAddMoney,
   onEdit,
   onRemove,
+  onPayCreditCard,
   removing = false,
   compact = false
 }) => {
@@ -131,6 +132,12 @@ const WalletCard = ({
 
   const isUpi  = cardType.toLowerCase() === 'upi';
   const isCash = cardType.toLowerCase() === 'cash';
+  const isCredit = cardType.toLowerCase() === 'credit';
+  const isConfiguredCredit = cardType.toLowerCase() === 'credit' && wallet?.creditTermsConfigured;
+  const cardCreditBalance = isConfiguredCredit ? Math.max(0, -Number(wallet?.outstandingBalance || 0)) : 0;
+  const shownBalance = isConfiguredCredit
+    ? Math.max(0, Number(wallet?.outstandingBalance || 0))
+    : isCredit ? null : balance;
   const detailsVisible = showDetails || preview;
   const safeNumber = String(cardNumber || '');
   const displayId = isCash
@@ -305,7 +312,7 @@ const WalletCard = ({
                     )}
                     <div className="min-w-0">
                       <p className="text-[10px] font-bold uppercase tracking-[0.18em] opacity-85 truncate">
-                        {bankName || cardType}
+                        {wallet?.cardName || bankName || cardType}
                       </p>
                       <p className="text-[9.5px] font-medium opacity-60 capitalize mt-0.5">
                         {isCash ? 'Cash Account' : isUpi ? 'UPI Payment' : `${cardType} Card`}
@@ -359,9 +366,15 @@ const WalletCard = ({
                   )}
                   {!isCash && (
                     <div className="text-right shrink-0">
-                      <p className="text-[7px] uppercase tracking-[0.12em] opacity-55 mb-0.5">Balance</p>
+                      <p className="text-[7px] uppercase tracking-[0.12em] opacity-55 mb-0.5">
+                        {isConfiguredCredit ? cardCreditBalance > 0 ? 'Card credit' : 'Outstanding' : isCredit ? 'Credit terms' : 'Balance'}
+                      </p>
                       <p className="text-[15px] font-black tabular-nums tracking-wide drop-shadow">
-                        {detailsVisible ? formatCurrency(balance) : '₹ ••••'}
+                        {isCredit && !isConfiguredCredit
+                          ? 'Not configured'
+                          : detailsVisible
+                            ? formatCurrency(cardCreditBalance > 0 ? cardCreditBalance : shownBalance || 0)
+                            : '₹ ••••'}
                       </p>
                     </div>
                   )}
@@ -531,14 +544,25 @@ const WalletCard = ({
           className="w-full max-w-[350px] sm:max-w-[390px] flex items-center justify-between gap-2 mt-3"
           style={{ animation: 'fadeSlideUp 0.35s ease both' }}
         >
-          <button
-            type="button"
-            onClick={() => onAddMoney?.(wallet)}
-            className="flex-1 inline-flex h-10 items-center justify-center gap-1.5 rounded-xl border border-border bg-white text-xs font-bold text-primary hover:bg-primary hover:text-white hover:border-primary shadow-sm transition-all duration-200 active:scale-95"
-          >
-            <Plus size={14} />
-            Add balance
-          </button>
+          {!isCredit ? (
+            <button
+              type="button"
+              onClick={() => onAddMoney?.(wallet)}
+              className="flex-1 inline-flex h-10 items-center justify-center gap-1.5 rounded-xl border border-border bg-white text-xs font-bold text-primary hover:bg-primary hover:text-white hover:border-primary shadow-sm transition-all duration-200 active:scale-95"
+            >
+              <Plus size={14} />
+              Add balance
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => onPayCreditCard?.(wallet)}
+              className="flex-1 inline-flex h-10 items-center justify-center gap-1.5 rounded-xl border border-primary/25 bg-gradient-to-r from-primary to-primary-light text-xs font-bold text-white hover:shadow-md hover:brightness-105 shadow-sm transition-all duration-200 active:scale-95"
+            >
+              <CreditCard size={14} />
+              Pay Credit Card
+            </button>
+          )}
 
           <div className="flex gap-2">
             <button

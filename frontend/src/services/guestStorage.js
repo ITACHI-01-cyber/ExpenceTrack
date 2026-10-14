@@ -11,6 +11,8 @@ const LS_KEYS = {
   transactions: 'guest-transactions',
   goals: 'guest-goals',
   budget: 'guest-budget',
+  creditRepayments: 'guest-credit-repayments',
+  creditStatements: 'guest-credit-statements',
   seeded: 'guest-seeded',
 };
 
@@ -39,7 +41,7 @@ const DEMO_WALLETS = [
     bankName: 'HDFC Bank',
     cardType: 'debit',
     cardBrand: 'Visa',
-    cardNumber: '4111222233334444',
+    cardNumber: '4444',
     cardHolderName: 'Guest User',
     expiryDate: '12/28',
     balance: 24500,
@@ -180,11 +182,29 @@ const wallets = {
     if (walletId) {
       const idx = list.findIndex((w) => w.id === walletId);
       if (idx === -1) return null;
+      const wasConfigured = Boolean(list[idx].creditTermsConfigured);
+      const previousOutstandingBalance = list[idx].outstandingBalance;
       list[idx] = { ...list[idx], ...wallet, id: walletId };
+      if (wasConfigured) {
+        list[idx].outstandingBalance = previousOutstandingBalance;
+        list[idx].creditOpeningBalance = wallet.creditOpeningBalance ?? list[idx].creditOpeningBalance;
+      } else if (wallet.creditTermsConfigured) {
+        list[idx].creditOpeningBalance = Number(wallet.outstandingBalance);
+        list[idx].creditTermsConfiguredAt = new Date().toISOString();
+        list[idx].balance = null;
+      }
       write(LS_KEYS.wallets, list);
       return list[idx];
     }
-    const newWallet = { ...wallet, id: genId(), balance: wallet.balance || 0 };
+    const newWallet = {
+      ...wallet,
+      id: genId(),
+      balance: wallet.creditTermsConfigured ? null : (wallet.balance || 0),
+      outstandingBalance: wallet.creditTermsConfigured ? Number(wallet.outstandingBalance) : null,
+      creditTermsConfigured: Boolean(wallet.creditTermsConfigured),
+      creditOpeningBalance: wallet.creditTermsConfigured ? Number(wallet.outstandingBalance) : null,
+      creditTermsConfiguredAt: wallet.creditTermsConfigured ? new Date().toISOString() : null,
+    };
     list.push(newWallet);
     write(LS_KEYS.wallets, list);
     return newWallet;
@@ -194,6 +214,9 @@ const wallets = {
     const list = wallets.getAll();
     const idx = list.findIndex((w) => w.id === walletId);
     if (idx === -1) return null;
+    if (list[idx].cardType?.toLowerCase() === 'credit') {
+      throw new Error('Credit card balances can only change through purchases and repayments.');
+    }
     list[idx].balance = (list[idx].balance || 0) + Number(amount);
     write(LS_KEYS.wallets, list);
     return list[idx];
@@ -233,11 +256,19 @@ const transactions = {
   create: (tx) => {
     const list = read(LS_KEYS.transactions) || [];
     const newTx = { ...tx, id: genId() };
-    list.push(newTx);
-    write(LS_KEYS.transactions, list);
-
-    // If linked to a wallet, update wallet balance
-    if (newTx.walletId) {
+    newTx.date ||= new Date().toISOString();
+    const linkedWallet = wallets.getAll().find((w) => w.id === newTx.walletId);
+    if (linkedWallet?.cardType === 'credit') {
+      if (newTx.type !== 'expense') throw new Error('Credit card transactions must be expenses.');
+      if (!linkedWallet.creditTermsConfigured) throw new Error('Configure credit terms before recording a purchase.');
+      const amount = Number(newTx.amount);
+      if (linkedWallet.outstandingBalance + amount > linkedWallet.creditLimit) throw new Error('Purchase exceeds available credit.');
+      linkedWallet.outstandingBalance += amount;
+      const allWallets = wallets.getAll();
+      allWallets[allWallets.findIndex((w) => w.id === linkedWallet.id)] = linkedWallet;
+      write(LS_KEYS.wallets, allWallets);
+      newTx.transactionKind = 'purchase';
+    } else if (newTx.walletId) {
       const allWallets = wallets.getAll();
       const idx = allWallets.findIndex((w) => w.id === newTx.walletId);
       if (idx !== -1) {
@@ -250,20 +281,220 @@ const transactions = {
       }
     }
 
+    newTx.transactionKind ||= 'standard';
+    list.push(newTx);
+    write(LS_KEYS.transactions, list);
     return newTx;
+  },
+
+  recordPurchase: (tx) => transactions.create({ ...tx, type: 'expense' }),
+
+  repay: (cardId, request) => {
+    const list = wallets.getAll();
+    const card = list.find((w) => w.id === cardId);
+    const source = list.find((w) => w.id === request.sourceWalletId);
+    if (!card || !source) throw new Error('Choose a credit card and a source wallet.');
+    if (source.cardType?.toLowerCase() === 'credit') throw new Error('Credit cards cannot be repayment sources.');
+    if (!request.idempotencyKey?.trim()) throw new Error('An idempotency key is required.');
+    if (!card.creditTermsConfigured) throw new Error('Configure credit terms before recording a repayment.');
+    const existing = (read(LS_KEYS.creditRepayments) || []).find((item) => item.idempotencyKey === request.idempotencyKey);
+    if (existing) {
+      if (existing.walletId !== cardId || existing.sourceWalletId !== request.sourceWalletId
+          || existing.statementId !== (request.statementId || null)
+          || Number(existing.amount) !== Number(request.amount)) {
+        throw new Error('Idempotency key was already used for a different repayment.');
+      }
+      return { ...existing, outstandingBalance: card.outstandingBalance, sourceWalletBalance: source.balance, replayed: true };
+    }
+    const amount = Number(request.amount);
+    if (!Number.isFinite(amount) || amount <= 0 || amount > card.outstandingBalance || amount > (source.balance || 0)) {
+      throw new Error('Repayment must be positive and within the card balance and source wallet balance.');
+    }
+    card.outstandingBalance -= amount;
+    source.balance = (source.balance || 0) - amount;
+    write(LS_KEYS.wallets, list);
+    const repayment = {
+      id: genId(), walletId: cardId, sourceWalletId: source.id,
+      statementId: request.statementId || null, amount, date: request.date || new Date().toISOString(),
+      transactionKind: 'repayment', idempotencyKey: request.idempotencyKey,
+    };
+    const repayments = read(LS_KEYS.creditRepayments) || [];
+    repayments.push(repayment);
+    write(LS_KEYS.creditRepayments, repayments);
+    return { ...repayment, outstandingBalance: card.outstandingBalance, sourceWalletBalance: source.balance, replayed: false };
+  },
+
+  reverseRepayment: (cardId, repaymentId) => {
+    const repayments = read(LS_KEYS.creditRepayments) || [];
+    const idx = repayments.findIndex((r) => r.id === repaymentId && r.walletId === cardId);
+    if (idx === -1) throw new Error('Repayment record not found.');
+    const repayment = repayments[idx];
+    const list = wallets.getAll();
+    const card = list.find((w) => w.id === cardId);
+    const source = list.find((w) => w.id === repayment.sourceWalletId);
+    if (!card) throw new Error('Credit card not found.');
+    const amount = Number(repayment.amount);
+    const nextOutstanding = Number(card.outstandingBalance || 0) + amount;
+    if (nextOutstanding > Number(card.creditLimit)) {
+      throw new Error('Reversing this repayment would cause card balance to exceed credit limit.');
+    }
+    card.outstandingBalance = nextOutstanding;
+    if (source) {
+      source.balance = Number(source.balance || 0) + amount;
+    }
+    write(LS_KEYS.wallets, list);
+    repayments.splice(idx, 1);
+    write(LS_KEYS.creditRepayments, repayments);
+    return true;
+  },
+
+  getAllRepayments: (params = {}) => {
+    let list = read(LS_KEYS.creditRepayments) || [];
+    if (params.startDate && params.endDate) {
+      const start = new Date(params.startDate);
+      const end = new Date(params.endDate);
+      end.setHours(23, 59, 59, 999);
+      list = list.filter((r) => {
+        const d = new Date(r.date);
+        return d >= start && d <= end;
+      });
+    }
+    return list.sort((a, b) => new Date(b.date) - new Date(a.date));
+  },
+
+  recordRefund: (purchaseId, request) => {
+    const txList = read(LS_KEYS.transactions) || [];
+    const purchase = txList.find((tx) => tx.id === purchaseId && tx.transactionKind === 'purchase');
+    if (!purchase) throw new Error('Refunds must reference a saved credit card purchase.');
+    if (!request.idempotencyKey?.trim()) throw new Error('An idempotency key is required.');
+    const previous = txList.find((tx) => tx.transactionKind === 'refund' && tx.idempotencyKey === request.idempotencyKey);
+    if (previous) {
+      if (previous.relatedTransactionId !== purchaseId || Math.abs(Number(previous.amount)) !== Number(request.amount)) {
+        throw new Error('Idempotency key was already used for a different refund.');
+      }
+      return previous;
+    }
+    const amount = Number(request.amount);
+    const alreadyRefunded = txList
+      .filter((tx) => tx.transactionKind === 'refund' && tx.relatedTransactionId === purchaseId)
+      .reduce((total, refund) => total + Math.abs(Number(refund.amount)), 0);
+    if (!Number.isFinite(amount) || amount <= 0 || amount + alreadyRefunded > Number(purchase.amount)) {
+      throw new Error('Refund must be positive and cannot exceed the unrefunded purchase amount.');
+    }
+    const cardList = wallets.getAll();
+    const card = cardList.find((wallet) => wallet.id === purchase.walletId);
+    if (!card?.creditTermsConfigured) throw new Error('The original card is not configured for credit.');
+    card.outstandingBalance = Number(card.outstandingBalance || 0) - amount;
+    const refundDate = request.date || new Date().toISOString();
+    if (new Date(refundDate) < new Date(purchase.date)) {
+      throw new Error('Refund date cannot precede the original purchase.');
+    }
+    const refund = {
+      ...purchase,
+      id: genId(),
+      type: 'expense',
+      amount: -amount,
+      description: `Refund for ${purchase.description || 'credit card purchase'}`,
+      date: refundDate,
+      transactionKind: 'refund',
+      idempotencyKey: request.idempotencyKey,
+      relatedTransactionId: purchaseId,
+      isRecurring: false,
+    };
+    txList.push(refund);
+    const walletIndex = cardList.findIndex((wallet) => wallet.id === card.id);
+    cardList[walletIndex] = card;
+    write(LS_KEYS.transactions, txList);
+    write(LS_KEYS.wallets, cardList);
+    return refund;
+  },
+
+  getCreditActivity: (cardId) => [
+    ...(read(LS_KEYS.transactions) || [])
+      .filter((tx) => tx.walletId === cardId && ['purchase', 'refund'].includes(tx.transactionKind))
+      .map((tx) => tx.transactionKind === 'refund' ? { ...tx, amount: Math.abs(tx.amount) } : tx),
+    ...(read(LS_KEYS.creditRepayments) || [])
+      .filter((repayment) => repayment.walletId === cardId),
+  ].sort((a, b) => new Date(b.date) - new Date(a.date)),
+
+  getStatements: (cardId) => (read(LS_KEYS.creditStatements) || [])
+    .filter((statement) => statement.walletId === cardId)
+    .sort((a, b) => b.periodEnd.localeCompare(a.periodEnd)),
+
+  generateStatement: (cardId, asOfDate) => {
+    const card = wallets.getAll().find((w) => w.id === cardId);
+    if (!card?.creditTermsConfigured) throw new Error('Configure credit terms before generating a statement.');
+    const zone = card.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const dayFormatter = new Intl.DateTimeFormat('en-CA', {
+      timeZone: zone, year: 'numeric', month: '2-digit', day: '2-digit',
+    });
+    const today = asOfDate || dayFormatter.format(new Date());
+    const [asOfYear, asOfMonth, asOfDay] = today.split('-').map(Number);
+    const local = new Date(asOfYear, asOfMonth - 1, asOfDay, 12);
+    const year = local.getFullYear();
+    const month = local.getMonth();
+    const closingDay = card.statementClosingDay;
+    let close = new Date(year, month, Math.min(closingDay, new Date(year, month + 1, 0).getDate()));
+    if (close > local) {
+      const prevMonth = new Date(year, month - 1, 1);
+      close = new Date(prevMonth.getFullYear(), prevMonth.getMonth(),
+        Math.min(closingDay, new Date(prevMonth.getFullYear(), prevMonth.getMonth() + 1, 0).getDate()));
+    }
+    const periodEnd = `${close.getFullYear()}-${String(close.getMonth() + 1).padStart(2, '0')}-${String(close.getDate()).padStart(2, '0')}`;
+    const statements = read(LS_KEYS.creditStatements) || [];
+    const existing = statements.find((statement) => statement.walletId === cardId && statement.periodEnd === periodEnd);
+    if (existing) return existing;
+    const nextMonth = new Date(close.getFullYear(), close.getMonth() + 1, 1);
+    const due = new Date(nextMonth.getFullYear(), nextMonth.getMonth(),
+      Math.min(card.paymentDueDay, new Date(nextMonth.getFullYear(), nextMonth.getMonth() + 1, 0).getDate()));
+    const cycleDate = (value) => dayFormatter.format(new Date(value));
+    const purchases = (read(LS_KEYS.transactions) || []).filter((tx) => tx.walletId === cardId
+      && tx.transactionKind === 'purchase' && cycleDate(tx.date) <= periodEnd
+      && cycleDate(tx.date) >= cycleDate(card.creditTermsConfiguredAt))
+      .reduce((total, tx) => total + Number(tx.amount), 0);
+    const repayments = (read(LS_KEYS.creditRepayments) || []).filter((repayment) => repayment.walletId === cardId
+      && cycleDate(repayment.date) <= periodEnd && cycleDate(repayment.date) >= cycleDate(card.creditTermsConfiguredAt))
+      .reduce((total, repayment) => total + Number(repayment.amount), 0);
+    const refunds = (read(LS_KEYS.transactions) || []).filter((tx) => tx.walletId === cardId
+      && tx.transactionKind === 'refund' && cycleDate(tx.date) <= periodEnd
+      && cycleDate(tx.date) >= cycleDate(card.creditTermsConfiguredAt))
+      .reduce((total, tx) => total + Math.abs(Number(tx.amount)), 0);
+    const previousClose = new Date(close.getFullYear(), close.getMonth() - 1, 1);
+    const priorClose = new Date(previousClose.getFullYear(), previousClose.getMonth(),
+      Math.min(closingDay, new Date(previousClose.getFullYear(), previousClose.getMonth() + 1, 0).getDate()));
+    const periodStart = new Date(priorClose.getFullYear(), priorClose.getMonth(), priorClose.getDate() + 1);
+    const snapshot = {
+      id: genId(), walletId: cardId, periodEnd,
+      periodStart: `${periodStart.getFullYear()}-${String(periodStart.getMonth() + 1).padStart(2, '0')}-${String(periodStart.getDate()).padStart(2, '0')}`,
+      generatedAt: new Date().toISOString(), timezone: zone, statementClosingDay: closingDay,
+      dueDate: `${due.getFullYear()}-${String(due.getMonth() + 1).padStart(2, '0')}-${String(due.getDate()).padStart(2, '0')}`,
+      statementBalance: Number(card.creditOpeningBalance || 0) + purchases - refunds - repayments,
+      minimumPaymentAmount: card.minimumPaymentAmount || null,
+    };
+    statements.push(snapshot);
+    write(LS_KEYS.creditStatements, statements);
+    return snapshot;
   },
 
   update: (id, tx) => {
     const list = read(LS_KEYS.transactions) || [];
     const idx = list.findIndex((t) => t.id === id);
     if (idx === -1) return null;
+    if (['purchase', 'refund'].includes(list[idx].transactionKind)) {
+      throw new Error('Credit card purchases and refunds cannot be edited in preview mode.');
+    }
     list[idx] = { ...list[idx], ...tx, id };
     write(LS_KEYS.transactions, list);
     return list[idx];
   },
 
   remove: (id) => {
-    const list = (read(LS_KEYS.transactions) || []).filter((t) => t.id !== id);
+    const transactionsList = read(LS_KEYS.transactions) || [];
+    const transaction = transactionsList.find((t) => t.id === id);
+    if (['purchase', 'refund'].includes(transaction?.transactionKind)) {
+      throw new Error('Credit card purchases and refunds cannot be deleted in preview mode.');
+    }
+    const list = transactionsList.filter((t) => t.id !== id);
     write(LS_KEYS.transactions, list);
     return true;
   },
@@ -340,13 +571,44 @@ const budget = {
       if (tx.type === 'income') monthlyIncome += tx.amount;
     });
 
-    const availableBalance = allWallets.reduce((sum, w) => sum + (w.balance || 0), 0);
+    const availableBalance = allWallets
+      .filter((wallet) => wallet.cardType?.toLowerCase() !== 'credit')
+      .reduce((sum, wallet) => sum + (wallet.balance || 0), 0);
+
+    const creditCards = allWallets.filter(
+      (wallet) => wallet.cardType?.toLowerCase() === 'credit' && wallet.creditTermsConfigured
+    );
+    const totalCreditDebt = creditCards.reduce(
+      (sum, w) => sum + Math.max(0, Number(w.outstandingBalance) || 0), 0
+    );
+    const totalCreditLimit = creditCards.reduce(
+      (sum, w) => sum + (Number(w.creditLimit) || 0), 0
+    );
+    const availableCredit = creditCards.reduce(
+      (sum, w) => sum + Math.max(0, (Number(w.creditLimit) || 0) - (Number(w.outstandingBalance) || 0)), 0
+    );
+    const creditUtilization = totalCreditLimit > 0
+      ? Math.min(100, (totalCreditDebt / totalCreditLimit) * 100)
+      : 0;
+
+    const allRepayments = read(LS_KEYS.creditRepayments) || [];
+    const creditRepaymentsThisMonth = allRepayments
+      .filter((r) => {
+        const d = new Date(r.date);
+        return d.getMonth() + 1 === month && d.getFullYear() === year;
+      })
+      .reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
 
     return {
       monthlyIncome: b.monthlyIncome || monthlyIncome,
       monthlyBudgetLimit: b.budgetLimit || 0,
       monthlySpent,
       availableBalance,
+      totalCreditDebt,
+      totalCreditLimit,
+      availableCredit,
+      creditUtilization,
+      creditRepaymentsThisMonth,
     };
   },
 };

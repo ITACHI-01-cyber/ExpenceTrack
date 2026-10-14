@@ -14,4 +14,9 @@ public class DashboardSummaryDTO {
     private Double monthlyIncome;
     private Double monthlyBudgetLimit;
     private Double monthlySpent;
+    private Double totalCreditDebt;
+    private Double totalCreditLimit;
+    private Double availableCredit;
+    private Double creditUtilization;
+    private Double creditRepaymentsThisMonth;
 }

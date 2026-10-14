@@ -11,6 +11,7 @@ import com.expensetracker.dto.DashboardSummaryDTO;
 import com.expensetracker.model.Budget;
 import com.expensetracker.model.Transaction;
 import com.expensetracker.model.Wallet;
+import com.expensetracker.repository.CreditRepaymentRepository;
 import com.expensetracker.repository.BudgetRepository;
 import com.expensetracker.repository.TransactionRepository;
 import com.expensetracker.repository.WalletRepository;
@@ -24,6 +25,7 @@ public class BudgetService {
     private final BudgetRepository budgetRepository;
     private final TransactionRepository transactionRepository;
     private final WalletRepository walletRepository;
+    private final CreditRepaymentRepository creditRepaymentRepository;
 
     public Budget getBudget(String userId, Integer month, Integer year) {
         return budgetRepository.findByUserIdAndMonthAndYear(userId, month, year)
@@ -51,16 +53,46 @@ public class BudgetService {
     public DashboardSummaryDTO getDashboardSummary(String userId, Integer month, Integer year) {
         List<Wallet> wallets = walletRepository.findByUserId(userId);
         double totalBalance = wallets.stream()
+                .filter(wallet -> !"credit".equalsIgnoreCase(wallet.getCardType()))
                 .mapToDouble(w -> {
                     Double balance = w.getBalance();
                     return balance != null ? balance : 0.0;
                 })
                 .sum();
 
+        List<Wallet> creditCards = wallets.stream()
+                .filter(w -> "credit".equalsIgnoreCase(w.getCardType()) && Boolean.TRUE.equals(w.getCreditTermsConfigured()))
+                .toList();
+
+        double totalCreditDebt = creditCards.stream()
+                .mapToDouble(w -> w.getOutstandingBalance() != null ? Math.max(0.0, w.getOutstandingBalance().doubleValue()) : 0.0)
+                .sum();
+
+        double totalCreditLimit = creditCards.stream()
+                .mapToDouble(w -> w.getCreditLimit() != null ? w.getCreditLimit().doubleValue() : 0.0)
+                .sum();
+
+        double availableCredit = creditCards.stream()
+                .mapToDouble(w -> {
+                    double limit = w.getCreditLimit() != null ? w.getCreditLimit().doubleValue() : 0.0;
+                    double debt = w.getOutstandingBalance() != null ? w.getOutstandingBalance().doubleValue() : 0.0;
+                    return Math.max(0.0, limit - debt);
+                })
+                .sum();
+
+        double creditUtilization = totalCreditLimit > 0.0
+                ? Math.min(100.0, (totalCreditDebt / totalCreditLimit) * 100.0)
+                : 0.0;
+
         LocalDateTime startDate = YearMonth.of(year, month).atDay(1).atStartOfDay();
         LocalDateTime endDate = YearMonth.of(year, month).atEndOfMonth().atTime(23, 59, 59);
 
         List<Transaction> transactions = transactionRepository.findByUserIdAndDateBetween(userId, startDate, endDate);
+
+        double creditRepaymentsThisMonth = creditRepaymentRepository.findByUserIdAndDateBetween(userId, startDate, endDate)
+                .stream()
+                .mapToDouble(r -> r.getAmount() != null ? r.getAmount().doubleValue() : 0.0)
+                .sum();
 
         Budget budget = getBudget(userId, month, year);
 
@@ -92,6 +124,11 @@ public class BudgetService {
                 .monthlyIncome(monthlyIncome)
                 .monthlyBudgetLimit(monthlyBudgetLimit)
                 .monthlySpent(monthlySpent)
+                .totalCreditDebt(totalCreditDebt)
+                .totalCreditLimit(totalCreditLimit)
+                .availableCredit(availableCredit)
+                .creditUtilization(creditUtilization)
+                .creditRepaymentsThisMonth(creditRepaymentsThisMonth)
                 .build();
     }
 }
