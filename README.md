@@ -22,10 +22,38 @@ A clean, beautiful entry point to your financial hub.
 <br/>
 <img src="https://i.ibb.co/tp4CNX2p/08.png" alt="Login Screen" width="100%" />
 
-### 📊 The Command Center
-Get a bird's-eye view of your financial health. Track active balances, monthly budgets, and ongoing savings goals at a glance.
-<br/>
-<img src="https://i.ibb.co/gbFp6Xdw/pasted-file.png" alt="Dashboard" width="100%" />
+### 📊 The Command Center — Dashboard Evolution
+
+Compare the original dashboard with the redesigned ExpenceTrack experience.
+
+<div align="center">
+
+<table>
+<tr>
+<td align="center" width="50%">
+
+🕰️ Older Version
+
+<img src="https://i.ibb.co/gbFp6Xdw/pasted-file.png" alt="Older ExpenceTrack dashboard" width="100%"/>
+
+</td>
+<td align="center" width="50%">
+
+✨ New Version
+
+<img src="https://i.ibb.co/JjMxWNCN/home.png" alt="home" width="100%"/>
+
+</td>
+</tr>
+</table>
+
+What's improved?
+
+🎨 Modern dark theme and refined interface.
+
+📊 Better-organized expense and budget summaries.
+
+</div>
 
 ### 💸 Smart Transactions & Analytics
 Monitor where every penny goes with dynamic line charts and category-based donut graphs.
@@ -44,8 +72,7 @@ Manage multiple payment methods in one place. **The standout feature:** Extensiv
 ### ⚙️ User Profiles
 Easily manage your identity, update your display name, and upload custom avatars.
 <br/>
-<img src="https://i.ibb.co/JRJhbZBL/06.png" alt="Profile Settings" width="100%" />
-
+<img src="https://i.ibb.co/b5HTHK8d/apperence.png" alt="apperence" width="100%" />
 ---
 
 ## 🛠️ Tech Stack
