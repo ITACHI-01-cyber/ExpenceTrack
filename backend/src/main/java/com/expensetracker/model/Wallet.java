@@ -50,6 +50,9 @@ public class Wallet {
     private String primaryColor;
     private String secondaryColor;
     private String textColor;
+    private String accentColor;
+    private String artwork;
+    private String cardStyle;
     private String cardIcon;
     private String backSignatureText;
     private String backContactInfo;

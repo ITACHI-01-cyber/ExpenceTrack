@@ -5,6 +5,7 @@ import com.expensetracker.dto.CreditActivityItem;
 import com.expensetracker.dto.CreditRepaymentRequest;
 import com.expensetracker.dto.CreditRepaymentResponse;
 import com.expensetracker.dto.CreditStatementRequest;
+import com.expensetracker.dto.WalletCustomizationRequest;
 import com.expensetracker.model.CreditRepayment;
 import com.expensetracker.model.CreditStatement;
 import com.expensetracker.model.User;
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Map;
 import java.time.LocalDate;
 
 @RestController
@@ -105,6 +107,13 @@ public class WalletController {
     public ResponseEntity<ApiResponse<Wallet>> updateWallet(@PathVariable String id, @RequestBody Wallet wallet) {
         Wallet updated = walletService.updateWallet(id, getUserId(), wallet);
         return ResponseEntity.ok(ApiResponse.success(updated, "Wallet updated"));
+    }
+
+    @PatchMapping("/{id}/customization")
+    public ResponseEntity<ApiResponse<Wallet>> updateCustomization(
+            @PathVariable String id, @RequestBody Map<String, Object> fields) {
+        Wallet updated = walletService.updateCustomization(id, getUserId(), new WalletCustomizationRequest(fields));
+        return ResponseEntity.ok(ApiResponse.success(updated, "Wallet customization updated"));
     }
 
     @DeleteMapping("/{id}")

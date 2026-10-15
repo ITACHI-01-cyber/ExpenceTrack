@@ -197,10 +197,31 @@ export const SCENIC_DESIGNS = [
   }
 ];
 
+// Android ids are stored unchanged. These are intentional web fallbacks, not
+// assertions that the native illustrations are visually identical.
+export const ANDROID_DESIGNS = [
+  { id: 'broco', name: 'Broco', primaryColor: '#166534', secondaryColor: '#84CC16', textColor: '#FFFFFF', accentColor: '#D9F99D' },
+  { id: 'tonot', name: 'Tonot', primaryColor: '#7C2D12', secondaryColor: '#FB923C', textColor: '#FFFFFF', accentColor: '#FED7AA' },
+  { id: 'kocheng', name: 'Kocheng', primaryColor: '#1E3A8A', secondaryColor: '#38BDF8', textColor: '#FFFFFF', accentColor: '#BAE6FD' },
+  { id: 'cyber', name: 'Cyber', primaryColor: '#18181B', secondaryColor: '#A855F7', textColor: '#FFFFFF', accentColor: '#22D3EE' }
+];
+
 export const getCardDesign = (wallet = {}) => {
   const safeWallet = wallet || {};
   const type = (safeWallet.cardType || '').toLowerCase();
   const designs = type === 'upi' ? UPI_DESIGNS : (type === 'cash' ? CASH_DESIGNS : CARD_DESIGNS);
+  const androidMatch = ANDROID_DESIGNS.find((d) => d.id === safeWallet.designPreset);
+  if (androidMatch) {
+    return {
+      ...androidMatch,
+      primaryColor: safeWallet.primaryColor || androidMatch.primaryColor,
+      secondaryColor: safeWallet.secondaryColor || androidMatch.secondaryColor,
+      textColor: safeWallet.textColor || androidMatch.textColor,
+      accentColor: safeWallet.accentColor || androidMatch.accentColor,
+      artwork: safeWallet.artwork || null,
+      cardStyle: safeWallet.cardStyle || 'default'
+    };
+  }
 
   // Check DC designs
   const dcMatch = DC_DESIGNS.find((d) => d.id === safeWallet.designPreset);
@@ -377,6 +398,12 @@ export const getCardBackground = (wallet = {}) => {
   const safeWallet = wallet || {};
   const design = getCardDesign(safeWallet);
   const gradient = `linear-gradient(135deg, ${design.primaryColor}, ${design.secondaryColor})`;
+
+  // A shared HTTPS asset can be rendered by either client. Local Android paths
+  // deliberately remain identifiers and use the preset fallback on the web.
+  if (typeof safeWallet.artwork === 'string' && /^https:\/\//i.test(safeWallet.artwork)) {
+    return { backgroundImage: `url("${safeWallet.artwork.replace(/"/g, '%22')}")`, backgroundSize: 'cover', backgroundPosition: 'center', color: design.textColor };
+  }
 
   // Check scenic patterns first
   if (safeWallet.designPreset && scenicPatterns[safeWallet.designPreset]) {

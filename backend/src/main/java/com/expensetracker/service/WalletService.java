@@ -9,12 +9,29 @@ import org.springframework.stereotype.Service;
 
 import com.expensetracker.model.Wallet;
 import com.expensetracker.repository.WalletRepository;
+import com.expensetracker.dto.WalletCustomizationRequest;
 
 import lombok.RequiredArgsConstructor;
+
+import java.util.Set;
+import java.util.regex.Pattern;
 
 @Service
 @RequiredArgsConstructor
 public class WalletService {
+
+    private static final Set<String> CUSTOMIZATION_FIELDS = Set.of(
+            "designPreset", "primaryColor", "secondaryColor", "textColor", "accentColor", "artwork", "cardStyle");
+    private static final Set<String> KNOWN_PRESETS = Set.of(
+            "midnight", "sunset", "aurora", "berry", "silver", "custom",
+            "upi-pulse", "upi-mint", "upi-saffron", "upi-ocean", "upi-night", "upi-custom",
+            "cash-pop", "cash-neon", "cash-gold",
+            "dc-superman", "dc-wonderwoman", "dc-batman",
+            "scenic-alpine", "scenic-ocean", "scenic-northern", "scenic-sahara", "scenic-tropical", "scenic-neon-city", "scenic-cherry", "scenic-volcano",
+            "broco", "tonot", "kocheng", "cyber");
+    private static final Pattern HEX_COLOR = Pattern.compile("^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$");
+    private static final Pattern ARTWORK_ID = Pattern.compile("^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$");
+    private static final Pattern CARD_STYLE = Pattern.compile("^[a-zA-Z][a-zA-Z0-9_-]{0,31}$");
 
     private final WalletRepository walletRepository;
 
@@ -26,6 +43,7 @@ public class WalletService {
 
     public Wallet addWallet(String userId, Wallet wallet) {
         wallet.setUserId(userId);
+        copyCustomizationIfPresent(wallet, wallet);
         configureCreditTerms(wallet, null, wallet);
         if (wallet.getBalance() == null
                 && !Boolean.TRUE.equals(wallet.getCreditTermsConfigured())
@@ -87,15 +105,81 @@ public class WalletService {
         }
         wallet.setIsDefault(walletDetails.getIsDefault());
         wallet.setCardBrand(walletDetails.getCardBrand());
-        wallet.setDesignPreset(walletDetails.getDesignPreset());
-        wallet.setPrimaryColor(walletDetails.getPrimaryColor());
-        wallet.setSecondaryColor(walletDetails.getSecondaryColor());
-        wallet.setTextColor(walletDetails.getTextColor());
+        // PUT remains compatible with existing clients, but omitted customization
+        // must not erase a persisted design. Explicit clearing is available via PATCH.
+        copyCustomizationIfPresent(wallet, walletDetails);
         wallet.setCardIcon(walletDetails.getCardIcon());
         wallet.setBackSignatureText(walletDetails.getBackSignatureText());
         wallet.setBackContactInfo(walletDetails.getBackContactInfo());
 
         return sanitizeForResponse(walletRepository.save(sanitizeForStorage(wallet)));
+    }
+
+    public Wallet updateCustomization(String id, String userId, WalletCustomizationRequest request) {
+        Wallet wallet = walletRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Wallet not found"));
+        if (!userId.equals(wallet.getUserId())) {
+            throw new RuntimeException("Unauthorized");
+        }
+        if (request.fields() == null || request.fields().isEmpty()) {
+            return sanitizeForResponse(wallet);
+        }
+        for (String field : request.fields().keySet()) {
+            if (!CUSTOMIZATION_FIELDS.contains(field)) {
+                throw new IllegalArgumentException("Unsupported customization field: " + field);
+            }
+        }
+        if (request.contains("designPreset")) wallet.setDesignPreset(validatePreset(request.value("designPreset")));
+        if (request.contains("primaryColor")) wallet.setPrimaryColor(validateColor(request.value("primaryColor"), "primaryColor"));
+        if (request.contains("secondaryColor")) wallet.setSecondaryColor(validateColor(request.value("secondaryColor"), "secondaryColor"));
+        if (request.contains("textColor")) wallet.setTextColor(validateColor(request.value("textColor"), "textColor"));
+        if (request.contains("accentColor")) wallet.setAccentColor(validateColor(request.value("accentColor"), "accentColor"));
+        if (request.contains("artwork")) wallet.setArtwork(validateArtwork(request.value("artwork")));
+        if (request.contains("cardStyle")) wallet.setCardStyle(validateCardStyle(request.value("cardStyle")));
+        return sanitizeForResponse(walletRepository.save(sanitizeForStorage(wallet)));
+    }
+
+    private void copyCustomizationIfPresent(Wallet target, Wallet requested) {
+        if (requested.getDesignPreset() != null) target.setDesignPreset(validatePreset(requested.getDesignPreset()));
+        if (requested.getPrimaryColor() != null) target.setPrimaryColor(validateColor(requested.getPrimaryColor(), "primaryColor"));
+        if (requested.getSecondaryColor() != null) target.setSecondaryColor(validateColor(requested.getSecondaryColor(), "secondaryColor"));
+        if (requested.getTextColor() != null) target.setTextColor(validateColor(requested.getTextColor(), "textColor"));
+        if (requested.getAccentColor() != null) target.setAccentColor(validateColor(requested.getAccentColor(), "accentColor"));
+        if (requested.getArtwork() != null) target.setArtwork(validateArtwork(requested.getArtwork()));
+        if (requested.getCardStyle() != null) target.setCardStyle(validateCardStyle(requested.getCardStyle()));
+    }
+
+    private String validatePreset(Object value) {
+        String preset = nullableString(value, "designPreset");
+        if (preset != null && !KNOWN_PRESETS.contains(preset)) throw new IllegalArgumentException("Unknown card design preset");
+        return preset;
+    }
+
+    private String validateColor(Object value, String field) {
+        String color = nullableString(value, field);
+        if (color != null && !HEX_COLOR.matcher(color).matches()) throw new IllegalArgumentException(field + " must be a hexadecimal color");
+        return color;
+    }
+
+    private String validateArtwork(Object value) {
+        String artwork = nullableString(value, "artwork");
+        if (artwork != null && !(ARTWORK_ID.matcher(artwork).matches() || artwork.matches("^https://[^\\s]{1,2048}$"))) {
+            throw new IllegalArgumentException("artwork must be an identifier or HTTPS URL");
+        }
+        return artwork;
+    }
+
+    private String validateCardStyle(Object value) {
+        String style = nullableString(value, "cardStyle");
+        if (style != null && !CARD_STYLE.matcher(style).matches()) throw new IllegalArgumentException("cardStyle is invalid");
+        return style;
+    }
+
+    private String nullableString(Object value, String field) {
+        if (value == null) return null;
+        if (!(value instanceof String string)) throw new IllegalArgumentException(field + " must be a string");
+        String trimmed = string.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 
     public void deleteWallet(String id, String userId) {

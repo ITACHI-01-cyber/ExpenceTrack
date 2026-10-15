@@ -50,7 +50,7 @@ const MiniCardPreview = ({ wallet, isSelected, onClick, index = 0 }) => {
         }}
       />
 
-      <div className="relative z-10 p-3.5 flex flex-col justify-between h-full text-white">
+      <div className="relative z-10 p-3.5 flex flex-col justify-between h-full" style={{ color: bg.color || '#FFFFFF' }}>
         <div className="flex items-start justify-between">
           <span className="text-[9px] font-bold uppercase tracking-[0.18em] opacity-80">
             {wallet.cardName || wallet.bankName || wallet.cardType || 'Card'}

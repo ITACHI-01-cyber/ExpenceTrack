@@ -47,7 +47,7 @@ const DEMO_WALLETS = [
     balance: 24500,
     primaryColor: '#1a1a2e',
     secondaryColor: '#16213e',
-    designId: 'midnight-aurora',
+    designPreset: 'midnight',
   },
   {
     id: genId(),
@@ -60,7 +60,7 @@ const DEMO_WALLETS = [
     balance: 3200,
     primaryColor: '#00BAF2',
     secondaryColor: '#003087',
-    designId: 'ocean-gradient',
+    designPreset: 'upi-ocean',
   },
 ];
 

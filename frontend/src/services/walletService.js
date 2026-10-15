@@ -29,6 +29,11 @@ const save = async (wallet, walletId = null) => {
   return requireData(res, 'card creation');
 };
 
+const updateCustomization = async (walletId, customization) => {
+  const res = await api.patch(`/wallet/${walletId}/customization`, customization);
+  return requireData(res, 'card customization update');
+};
+
 const addMoney = async (walletId, amount) => {
   const res = await api.patch(`/wallet/${walletId}/add-money`, null, { params: { amount } });
   return requireData(res, 'wallet balance update');
@@ -84,6 +89,7 @@ const recordRefund = async (purchaseId, request) => {
 export default {
   getAll,
   save,
+  updateCustomization,
   addMoney,
   remove,
   repay,

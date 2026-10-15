@@ -134,6 +134,7 @@ const WalletCard = ({
   const isCash = cardType.toLowerCase() === 'cash';
   const isCredit = cardType.toLowerCase() === 'credit';
   const isConfiguredCredit = cardType.toLowerCase() === 'credit' && wallet?.creditTermsConfigured;
+  const cardTextColor = getCardBackground(wallet).color || '#FFFFFF';
   const cardCreditBalance = isConfiguredCredit ? Math.max(0, -Number(wallet?.outstandingBalance || 0)) : 0;
   const shownBalance = isConfiguredCredit
     ? Math.max(0, Number(wallet?.outstandingBalance || 0))
@@ -171,7 +172,11 @@ const WalletCard = ({
   }, [compact]);
 
   /* Shared card dimensions & border-radius */
-  const cardRadius = isUpi ? '28px' : '22px';
+  const cardRadius = wallet?.cardStyle === 'square'
+    ? '8px'
+    : wallet?.cardStyle === 'rounded'
+      ? '32px'
+      : isUpi ? '28px' : '22px';
 
   /* Tilt transform (no flip — flip is handled by the wrapper) */
   const tiltTransform = (!compact && !preview && isHovered && !isFlipped)
@@ -285,7 +290,7 @@ const WalletCard = ({
 
 
               {/* ── Card Content ── */}
-              <div className="relative z-10 h-full flex flex-col justify-between text-white text-left">
+              <div className="relative z-10 h-full flex flex-col justify-between text-left" style={{ color: cardTextColor }}>
 
                 {/* Top Row — Bank name + Logo Icon + Brand */}
                 <div className="flex justify-between items-start">
@@ -435,7 +440,7 @@ const WalletCard = ({
               />
 
               {/* Back Content */}
-              <div className="relative z-10 h-full flex flex-col text-white text-left" style={{ paddingTop: '68px', paddingLeft: '20px', paddingRight: '20px', paddingBottom: '16px' }}>
+              <div className="relative z-10 h-full flex flex-col text-left" style={{ paddingTop: '68px', paddingLeft: '20px', paddingRight: '20px', paddingBottom: '16px', color: cardTextColor }}>
 
                 {/* Back Contact Info / Disclaimer */}
                 <div className="text-[7px] opacity-75 truncate mb-1" title={wallet?.backContactInfo || "support@bank.com | 1-800-555-0199"}>
