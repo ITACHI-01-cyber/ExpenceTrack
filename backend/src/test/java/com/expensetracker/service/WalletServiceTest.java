@@ -48,10 +48,16 @@ class WalletServiceTest {
                 .creditLimit(new java.math.BigDecimal("100"))
                 .outstandingBalance(new java.math.BigDecimal("25"))
                 .statementClosingDay(31).paymentDueDay(21).timezone("UTC").build();
-        when(walletRepository.save(any(Wallet.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        java.util.concurrent.atomic.AtomicReference<Double> storedBalance = new java.util.concurrent.atomic.AtomicReference<>();
+        when(walletRepository.save(any(Wallet.class))).thenAnswer(invocation -> {
+            Wallet persisted = invocation.getArgument(0);
+            storedBalance.set(persisted.getBalance());
+            return persisted;
+        });
         Wallet result = service.addWallet("user-1", configured);
         assertTrue(result.getCreditTermsConfigured());
-        assertNull(result.getBalance());
+        assertEquals(0.0, result.getBalance());
+        assertNull(storedBalance.get());
     }
 
     @Test
@@ -121,5 +127,43 @@ class WalletServiceTest {
         saved = service.updateCustomization("wallet", "user-1",
                 new WalletCustomizationRequest(java.util.Collections.singletonMap("artwork", null)));
         assertNull(saved.getArtwork());
+    }
+
+    @Test
+    void acceptsAllAndroidCardDesignPresets() {
+        Wallet existing = Wallet.builder().id("wallet").userId("user-1").cardType("debit").build();
+        when(walletRepository.findById("wallet")).thenReturn(Optional.of(existing));
+        when(walletRepository.save(any(Wallet.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        String[] androidPresets = {"bredo", "drino", "wuhu", "yo", "ocean", "forest", "broco", "tonot", "kocheng", "cyber", "midnight", "aurora", "sunset"};
+        for (String preset : androidPresets) {
+            Wallet saved = service.updateCustomization("wallet", "user-1",
+                    new WalletCustomizationRequest(Map.of("designPreset", preset)));
+            assertEquals(preset, saved.getDesignPreset());
+        }
+    }
+
+    @Test
+    void sanitizesNonCreditWalletNullBalanceToZero() {
+        Wallet nullBalanceDebit = Wallet.builder().id("debit1").userId("user-1").cardType("debit").balance(null).build();
+        when(walletRepository.findByUserId("user-1")).thenReturn(java.util.List.of(nullBalanceDebit));
+
+        java.util.List<Wallet> wallets = service.getWallets("user-1");
+        assertEquals(1, wallets.size());
+        assertEquals(0.0, wallets.get(0).getBalance());
+    }
+
+    @Test
+    void returnsNumericCompatibilityBalanceForConfiguredCreditWalletWithoutWritingIt() {
+        Wallet configuredCredit = Wallet.builder().id("credit1").userId("user-1").cardType("credit")
+                .creditTermsConfigured(true).creditLimit(new java.math.BigDecimal("1000.00"))
+                .outstandingBalance(new java.math.BigDecimal("250.00")).balance(null).build();
+        when(walletRepository.findByUserId("user-1")).thenReturn(java.util.List.of(configuredCredit));
+
+        Wallet wallet = service.getWallets("user-1").get(0);
+
+        assertEquals(0.0, wallet.getBalance());
+        assertEquals(new java.math.BigDecimal("250.00"), wallet.getOutstandingBalance());
+        verify(walletRepository, never()).save(any(Wallet.class));
     }
 }

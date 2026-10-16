@@ -28,7 +28,7 @@ public class WalletService {
             "cash-pop", "cash-neon", "cash-gold",
             "dc-superman", "dc-wonderwoman", "dc-batman",
             "scenic-alpine", "scenic-ocean", "scenic-northern", "scenic-sahara", "scenic-tropical", "scenic-neon-city", "scenic-cherry", "scenic-volcano",
-            "broco", "tonot", "kocheng", "cyber");
+            "broco", "tonot", "bredo", "kocheng", "drino", "wuhu", "yo", "ocean", "forest", "cyber");
     private static final Pattern HEX_COLOR = Pattern.compile("^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$");
     private static final Pattern ARTWORK_ID = Pattern.compile("^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$");
     private static final Pattern CARD_STYLE = Pattern.compile("^[a-zA-Z][a-zA-Z0-9_-]{0,31}$");
@@ -303,12 +303,24 @@ public class WalletService {
     private Wallet sanitizeForStorage(Wallet wallet) {
         wallet.setCvv(null);
         wallet.setCardNumber(safeCardNumber(wallet));
+        if (wallet.getBalance() == null
+                && !Boolean.TRUE.equals(wallet.getCreditTermsConfigured())
+                && !"credit".equalsIgnoreCase(wallet.getCardType())) {
+            wallet.setBalance(0.0);
+        }
         return wallet;
     }
 
     private Wallet sanitizeForResponse(Wallet wallet) {
         wallet.setCvv(null);
         wallet.setCardNumber(safeCardNumber(wallet));
+        // `outstandingBalance` remains the source of truth for configured credit
+        // cards. `balance` is retained as a numeric compatibility field because
+        // older clients deserialize it as a non-null double. This is response-only:
+        // it deliberately does not backfill or overwrite the MongoDB document.
+        if (wallet.getBalance() == null) {
+            wallet.setBalance(0.0);
+        }
         return wallet;
     }
 
