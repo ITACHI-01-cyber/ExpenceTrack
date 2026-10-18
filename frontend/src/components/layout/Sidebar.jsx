@@ -2,6 +2,7 @@ import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, ArrowRightLeft, Wallet, LogOut, Star, Settings2, Eye } from 'lucide-react';
 import useAuthStore from '../../store/authStore';
+import { apiAssetUrl } from '../../services/api';
 
 const Sidebar = () => {
   const { user, logout, isGuest } = useAuthStore();
@@ -35,7 +36,7 @@ const Sidebar = () => {
                {isGuest ? (
                  <Eye size={28} />
                ) : user.profilePicture ? (
-                 <img src={user.profilePicture} alt="User" className="h-full w-full object-cover" />
+                 <img src={apiAssetUrl(user.profilePicture)} alt="User" className="h-full w-full object-cover" />
                ) : (
                  user.name.charAt(0)
                )}

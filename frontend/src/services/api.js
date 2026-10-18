@@ -27,3 +27,11 @@ api.interceptors.response.use(
 );
 
 export default api;
+
+// Media references are stored by the API as `/api/media/...`; make them work
+// against both a local API and the deployed API instead of the Vite origin.
+export const apiAssetUrl = (reference) => {
+  if (!reference || /^https?:\/\//i.test(reference) || reference.startsWith('data:')) return reference;
+  const origin = api.defaults.baseURL.replace(/\/api\/?$/, '');
+  return `${origin}${reference.startsWith('/') ? reference : `/${reference}`}`;
+};

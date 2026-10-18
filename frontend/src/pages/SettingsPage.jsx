@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import Layout from '../components/layout/Layout';
 import TopBar from '../components/layout/TopBar';
 import useAuthStore from '../store/authStore';
-import api from '../services/api';
+import api, { apiAssetUrl } from '../services/api';
 import Button from '../components/ui/Button';
 import { UserCircle, Palette, CreditCard, Mail, Upload, X, Moon, Sun, Sparkles } from 'lucide-react';
 import useAppearanceStore from '../store/appearanceStore';
@@ -21,8 +21,17 @@ const SettingsPage = () => {
   const [currency, setCurrency] = useState(user?.currency || 'INR');
   const [gmailConnected, setGmailConnected] = useState(user?.gmailConnected || false);
   const [avatarError, setAvatarError] = useState('');
+  const [wallpaperOpacity, setWallpaperOpacity] = useState(user?.wallpaperOpacity ?? 35);
+  const [wallpaperEnabled, setWallpaperEnabled] = useState(Boolean(user?.wallpaperEnabled));
+  const [wallpaperImage, setWallpaperImage] = useState(user?.wallpaperImage || '');
 
-  const handleAvatarUpload = (e) => {
+  const uploadMedia = async (file, kind) => {
+    const form = new FormData(); form.append('file', file);
+    const response = await api.post(`/media/${kind}`, form);
+    if (!response.data?.success) throw new Error(response.data?.message || 'Upload failed');
+    return response.data.data;
+  };
+  const handleAvatarUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -31,18 +40,18 @@ const SettingsPage = () => {
       return;
     }
 
-    if (file.size > 1024 * 1024) {
-      setAvatarError('Please choose an image under 1 MB.');
+    if (file.size > 5 * 1024 * 1024) {
+      setAvatarError('Please choose an image under 5 MB.');
       return;
     }
-
-    const reader = new FileReader();
-    reader.onload = () => {
+    try {
+      setLoading(true);
+      const imageReference = isGuest ? URL.createObjectURL(file) : await uploadMedia(file, 'avatar');
       setAvatarError('');
-      setProfilePicture(reader.result);
-    };
-    reader.onerror = () => setAvatarError('Could not read this image.');
-    reader.readAsDataURL(file);
+      setProfilePicture(imageReference);
+      if (!isGuest) updateUser({ profilePicture: imageReference });
+    } catch (err) { setAvatarError(err.response?.data?.message || 'Could not upload this image.'); }
+    finally { setLoading(false); }
   };
 
   const clearAvatar = () => {
@@ -90,6 +99,25 @@ const SettingsPage = () => {
   const handleAccentSave = (e) => {
     e.preventDefault();
     saveSettings({ accentColor });
+  };
+
+  const handleWallpaperUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/') || file.size > 5 * 1024 * 1024) {
+      setMessage('Wallpaper must be an image no larger than 5 MB.'); return;
+    }
+    try {
+      setLoading(true);
+      const reference = isGuest ? URL.createObjectURL(file) : await uploadMedia(file, 'wallpaper');
+      setWallpaperImage(reference); setWallpaperEnabled(true);
+      await saveSettings({ wallpaperImage: reference, wallpaperEnabled: true, wallpaperOpacity });
+    } catch (err) { setMessage(err.response?.data?.message || 'Failed to upload wallpaper.'); }
+    finally { setLoading(false); }
+  };
+
+  const saveWallpaper = async () => {
+    await saveSettings({ wallpaperImage, wallpaperEnabled, wallpaperOpacity });
   };
 
   const handlePreferencesSave = (e) => {
@@ -162,7 +190,7 @@ const SettingsPage = () => {
                   <label className="block text-sm font-medium text-neutral-muted mb-2">Profile Picture</label>
                   <div className="flex flex-wrap items-center gap-4">
                     <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xl overflow-hidden shrink-0">
-                      {profilePicture ? <img src={profilePicture} alt="Avatar" className="w-full h-full object-cover" /> : name.charAt(0)}
+                      {profilePicture ? <img src={apiAssetUrl(profilePicture)} alt="Avatar" className="w-full h-full object-cover" /> : name.charAt(0)}
                     </div>
                     <div className="flex flex-wrap gap-2">
                       <label className="inline-flex cursor-pointer items-center gap-2 rounded-input border border-border bg-white px-4 py-2 text-sm font-medium text-neutral-text transition-colors hover:border-primary hover:text-primary">
@@ -208,7 +236,7 @@ const SettingsPage = () => {
           {activeTab === 'appearance' && (
             <div className="animate-[fade-in_0.3s_ease-out_both]">
               <h2 className="mb-2 text-xl font-bold text-neutral-text">Appearance</h2>
-              <p className="mb-6 max-w-lg text-sm text-neutral-muted">Choose a theme and optional glass surfaces. Changes apply immediately and are saved on this device.</p>
+              <p className="mb-6 max-w-lg text-sm text-neutral-muted">Choose a theme and optional glass surfaces. Changes apply immediately and are saved to your account.</p>
               <div className="max-w-2xl space-y-6">
                 <fieldset>
                   <legend className="mb-2 text-sm font-semibold text-neutral-text">Theme</legend>
@@ -223,7 +251,7 @@ const SettingsPage = () => {
                           name="appearance-theme"
                           value={value}
                           checked={theme === value}
-                          onChange={() => setTheme(value)}
+                          onChange={() => { setTheme(value); saveSettings({ theme: value }); }}
                           className="sr-only"
                         />
                         <Icon size={18} aria-hidden="true" />
@@ -248,7 +276,7 @@ const SettingsPage = () => {
                     role="switch"
                     aria-checked={glass}
                     aria-label="Glassmorphism"
-                    onClick={() => setGlass(!glass)}
+                    onClick={() => { setGlass(!glass); saveSettings({ glass: !glass }); }}
                     className={`relative inline-flex h-8 w-[74px] shrink-0 items-center rounded-full p-1 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${glass ? 'bg-primary' : 'bg-neutral-muted/40'}`}
                   >
                     <span className={`absolute left-2 text-[9px] font-bold text-white transition-opacity ${glass ? 'opacity-100' : 'opacity-0'}`}>ON</span>
@@ -273,6 +301,27 @@ const SettingsPage = () => {
                 </div>
                 <Button type="submit" disabled={loading}>{loading ? 'Saving...' : 'Save Accent Color'}</Button>
                 </form>
+
+                <div className="space-y-3 rounded-xl border border-border bg-surface p-4">
+                  <div>
+                    <p className="text-sm font-semibold text-neutral-text">Wallpaper</p>
+                    <p className="mt-1 text-xs text-neutral-muted">Upload a personal background. It is stored with your account.</p>
+                  </div>
+                  {wallpaperImage && <div className="h-24 rounded-lg bg-cover bg-center" style={{ backgroundImage: `url("${apiAssetUrl(wallpaperImage)}")` }} />}
+                  <div className="flex flex-wrap items-center gap-3">
+                    <label className="inline-flex cursor-pointer items-center gap-2 rounded-input border border-border bg-white px-3 py-2 text-sm font-medium text-neutral-text">
+                      <Upload size={16} /> Upload wallpaper
+                      <input type="file" accept="image/jpeg,image/png,image/gif,image/webp" onChange={handleWallpaperUpload} className="sr-only" />
+                    </label>
+                    <label className="flex items-center gap-2 text-sm text-neutral-muted">
+                      <input type="checkbox" checked={wallpaperEnabled} onChange={(e) => setWallpaperEnabled(e.target.checked)} /> Enable
+                    </label>
+                  </div>
+                  <label className="block text-sm text-neutral-muted">Overlay: {wallpaperOpacity}%
+                    <input className="mt-2 block w-full" type="range" min="0" max="85" value={wallpaperOpacity} onChange={(e) => setWallpaperOpacity(Number(e.target.value))} />
+                  </label>
+                  <Button type="button" onClick={saveWallpaper} disabled={loading}>Save Wallpaper</Button>
+                </div>
               </div>
             </div>
           )}

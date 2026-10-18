@@ -149,6 +149,21 @@ body {
   font-family: var(--font-sans);
 }
 
+.app-layout-shell {
+  position: relative;
+  isolation: isolate;
+}
+.app-layout-shell::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background-image: linear-gradient(rgba(15, 13, 24, var(--wallpaper-overlay, 0)), rgba(15, 13, 24, var(--wallpaper-overlay, 0))), var(--wallpaper-image, none);
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+}
+
 ::selection {
   color: #fff;
   background: var(--primary-main);
