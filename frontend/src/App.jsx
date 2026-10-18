@@ -19,15 +19,26 @@ const ProtectedRoute = ({ children }) => {
 };
 
 const App = () => {
-  const { user } = useAuthStore();
-  const { theme, glass } = useAppearanceStore();
+  const { user, isAuthenticated, isGuest } = useAuthStore();
+  const { theme, glass, setTheme, setGlass } = useAppearanceStore();
+
+  useEffect(() => {
+    // The server wins over a previous browser user's cached appearance.
+    if (isAuthenticated && !isGuest && user) {
+      setTheme(user.theme || 'light');
+      setGlass(Boolean(user.glass));
+    }
+  }, [isAuthenticated, isGuest, user?.theme, user?.glass, setTheme, setGlass]);
 
   useEffect(() => {
     document.body.dataset.theme = theme;
     document.body.dataset.glass = String(glass);
     document.body.classList.toggle('dark', theme === 'dark');
     document.body.dataset.accent = user?.accentColor || 'purple';
-  }, [theme, glass, user?.accentColor]);
+    const wallpaper = user?.wallpaperEnabled ? user.wallpaperImage : null;
+    document.body.style.setProperty('--wallpaper-image', wallpaper ? `url("${wallpaper.startsWith('http') ? wallpaper : (import.meta.env.VITE_API_BASE_URL || (import.meta.env.PROD ? 'https://expencetrack.onrender.com/api' : 'http://localhost:8080/api')).replace(/\/api\/?$/, '') + wallpaper}")` : 'none');
+    document.body.style.setProperty('--wallpaper-overlay', `${Math.max(0, Math.min(100, user?.wallpaperOpacity ?? 35)) / 100}`);
+  }, [theme, glass, user?.accentColor, user?.wallpaperEnabled, user?.wallpaperImage, user?.wallpaperOpacity]);
 
   return (
     <Router>

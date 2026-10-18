@@ -36,6 +36,14 @@ public class User {
     private Boolean gmailConnected = false;
     @Builder.Default
     private String accentColor = "purple";
+    @Builder.Default
+    private Boolean glass = false;
+    private String wallpaperId;
+    private String wallpaperImage;
+    @Builder.Default
+    private Integer wallpaperOpacity = 35;
+    @Builder.Default
+    private Boolean wallpaperEnabled = false;
     
     @Builder.Default
     private AccountStatus status = AccountStatus.ACTIVE;

@@ -133,6 +133,11 @@ public class AuthService {
                 .currency(user.getCurrency())
                 .gmailConnected(user.getGmailConnected())
                 .accentColor(user.getAccentColor())
+                .glass(user.getGlass())
+                .wallpaperId(user.getWallpaperId())
+                .wallpaperImage(user.getWallpaperImage())
+                .wallpaperOpacity(user.getWallpaperOpacity())
+                .wallpaperEnabled(user.getWallpaperEnabled())
                 .build();
     }
 

@@ -36,6 +36,15 @@ public class UserService {
         if (settingsUpdate.getAccentColor() != null) {
             user.setAccentColor(settingsUpdate.getAccentColor());
         }
+        if (settingsUpdate.getGlass() != null) user.setGlass(settingsUpdate.getGlass());
+        if (settingsUpdate.getWallpaperId() != null) user.setWallpaperId(settingsUpdate.getWallpaperId());
+        if (settingsUpdate.getWallpaperImage() != null) user.setWallpaperImage(settingsUpdate.getWallpaperImage());
+        if (settingsUpdate.getWallpaperOpacity() != null) {
+            int opacity = settingsUpdate.getWallpaperOpacity();
+            if (opacity < 0 || opacity > 100) throw new IllegalArgumentException("Wallpaper opacity must be between 0 and 100");
+            user.setWallpaperOpacity(opacity);
+        }
+        if (settingsUpdate.getWallpaperEnabled() != null) user.setWallpaperEnabled(settingsUpdate.getWallpaperEnabled());
 
         return userRepository.save(user);
     }
