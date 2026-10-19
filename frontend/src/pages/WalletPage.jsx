@@ -11,6 +11,7 @@ import walletService from '../services/walletService';
 import { formatCurrency } from '../utils/formatCurrency';
 import { getCardBackground } from '../utils/cardDesigns';
 import { calculateNextDueDate } from '../utils/dateHelpers';
+import { apiErrorMessage } from '../utils/apiError';
 import useAuthStore from '../store/authStore';
 import guestStorage from '../services/guestStorage';
 
@@ -270,11 +271,14 @@ const WalletPage = () => {
   };
 
   const handleDeleteWallet = async (wallet) => {
+    if (deletingWalletId) return;
+
     const label = wallet.bankName || wallet.cardType || 'this card';
     const confirmed = window.confirm(`Remove ${label} from your wallet?`);
     if (!confirmed) return;
 
     try {
+      setWalletError('');
       setDeletingWalletId(wallet.id);
       if (isGuest) {
         guestStorage.wallets.remove(wallet.id);
@@ -285,7 +289,7 @@ const WalletPage = () => {
       await fetchWallets();
     } catch (err) {
       console.error('Failed to remove card:', err);
-      window.alert(err.message || 'Failed to remove card.');
+      setWalletError(apiErrorMessage(err, 'Failed to remove card. Please try again.'));
     } finally {
       setDeletingWalletId(null);
     }

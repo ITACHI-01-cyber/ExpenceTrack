@@ -36,7 +36,9 @@ public class SecurityConfig {
                 .cors(cors -> cors.configure(http))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/api/media/**").permitAll()
+                        // Delivered Cloudinary URLs are public. Only the legacy local read route is public.
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/media/**").permitAll()
+                        .requestMatchers("/api/media/**").authenticated()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session

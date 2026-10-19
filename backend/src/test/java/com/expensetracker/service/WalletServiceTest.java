@@ -12,6 +12,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Optional;
 import java.util.Map;
+import java.util.NoSuchElementException;
+
+import org.springframework.security.access.AccessDeniedException;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -78,6 +81,28 @@ class WalletServiceTest {
 
         assertThrows(IllegalArgumentException.class, () -> service.deleteWallet("credit", "user-1"));
         verify(walletRepository, never()).delete(any(Wallet.class));
+    }
+
+    @Test
+    void deletesAnOwnedNonCreditWallet() {
+        Wallet wallet = Wallet.builder().id("debit").userId("user-1").cardType("debit").build();
+        when(walletRepository.findById("debit")).thenReturn(Optional.of(wallet));
+
+        service.deleteWallet("debit", "user-1");
+
+        verify(walletRepository).delete(wallet);
+    }
+
+    @Test
+    void reportsMissingAndForeignWalletsWithoutDeletingThem() {
+        assertThrows(IllegalArgumentException.class, () -> service.deleteWallet(" ", "user-1"));
+        when(walletRepository.findById("missing")).thenReturn(Optional.empty());
+        assertThrows(NoSuchElementException.class, () -> service.deleteWallet("missing", "user-1"));
+
+        Wallet foreign = Wallet.builder().id("foreign").userId("owner").cardType("debit").build();
+        when(walletRepository.findById("foreign")).thenReturn(Optional.of(foreign));
+        assertThrows(AccessDeniedException.class, () -> service.deleteWallet("foreign", "user-1"));
+        verify(walletRepository, never()).delete(foreign);
     }
 
     @Test

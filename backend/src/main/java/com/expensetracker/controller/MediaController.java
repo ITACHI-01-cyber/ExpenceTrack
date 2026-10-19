@@ -3,7 +3,7 @@ package com.expensetracker.controller;
 import com.expensetracker.dto.ApiResponse;
 import com.expensetracker.model.User;
 import com.expensetracker.repository.UserRepository;
-import com.expensetracker.service.MediaStorageService;
+import com.expensetracker.service.UserMediaService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.ResponseEntity;
@@ -15,7 +15,7 @@ import org.springframework.web.multipart.MultipartFile;
 @RequestMapping("/api/media")
 @RequiredArgsConstructor
 public class MediaController {
-    private final MediaStorageService mediaStorageService;
+    private final UserMediaService mediaStorageService;
     private final UserRepository userRepository;
     private User currentUser() { return userRepository.findByEmail(SecurityContextHolder.getContext().getAuthentication().getName()).orElseThrow(() -> new RuntimeException("User not found")); }
     @PostMapping("/avatar")

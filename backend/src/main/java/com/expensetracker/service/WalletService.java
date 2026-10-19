@@ -4,8 +4,10 @@ import java.util.List;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.NoSuchElementException;
 
 import org.springframework.stereotype.Service;
+import org.springframework.security.access.AccessDeniedException;
 
 import com.expensetracker.model.Wallet;
 import com.expensetracker.repository.WalletRepository;
@@ -183,11 +185,14 @@ public class WalletService {
     }
 
     public void deleteWallet(String id, String userId) {
+        if (id == null || id.isBlank()) {
+            throw new IllegalArgumentException("Wallet ID is required");
+        }
         Wallet wallet = walletRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Wallet not found"));
+                .orElseThrow(() -> new NoSuchElementException("Wallet not found"));
                 
-        if (!wallet.getUserId().equals(userId)) {
-            throw new RuntimeException("Unauthorized");
+        if (!userId.equals(wallet.getUserId())) {
+            throw new AccessDeniedException("You are not authorized to delete this wallet");
         }
         if ("credit".equalsIgnoreCase(wallet.getCardType())
                 && Boolean.TRUE.equals(wallet.getCreditTermsConfigured())

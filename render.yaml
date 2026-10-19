@@ -18,6 +18,14 @@ services:
         sync: false
       - key: SEED_DEMO_DATA
         value: false
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: MEDIA_MIGRATION_ENABLED
+        value: false
       - key: BREVO_API_KEY
         sync: false
       - key: MAIL_FROM

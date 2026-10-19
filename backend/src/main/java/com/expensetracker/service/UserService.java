@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 
 import com.expensetracker.model.User;
 import com.expensetracker.repository.UserRepository;
+import com.expensetracker.dto.UserSettingsUpdate;
 
 import lombok.RequiredArgsConstructor;
 
@@ -14,7 +15,7 @@ public class UserService {
 
     private final UserRepository userRepository;
 
-    public User updateSettings(@NonNull String userId, @NonNull User settingsUpdate) {
+    public User updateSettings(@NonNull String userId, @NonNull UserSettingsUpdate settingsUpdate) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -22,6 +23,7 @@ public class UserService {
             user.setName(settingsUpdate.getName());
         }
         if (settingsUpdate.getProfilePicture() != null) {
+            validateMediaReference(settingsUpdate.getProfilePicture());
             user.setProfilePicture(settingsUpdate.getProfilePicture());
         }
         if (settingsUpdate.getTheme() != null) {
@@ -38,7 +40,10 @@ public class UserService {
         }
         if (settingsUpdate.getGlass() != null) user.setGlass(settingsUpdate.getGlass());
         if (settingsUpdate.getWallpaperId() != null) user.setWallpaperId(settingsUpdate.getWallpaperId());
-        if (settingsUpdate.getWallpaperImage() != null) user.setWallpaperImage(settingsUpdate.getWallpaperImage());
+        if (settingsUpdate.getWallpaperImage() != null) {
+            validateMediaReference(settingsUpdate.getWallpaperImage());
+            user.setWallpaperImage(settingsUpdate.getWallpaperImage());
+        }
         if (settingsUpdate.getWallpaperOpacity() != null) {
             int opacity = settingsUpdate.getWallpaperOpacity();
             if (opacity < 0 || opacity > 100) throw new IllegalArgumentException("Wallpaper opacity must be between 0 and 100");
@@ -47,5 +52,14 @@ public class UserService {
         if (settingsUpdate.getWallpaperEnabled() != null) user.setWallpaperEnabled(settingsUpdate.getWallpaperEnabled());
 
         return userRepository.save(user);
+    }
+
+    private void validateMediaReference(String reference) {
+        if (reference.regionMatches(true, 0, "data:", 0, 5)) {
+            throw new IllegalArgumentException("Image data must be uploaded through /api/media; Base64 image data is not supported");
+        }
+        if (!reference.isBlank() && !reference.startsWith("https://") && !reference.startsWith("/api/media/")) {
+            throw new IllegalArgumentException("Image reference must be a secure URL or a legacy media reference");
+        }
     }
 }

@@ -1,6 +1,7 @@
 package com.expensetracker.controller;
 
 import com.expensetracker.dto.ApiResponse;
+import com.expensetracker.dto.UserSettingsUpdate;
 import com.expensetracker.model.User;
 import com.expensetracker.repository.UserRepository;
 import com.expensetracker.service.UserService;
@@ -26,7 +27,7 @@ public class UserController {
     }
 
     @PutMapping("/settings")
-    public ResponseEntity<ApiResponse<User>> updateSettings(@RequestBody User settingsUpdate) {
+    public ResponseEntity<ApiResponse<User>> updateSettings(@RequestBody UserSettingsUpdate settingsUpdate) {
         User updatedUser = userService.updateSettings(getUserId(), settingsUpdate);
         // Do not return password hash
         updatedUser.setPasswordHash(null);
