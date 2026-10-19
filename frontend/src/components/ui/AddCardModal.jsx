@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { ArrowLeft, Check, X, Lock } from 'lucide-react';
 import WalletCard from '../dashboard/WalletCard';
+import ScenicPresetCard from './ScenicPresetCard';
 import { CARD_DESIGNS, UPI_DESIGNS, CASH_DESIGNS, SCENIC_DESIGNS, DC_DESIGNS, getCardBackground } from '../../utils/cardDesigns';
 import CARD_ICONS, { CardIconRenderer } from '../../utils/cardIcons';
 import Button from './Button';
@@ -88,6 +89,7 @@ const AddCardModal = ({ isOpen, onClose, onSave, initialData = null, isGuest }) 
   const isUpi = formData.cardType === 'upi';
   const isCash = formData.cardType === 'cash';
   const availableDesigns = isUpi ? UPI_DESIGNS : (isCash ? CASH_DESIGNS : CARD_DESIGNS);
+  const creditedScenicDesign = SCENIC_DESIGNS.find((design) => design.artworkCredit);
 
   const updateField = (name, value) => {
     setFormData((current) => ({ ...current, [name]: value }));
@@ -485,26 +487,34 @@ const AddCardModal = ({ isOpen, onClose, onSave, initialData = null, isGuest }) 
               </div>
 
               {/* Scenic / Illustrated Cards Section */}
-              <div className="mt-5">
-                <p className="mb-3 text-sm font-semibold text-neutral-text">🎨 Scenic Cards</p>
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-2">
-                  {SCENIC_DESIGNS.map((design) => {
-                    const scenicBg = getCardBackground({ designPreset: design.id, primaryColor: design.primaryColor, secondaryColor: design.secondaryColor, textColor: design.textColor });
-                    return (
-                      <button
-                        key={design.id}
-                        type="button"
-                        onClick={() => selectDesign(design)}
-                        className={`relative h-24 overflow-hidden rounded-xl border-2 p-3 text-left transition-all ${formData.designPreset === design.id ? 'border-primary shadow-md ring-2 ring-primary/30' : 'border-transparent hover:border-primary/40'}`}
-                        style={{ ...scenicBg, backgroundSize: 'cover' }}
-                      >
-                        <span className="relative z-10 text-xs font-bold drop-shadow-[0_1px_3px_rgba(0,0,0,0.5)]">{design.name}</span>
-                        {formData.designPreset === design.id && <Check className="absolute right-2 top-2 drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]" size={16} />}
-                      </button>
-                    );
-                  })}
+              <section className="mt-6" aria-labelledby="scenic-cards-heading">
+                <div className="mb-3">
+                  <h3 id="scenic-cards-heading" className="text-sm font-semibold text-neutral-text">Scenic Cards</h3>
+                  <p className="mt-1 text-xs text-neutral-muted">Choose a landscape-inspired finish for your card.</p>
                 </div>
-              </div>
+                <div className="grid grid-cols-2 gap-3">
+                  {SCENIC_DESIGNS.map((design) => (
+                    <ScenicPresetCard
+                      key={design.id}
+                      design={design}
+                      selected={formData.designPreset === design.id}
+                      onSelect={() => selectDesign(design)}
+                    />
+                  ))}
+                </div>
+                {creditedScenicDesign && (
+                  <p className="mt-3 text-[10px] leading-relaxed text-neutral-muted">
+                    {creditedScenicDesign.name} photo by{' '}
+                    <a href={creditedScenicDesign.artworkCreditUrl} target="_blank" rel="noreferrer" className="font-medium underline underline-offset-2">
+                      {creditedScenicDesign.artworkCredit}
+                    </a>
+                    {' '}·{' '}
+                    <a href={creditedScenicDesign.artworkLicenseUrl} target="_blank" rel="noreferrer" className="font-medium underline underline-offset-2">
+                      {creditedScenicDesign.artworkLicense}
+                    </a>
+                  </p>
+                )}
+              </section>
               {/* DC Superhero Cards Section */}
               <div className="mt-5">
                 <div className="flex items-center justify-between mb-3">

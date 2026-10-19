@@ -144,56 +144,68 @@ export const SCENIC_DESIGNS = [
     name: 'Alpine Sunset',
     primaryColor: '#2d1b69',
     secondaryColor: '#e8758c',
-    textColor: '#FFFFFF'
+    textColor: '#FFFFFF',
+    artworkUrl: 'https://i.pinimg.com/1200x/dc/4b/c3/dc4bc3313ba0575d4cba9a3a4e10cd76.jpg'
   },
   {
     id: 'scenic-ocean',
     name: 'Ocean Horizon',
     primaryColor: '#0c2340',
     secondaryColor: '#00b4d8',
-    textColor: '#FFFFFF'
+    textColor: '#FFFFFF',
+    artworkUrl: 'https://images.unsplash.com/photo-1500375592092-40eb2168fd21?auto=format&fit=crop&w=1200&h=800&q=85'
   },
   {
     id: 'scenic-northern',
     name: 'Northern Lights',
     primaryColor: '#0a0a2e',
     secondaryColor: '#43e97b',
-    textColor: '#FFFFFF'
+    textColor: '#FFFFFF',
+    artworkUrl: 'https://images.unsplash.com/photo-1531366936337-7c912a4589a7?auto=format&fit=crop&w=1200&q=85'
   },
   {
     id: 'scenic-sahara',
     name: 'Sahara Dunes',
     primaryColor: '#b45309',
     secondaryColor: '#fbbf24',
-    textColor: '#FFFFFF'
+    textColor: '#FFFFFF',
+    artworkUrl: 'https://images.unsplash.com/photo-1509316785289-025f5b846b35?auto=format&fit=crop&w=1200&q=85'
   },
   {
     id: 'scenic-tropical',
     name: 'Tropical',
     primaryColor: '#0891b2',
     secondaryColor: '#f472b6',
-    textColor: '#FFFFFF'
+    textColor: '#FFFFFF',
+    artworkUrl: 'https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=1200&q=85'
   },
   {
     id: 'scenic-neon-city',
     name: 'Neon City',
     primaryColor: '#0f0f2e',
     secondaryColor: '#a855f7',
-    textColor: '#FFFFFF'
+    textColor: '#FFFFFF',
+    artworkUrl: 'https://images.unsplash.com/photo-1519501025264-65ba15a82390?auto=format&fit=crop&w=1200&q=85'
   },
   {
     id: 'scenic-cherry',
     name: 'Cherry Blossom',
     primaryColor: '#be185d',
     secondaryColor: '#f9a8d4',
-    textColor: '#FFFFFF'
+    textColor: '#FFFFFF',
+    artworkUrl: 'https://images.unsplash.com/photo-1522383225653-ed111181a951?auto=format&fit=crop&w=1200&q=85'
   },
   {
     id: 'scenic-volcano',
     name: 'Volcanic Dawn',
     primaryColor: '#7f1d1d',
     secondaryColor: '#f97316',
-    textColor: '#FFFFFF'
+    textColor: '#FFFFFF',
+    artworkUrl: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/0/04/001_Volcano_eruption_of_Litli-Hr%C3%BAtur_in_Iceland_in_2023_Photo_by_Giles_Laurent.jpg/1280px-001_Volcano_eruption_of_Litli-Hr%C3%BAtur_in_Iceland_in_2023_Photo_by_Giles_Laurent.jpg',
+    artworkCredit: 'Giles Laurent',
+    artworkCreditUrl: 'https://commons.wikimedia.org/wiki/File:001_Volcano_eruption_of_Litli-Hr%C3%BAtur_in_Iceland_in_2023_Photo_by_Giles_Laurent.jpg',
+    artworkLicense: 'CC BY-SA 4.0',
+    artworkLicenseUrl: 'https://creativecommons.org/licenses/by-sa/4.0/'
   }
 ];
 
@@ -398,6 +410,17 @@ export const getCardBackground = (wallet = {}) => {
   const safeWallet = wallet || {};
   const design = getCardDesign(safeWallet);
   const gradient = `linear-gradient(135deg, ${design.primaryColor}, ${design.secondaryColor})`;
+
+  const scenicMatch = SCENIC_DESIGNS.find((item) => item.id === safeWallet.designPreset);
+  if (scenicMatch) {
+    return {
+      backgroundImage: `linear-gradient(180deg, rgba(8, 12, 28, 0.28) 0%, rgba(8, 12, 28, 0.08) 42%, rgba(8, 12, 28, 0.62) 100%), url("${scenicMatch.artworkUrl}"), ${gradient}`,
+      backgroundColor: design.primaryColor,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      color: design.textColor
+    };
+  }
 
   // A shared HTTPS asset can be rendered by either client. Local Android paths
   // deliberately remain identifiers and use the preset fallback on the web.
