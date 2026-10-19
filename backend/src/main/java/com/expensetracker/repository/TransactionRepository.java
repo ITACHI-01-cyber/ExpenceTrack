@@ -15,4 +15,6 @@ public interface TransactionRepository extends MongoRepository<Transaction, Stri
     java.util.Optional<Transaction> findByUserIdAndIdempotencyKey(String userId, String idempotencyKey);
     List<Transaction> findByUserIdAndRelatedTransactionIdAndTransactionKind(
             String userId, String relatedTransactionId, String transactionKind);
+    List<Transaction> findByUserIdAndWalletId(String userId, String walletId);
+    void deleteByUserIdAndWalletId(String userId, String walletId);
 }

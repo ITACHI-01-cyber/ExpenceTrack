@@ -271,25 +271,40 @@ const WalletPage = () => {
   };
 
   const handleDeleteWallet = async (wallet) => {
-    if (deletingWalletId) return;
+    if (deletingWalletId || !wallet) return;
 
-    const label = wallet.bankName || wallet.cardType || 'this card';
-    const confirmed = window.confirm(`Remove ${label} from your wallet?`);
+    const label = wallet.cardName || wallet.bankName || wallet.cardType || "this card";
+    const isCreditCard = (wallet.cardType || "").toLowerCase() === "credit";
+    const hasBalance = isCreditCard && Number(wallet.outstandingBalance) > 0;
+    const balanceNotice = hasBalance
+      ? ` This card has an outstanding balance of ${formatCurrency(wallet.outstandingBalance)} which will be removed.`
+      : "";
+    const warning = `Permanently delete "${label}"?\n\nWarning: All associated transactions, statements, and repayment history will also be permanently deleted.${balanceNotice}\n\nAre you sure you want to proceed?`;
+
+    const confirmed = window.confirm(warning);
     if (!confirmed) return;
 
     try {
-      setWalletError('');
+      setWalletError("");
       setDeletingWalletId(wallet.id);
       if (isGuest) {
         guestStorage.wallets.remove(wallet.id);
       } else {
         await walletService.remove(wallet.id);
       }
-      if (selectedWalletId === wallet.id) setSelectedWalletId(null);
-      await fetchWallets();
+      
+      // Fetch fresh wallets from backend / storage
+      const updated = isGuest ? guestStorage.wallets.getAll() : await walletService.getAll();
+      setWallets(updated || []);
+
+      // Automatically select another remaining card if the deleted card was selected
+      if (selectedWalletId === wallet.id) {
+        const remaining = (updated || []).filter((w) => w.id !== wallet.id);
+        setSelectedWalletId(remaining.length > 0 ? remaining[0].id : null);
+      }
     } catch (err) {
-      console.error('Failed to remove card:', err);
-      setWalletError(apiErrorMessage(err, 'Failed to remove card. Please try again.'));
+      console.error("Failed to remove card:", err);
+      setWalletError(apiErrorMessage(err, "Failed to remove card. Please try again."));
     } finally {
       setDeletingWalletId(null);
     }

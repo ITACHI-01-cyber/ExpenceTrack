@@ -17,4 +17,5 @@ public interface CreditRepaymentRepository extends MongoRepository<CreditRepayme
     List<CreditRepayment> findByUserIdAndWalletIdOrderByDateDesc(String userId, String walletId);
     List<CreditRepayment> findByUserId(String userId);
     List<CreditRepayment> findByUserIdAndDateBetween(String userId, LocalDateTime start, LocalDateTime end);
+    void deleteByUserIdAndWalletId(String userId, String walletId);
 }

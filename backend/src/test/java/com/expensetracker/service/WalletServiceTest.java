@@ -2,6 +2,9 @@ package com.expensetracker.service;
 
 import com.expensetracker.model.Wallet;
 import com.expensetracker.repository.WalletRepository;
+import com.expensetracker.repository.TransactionRepository;
+import com.expensetracker.repository.CreditRepaymentRepository;
+import com.expensetracker.repository.CreditStatementRepository;
 import com.expensetracker.dto.WalletCustomizationRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
@@ -23,6 +26,9 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class WalletServiceTest {
     @Mock private WalletRepository walletRepository;
+    @Mock private TransactionRepository transactionRepository;
+    @Mock private CreditRepaymentRepository creditRepaymentRepository;
+    @Mock private CreditStatementRepository creditStatementRepository;
     @InjectMocks private WalletService service;
 
     @Test
@@ -73,14 +79,45 @@ class WalletServiceTest {
     }
 
     @Test
-    void refusesToDeleteCreditCardWithOutstandingLiability() {
-        when(walletRepository.findById("credit")).thenReturn(Optional.of(
-                Wallet.builder().id("credit").userId("user-1").cardType("credit")
-                        .creditTermsConfigured(true)
-                        .outstandingBalance(new java.math.BigDecimal("0.01")).build()));
+    void deletesCreditCardWithPositiveOutstandingBalanceAndCleansUpAssociatedData() {
+        Wallet creditWallet = Wallet.builder().id("credit").userId("user-1").cardType("credit")
+                .creditTermsConfigured(true)
+                .outstandingBalance(new java.math.BigDecimal("1500.00")).build();
+        when(walletRepository.findById("credit")).thenReturn(Optional.of(creditWallet));
 
-        assertThrows(IllegalArgumentException.class, () -> service.deleteWallet("credit", "user-1"));
-        verify(walletRepository, never()).delete(any(Wallet.class));
+        service.deleteWallet("credit", "user-1");
+
+        verify(transactionRepository).deleteByUserIdAndWalletId("user-1", "credit");
+        verify(creditRepaymentRepository).deleteByUserIdAndWalletId("user-1", "credit");
+        verify(creditStatementRepository).deleteByUserIdAndWalletId("user-1", "credit");
+        verify(walletRepository).delete(creditWallet);
+    }
+
+    @Test
+    void deletesCreditCardWithZeroBalanceAndCleansUpAssociatedData() {
+        Wallet creditWallet = Wallet.builder().id("credit-zero").userId("user-1").cardType("credit")
+                .creditTermsConfigured(true)
+                .outstandingBalance(java.math.BigDecimal.ZERO).build();
+        when(walletRepository.findById("credit-zero")).thenReturn(Optional.of(creditWallet));
+
+        service.deleteWallet("credit-zero", "user-1");
+
+        verify(transactionRepository).deleteByUserIdAndWalletId("user-1", "credit-zero");
+        verify(creditRepaymentRepository).deleteByUserIdAndWalletId("user-1", "credit-zero");
+        verify(creditStatementRepository).deleteByUserIdAndWalletId("user-1", "credit-zero");
+        verify(walletRepository).delete(creditWallet);
+    }
+
+    @Test
+    void doesNotDeleteTransactionsFromOtherWallets() {
+        Wallet wallet = Wallet.builder().id("target-card").userId("user-1").cardType("credit").build();
+        when(walletRepository.findById("target-card")).thenReturn(Optional.of(wallet));
+
+        service.deleteWallet("target-card", "user-1");
+
+        verify(transactionRepository).deleteByUserIdAndWalletId("user-1", "target-card");
+        verify(transactionRepository, never()).deleteByUserIdAndWalletId(eq("user-1"), eq("other-card"));
+        verify(walletRepository).delete(wallet);
     }
 
     @Test
@@ -90,6 +127,7 @@ class WalletServiceTest {
 
         service.deleteWallet("debit", "user-1");
 
+        verify(transactionRepository).deleteByUserIdAndWalletId("user-1", "debit");
         verify(walletRepository).delete(wallet);
     }
 

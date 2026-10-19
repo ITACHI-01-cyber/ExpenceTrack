@@ -8,6 +8,10 @@ import java.util.NoSuchElementException;
 
 import org.springframework.stereotype.Service;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.transaction.annotation.Transactional;
+import com.expensetracker.repository.TransactionRepository;
+import com.expensetracker.repository.CreditRepaymentRepository;
+import com.expensetracker.repository.CreditStatementRepository;
 
 import com.expensetracker.model.Wallet;
 import com.expensetracker.repository.WalletRepository;
@@ -36,6 +40,9 @@ public class WalletService {
     private static final Pattern CARD_STYLE = Pattern.compile("^[a-zA-Z][a-zA-Z0-9_-]{0,31}$");
 
     private final WalletRepository walletRepository;
+    private final TransactionRepository transactionRepository;
+    private final CreditRepaymentRepository creditRepaymentRepository;
+    private final CreditStatementRepository creditStatementRepository;
 
     public List<Wallet> getWallets(String userId) {
         return walletRepository.findByUserId(userId).stream()
@@ -184,6 +191,7 @@ public class WalletService {
         return trimmed.isEmpty() ? null : trimmed;
     }
 
+    @Transactional
     public void deleteWallet(String id, String userId) {
         if (id == null || id.isBlank()) {
             throw new IllegalArgumentException("Wallet ID is required");
@@ -194,12 +202,13 @@ public class WalletService {
         if (!userId.equals(wallet.getUserId())) {
             throw new AccessDeniedException("You are not authorized to delete this wallet");
         }
-        if ("credit".equalsIgnoreCase(wallet.getCardType())
-                && Boolean.TRUE.equals(wallet.getCreditTermsConfigured())
-                && wallet.getOutstandingBalance() != null
-                && wallet.getOutstandingBalance().signum() > 0) {
-            throw new IllegalArgumentException("A credit card with an outstanding balance cannot be deleted");
-        }
+        // Delete all transactions explicitly associated with this card
+        transactionRepository.deleteByUserIdAndWalletId(userId, id);
+        // Clean up credit repayments associated with this card
+        creditRepaymentRepository.deleteByUserIdAndWalletId(userId, id);
+        // Clean up credit statements associated with this card
+        creditStatementRepository.deleteByUserIdAndWalletId(userId, id);
+        // Delete the wallet itself
         walletRepository.delete(wallet);
     }
 

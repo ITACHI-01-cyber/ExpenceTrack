@@ -11,4 +11,5 @@ public interface CreditStatementRepository extends MongoRepository<CreditStateme
     Optional<CreditStatement> findByWalletIdAndPeriodEnd(String walletId, LocalDate periodEnd);
     Optional<CreditStatement> findByIdAndUserIdAndWalletId(String id, String userId, String walletId);
     List<CreditStatement> findByUserIdAndWalletIdOrderByPeriodEndDesc(String userId, String walletId);
+    void deleteByUserIdAndWalletId(String userId, String walletId);
 }

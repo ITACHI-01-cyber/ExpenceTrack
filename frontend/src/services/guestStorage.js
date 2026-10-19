@@ -225,6 +225,12 @@ const wallets = {
   remove: (walletId) => {
     const list = wallets.getAll().filter((w) => w.id !== walletId);
     write(LS_KEYS.wallets, list);
+    const txList = (read(LS_KEYS.transactions) || []).filter((t) => t.walletId !== walletId);
+    write(LS_KEYS.transactions, txList);
+    const repayList = (read(LS_KEYS.creditRepayments) || []).filter((r) => r.walletId !== walletId);
+    write(LS_KEYS.creditRepayments, repayList);
+    const stmtList = (read(LS_KEYS.creditStatements) || []).filter((s) => s.walletId !== walletId);
+    write(LS_KEYS.creditStatements, stmtList);
     return true;
   },
 };

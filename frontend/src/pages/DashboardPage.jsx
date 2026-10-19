@@ -1,49 +1,55 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/layout/Layout';
-import TopBar from '../components/layout/TopBar';
 import CardCarousel from '../components/dashboard/CardCarousel';
-import BudgetProgress from '../components/dashboard/BudgetProgress';
-import ExpenseStatsChart from '../components/dashboard/ExpenseStatsChart';
-import MonthlyExpenseGrid from '../components/dashboard/MonthlyExpenseGrid';
-import SavingsGoalsGrid from '../components/dashboard/SavingsGoalsGrid';
 import EditBudgetModal from '../components/ui/EditBudgetModal';
 import AddGoalModal from '../components/ui/AddGoalModal';
 import EditGoalModal from '../components/ui/EditGoalModal';
 import AddBalanceModal from '../components/ui/AddBalanceModal';
 import PayCreditCardModal from '../components/ui/PayCreditCardModal';
 import { formatCurrency } from '../utils/formatCurrency';
-import { calculateNextDueDate } from '../utils/dateHelpers';
-import {
-  AlertTriangle,
-  ArrowDownLeft,
-  ArrowRight,
-  ArrowUpRight,
-  CheckCircle,
-  Clock,
-  CreditCard,
-  Percent,
-  Plus,
-  ReceiptText,
-  Settings2,
-  Target,
-  Wallet,
-} from 'lucide-react';
+import { apiAssetUrl } from '../services/api';
 import api from '../services/api';
 import walletService from '../services/walletService';
 import useAuthStore from '../store/authStore';
 import guestStorage from '../services/guestStorage';
+import {
+  Search,
+  Bell,
+  Calendar,
+  Wallet,
+  MoreVertical,
+  BarChart3,
+  ArrowDownLeft,
+  ArrowUpRight,
+  ReceiptText,
+  Target,
+  ArrowRight,
+  Utensils,
+  Heart,
+  MoreHorizontal,
+  ShoppingBag,
+  Plus,
+  CreditCard,
+  ChevronDown,
+  Clock,
+  AlertTriangle,
+  CheckCircle,
+} from 'lucide-react';
 
 const DashboardPage = () => {
   const navigate = useNavigate();
   const { isGuest, user } = useAuthStore();
   const [summary, setSummary] = useState(null);
   const [transactions, setTransactions] = useState([]);
+  const [allTransactions, setAllTransactions] = useState([]);
   const [wallets, setWallets] = useState([]);
-  const [creditActivity, setCreditActivity] = useState([]);
-  const [creditActivityError, setCreditActivityError] = useState('');
+  const [selectedWallet, setSelectedWallet] = useState(null);
   const [goals, setGoals] = useState([]);
+  const [creditActivity, setCreditActivity] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Modals state
   const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false);
   const [isAddGoalModalOpen, setIsAddGoalModalOpen] = useState(false);
   const [isEditGoalModalOpen, setIsEditGoalModalOpen] = useState(false);
@@ -52,79 +58,7 @@ const DashboardPage = () => {
   const [isPayModalOpen, setIsPayModalOpen] = useState(false);
   const [selectedCardForPayment, setSelectedCardForPayment] = useState(null);
 
-  const [allTransactions, setAllTransactions] = useState([]);
-  const [selectedWallet, setSelectedWallet] = useState(null);
-  const [gridTransactions, setGridTransactions] = useState([]);
-  const [gridFilterType, setGridFilterType] = useState('month'); // 'week' | 'month' | 'lastMonth' | 'year' | 'custom'
-  const [gridCustomRange, setGridCustomRange] = useState({ startDate: '', endDate: '' });
-
-  const getTransactionsQueryString = (type, range) => {
-    const now = new Date();
-    const formatDate = (date) => {
-      const yyyy = date.getFullYear();
-      const mm = String(date.getMonth() + 1).padStart(2, '0');
-      const dd = String(date.getDate()).padStart(2, '0');
-      return `${yyyy}-${mm}-${dd}`;
-    };
-
-    if (type === 'week') {
-      const startOfWeek = new Date(now);
-      const day = startOfWeek.getDay();
-      const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1);
-      startOfWeek.setDate(diff);
-      const startDate = formatDate(startOfWeek);
-      const endDate = formatDate(now);
-      return `?startDate=${startDate}&endDate=${endDate}`;
-    } else if (type === 'month') {
-      const month = now.getMonth() + 1;
-      const year = now.getFullYear();
-      return `?month=${month}&year=${year}`;
-    } else if (type === 'lastMonth') {
-      const lastMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-      const month = lastMonthDate.getMonth() + 1;
-      const year = lastMonthDate.getFullYear();
-      return `?month=${month}&year=${year}`;
-    } else if (type === 'year') {
-      const year = now.getFullYear();
-      const startDate = `${year}-01-01`;
-      const endDate = `${year}-12-31`;
-      return `?startDate=${startDate}&endDate=${endDate}`;
-    } else if (type === 'custom' && range?.startDate && range?.endDate) {
-      return `?startDate=${range.startDate}&endDate=${range.endDate}`;
-    } else {
-      const month = now.getMonth() + 1;
-      const year = now.getFullYear();
-      return `?month=${month}&year=${year}`;
-    }
-  };
-
-  const fetchGridTransactions = async (type, range) => {
-    try {
-      const query = getTransactionsQueryString(type, range);
-      if (isGuest) {
-        const params = Object.fromEntries(new URLSearchParams(query.replace('?', '')));
-        setGridTransactions(guestStorage.transactions.getAll(params));
-      } else {
-        const res = await api.get(`/transactions${query}`);
-        if (res.data.success) {
-          setGridTransactions(res.data.data);
-        }
-      }
-    } catch (err) {
-      console.error("Failed to fetch grid transactions", err);
-    }
-  };
-
-  const handleGridFilterChange = async (type, range) => {
-    setGridFilterType(type);
-    if (range) {
-      setGridCustomRange(range);
-    }
-    await fetchGridTransactions(type, range);
-  };
-
   const fetchData = async () => {
-    // ── Wallets ──
     try {
       if (isGuest) {
         setWallets(guestStorage.wallets.getAll());
@@ -142,31 +76,21 @@ const DashboardPage = () => {
       const year = now.getFullYear();
 
       if (isGuest) {
-        // Guest: read directly from localStorage
         const summaryData = guestStorage.budget.getSummary();
         setSummary(summaryData);
 
         const allTx = guestStorage.transactions.getAll({ month, year });
         const sorted = allTx.sort((a, b) => new Date(b.date) - new Date(a.date));
         setAllTransactions(sorted);
-        setTransactions(sorted.slice(0, 4));
+        setTransactions(sorted.slice(0, 5));
 
         const allGoals = guestStorage.goals.getAll({ month, year });
         setGoals(allGoals);
-
-        // Grid transactions for the current filter
-        const gridQuery = getTransactionsQueryString(gridFilterType, gridCustomRange);
-        const gridParams = Object.fromEntries(new URLSearchParams(gridQuery.replace('?', '')));
-        const gridTx = guestStorage.transactions.getAll(gridParams);
-        setGridTransactions(gridTx);
       } else {
-        const gridQuery = getTransactionsQueryString(gridFilterType, gridCustomRange);
-
-        const [summaryRes, txRes, goalsRes, gridTxRes] = await Promise.all([
+        const [summaryRes, txRes, goalsRes] = await Promise.all([
           api.get('/dashboard/summary'),
           api.get(`/transactions?month=${month}&year=${year}`),
-          api.get(`/goals?month=${month}&year=${year}`),
-          api.get(`/transactions${gridQuery}`)
+          api.get(`/goals?month=${month}&year=${year}`)
         ]);
 
         if (summaryRes.data.success) {
@@ -175,17 +99,14 @@ const DashboardPage = () => {
         if (txRes.data.success) {
           const sorted = txRes.data.data.sort((a, b) => new Date(b.date) - new Date(a.date));
           setAllTransactions(sorted);
-          setTransactions(sorted.slice(0, 4));
+          setTransactions(sorted.slice(0, 5));
         }
-        if (goalsRes && goalsRes.data && goalsRes.data.success) {
+        if (goalsRes?.data?.success) {
           setGoals(goalsRes.data.data);
-        }
-        if (gridTxRes.data.success) {
-          setGridTransactions(gridTxRes.data.data);
         }
       }
     } catch (err) {
-      console.error("Failed to fetch dashboard data", err);
+      console.error('Failed to fetch dashboard data', err);
     } finally {
       setLoading(false);
     }
@@ -193,7 +114,6 @@ const DashboardPage = () => {
 
   useEffect(() => {
     fetchData();
-    return undefined;
   }, []);
 
   useEffect(() => {
@@ -202,8 +122,7 @@ const DashboardPage = () => {
     );
     if (cards.length === 0) {
       setCreditActivity([]);
-      setCreditActivityError('');
-      return undefined;
+      return;
     }
     let cancelled = false;
     Promise.all(cards.map(async (card) => {
@@ -215,103 +134,129 @@ const DashboardPage = () => {
       .then((lists) => {
         if (!cancelled) {
           setCreditActivity(lists.flat());
-          setCreditActivityError('');
         }
       })
       .catch((error) => {
-        if (!cancelled) {
-          setCreditActivityError(error.message || 'Credit repayment activity could not be loaded.');
-        }
+        console.error('Credit repayment activity could not be loaded', error);
       });
     return () => {
       cancelled = true;
     };
   }, [wallets, isGuest]);
 
-  const chartData = React.useMemo(() => {
-    const expensesByDay = {};
-    allTransactions.forEach(tx => {
-      if (tx.type === 'expense') {
-        const dateObj = new Date(tx.date);
-        const dateStr = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-        expensesByDay[dateStr] = (expensesByDay[dateStr] || 0) + tx.amount;
-      }
-    });
-    const grouped = Object.entries(expensesByDay).map(([date, value]) => ({ 
-      date, 
-      value, 
-      timestamp: new Date(date + ` ${new Date().getFullYear()}`).getTime() 
-    }));
-    const sorted = grouped.sort((a, b) => a.timestamp - b.timestamp).map(({ date, value }) => ({ date, value }));
-    return sorted.length > 0 ? sorted : [{ date: 'No Data', value: 0 }];
+  // Derived financial totals
+  const monthlyExpenseTotal = useMemo(() => {
+    return allTransactions.reduce(
+      (total, tx) => total + (tx.type === 'expense' ? Number(tx.amount) || 0 : 0),
+      0
+    );
   }, [allTransactions]);
 
-  const expenseCategories = React.useMemo(() => {
-    const categories = {};
-    gridTransactions.forEach(tx => {
-      if (tx.type === 'expense') {
-        const catName = tx.category?.trim() || 'Uncategorized';
-        const categoryKey = catName.toLocaleLowerCase();
-        if (!categories[categoryKey]) {
-          categories[categoryKey] = { name: catName, amount: 0 };
-        }
-        categories[categoryKey].amount += tx.amount;
-      }
-    });
-    const mapped = Object.values(categories)
-      .sort((a, b) => b.amount - a.amount);
-    return mapped;
-  }, [gridTransactions]);
+  const monthlyIncomeTotal = useMemo(() => {
+    return Number(summary?.monthlyIncome) || allTransactions.reduce(
+      (total, tx) => total + (tx.type === 'income' ? Number(tx.amount) || 0 : 0),
+      0
+    );
+  }, [summary, allTransactions]);
 
-  const monthlyExpenseTotal = allTransactions.reduce(
-    (total, transaction) => total + (transaction.type === 'expense' ? Number(transaction.amount) || 0 : 0),
-    0
-  );
-  const monthlyIncomeTotal = Number(summary?.monthlyIncome) || allTransactions.reduce(
-    (total, transaction) => total + (transaction.type === 'income' ? Number(transaction.amount) || 0 : 0),
-    0
-  );
-  const configuredCreditCards = wallets.filter(
-    (wallet) => wallet.cardType?.toLowerCase() === 'credit' && wallet.creditTermsConfigured
-  );
-  const outstandingCreditTotal = configuredCreditCards.reduce(
-    (total, wallet) => total + (Number(wallet.outstandingBalance) || 0),
-    0
-  );
-  const totalCreditLimit = configuredCreditCards.reduce(
-    (total, wallet) => total + (Number(wallet.creditLimit) || 0),
-    0
-  );
-  const availableCreditTotal = configuredCreditCards.reduce(
-    (total, wallet) => total + Math.max(0, (Number(wallet.creditLimit) || 0) - (Number(wallet.outstandingBalance) || 0)),
-    0
-  );
-  const overallUtilization = totalCreditLimit > 0
-    ? Math.min(100, Math.round((outstandingCreditTotal / totalCreditLimit) * 100))
+  const budgetLimit = Number(summary?.monthlyBudgetLimit) || 0;
+  const budgetSpent = Number(summary?.monthlySpent) || monthlyExpenseTotal;
+  const budgetLeft = budgetLimit - budgetSpent;
+
+  // Expense summary percentage (safe division)
+  const expensePercentage = useMemo(() => {
+    if (budgetLimit > 0) {
+      return Math.min(100, Math.round((monthlyExpenseTotal / budgetLimit) * 1000) / 10);
+    }
+    if (monthlyIncomeTotal > 0) {
+      return Math.min(100, Math.round((monthlyExpenseTotal / monthlyIncomeTotal) * 1000) / 10);
+    }
+    return monthlyExpenseTotal > 0 ? 100 : 0;
+  }, [monthlyExpenseTotal, budgetLimit, monthlyIncomeTotal]);
+
+  // Savings goals calculation
+  const savingsGoalTotal = useMemo(() => {
+    return goals.reduce((total, goal) => total + (Number(goal.amount) || 0), 0);
+  }, [goals]);
+
+  const completedSavingsTotal = useMemo(() => {
+    return goals.reduce(
+      (total, goal) => total + (goal.completed ? Number(goal.amount) || 0 : 0),
+      0
+    );
+  }, [goals]);
+
+  const savingsProgress = savingsGoalTotal > 0
+    ? Math.min(100, Math.round((completedSavingsTotal / savingsGoalTotal) * 100))
     : 0;
-  const currentMonthPrefix = new Date().toISOString().slice(0, 7);
-  const paymentsThisMonth = creditActivity
-    .filter((item) => item.transactionKind === 'repayment' && String(item.paymentDate || item.date || '').startsWith(currentMonthPrefix))
-    .reduce((total, item) => total + (Number(item.amount) || 0), 0);
-  const totalCreditRepayments = creditActivity
-    .filter((item) => item.transactionKind === 'repayment')
-    .reduce((total, item) => total + (Number(item.amount) || 0), 0);
 
-  const creditCardBills = configuredCreditCards.map((card) => {
-    const due = calculateNextDueDate(card);
-    const balance = Number(card.outstandingBalance || 0);
-    return {
-      ...card,
-      due,
-      hasBalance: balance > 0,
-    };
+  // Selected card attributes
+  const cardNumber = String(selectedWallet?.cardNumber || '');
+  const maskedCardNumber = cardNumber
+    ? (selectedWallet?.cardType?.toLowerCase() === 'upi' ? cardNumber : `•••• •••• •••• ${cardNumber.slice(-4)}`)
+    : 'Not available';
+  const cardStatus = selectedWallet?.status || (Number(selectedWallet?.balance) > 0 || selectedWallet?.creditTermsConfigured ? 'Active' : 'Empty');
+
+  // Date formatting helper for header
+  const currentDate = new Date();
+  const dateLabel = currentDate.toLocaleDateString('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
   });
-  const overdueCount = creditCardBills.filter((b) => b.hasBalance && b.due?.status === 'overdue').length;
-  const upcomingCount = creditCardBills.filter((b) => b.hasBalance && (b.due?.status === 'upcoming' || b.due?.status === 'due_today')).length;
 
-  const handleOpenPayModal = (card) => {
-    setSelectedCardForPayment(card);
-    setIsPayModalOpen(true);
+  // Relative / friendly date formatting for recent transactions
+  const formatTxDate = (dateStr) => {
+    if (!dateStr) return 'Recent';
+    const txDate = new Date(dateStr);
+    const now = new Date();
+    const isToday = txDate.toDateString() === now.toDateString();
+    
+    const yesterday = new Date();
+    yesterday.setDate(now.getDate() - 1);
+    const isYesterday = txDate.toDateString() === yesterday.toDateString();
+
+    const timeStr = txDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    if (isToday) return `Today, ${timeStr}`;
+    if (isYesterday) return `Yesterday, ${timeStr}`;
+    return txDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  };
+
+  const getCategoryIconDetails = (category, type) => {
+    const cat = (category || '').toLowerCase();
+    if (type === 'income') {
+      return { icon: ArrowDownLeft, bg: 'bg-[#E6F8F3]', text: 'text-[#00B074]' };
+    }
+    if (cat.includes('food') || cat.includes('grocer') || cat.includes('din')) {
+      return { icon: Utensils, bg: 'bg-[#FEECEB]', text: 'text-[#FF5A5F]' };
+    }
+    if (cat.includes('health') || cat.includes('med') || cat.includes('fit')) {
+      return { icon: Heart, bg: 'bg-[#FFE8EC]', text: 'text-[#FF3B69]' };
+    }
+    if (cat.includes('shop') || cat.includes('cloth') || cat.includes('buy')) {
+      return { icon: ShoppingBag, bg: 'bg-[#EBF0FF]', text: 'text-[#4F6BFF]' };
+    }
+    return { icon: MoreHorizontal, bg: 'bg-[#F1EBFB]', text: 'text-[#704FE6]' };
+  };
+
+  // Credit card bills helper
+  const configuredCreditCards = wallets.filter(
+    (w) => w.cardType?.toLowerCase() === 'credit' && w.creditTermsConfigured
+  );
+
+  const handleAddBalance = async (amount) => {
+    try {
+      if (isGuest) {
+        guestStorage.wallets.addMoney(topUpWallet.id, amount);
+        setWallets(guestStorage.wallets.getAll());
+      } else {
+        await walletService.addMoney(topUpWallet.id, amount);
+        const w = await walletService.getAll();
+        setWallets(w || []);
+      }
+    } catch (err) {
+      console.error('Failed to top up wallet', err);
+    }
   };
 
   const handlePayCreditCardSubmit = async (cardId, request) => {
@@ -325,428 +270,448 @@ const DashboardPage = () => {
       return res;
     }
   };
-  const savingsGoalTotal = goals.reduce((total, goal) => total + (Number(goal.amount) || 0), 0);
-  const completedSavingsTotal = goals.reduce(
-    (total, goal) => total + (goal.completed ? Number(goal.amount) || 0 : 0),
-    0
-  );
-  const savingsProgress = savingsGoalTotal > 0
-    ? Math.min((completedSavingsTotal / savingsGoalTotal) * 100, 100)
-    : 0;
-  const cardNumber = String(selectedWallet?.cardNumber || '');
-  const maskedCardNumber = cardNumber
-    ? `•••• •••• •••• ${cardNumber.slice(-4)}`
-    : 'Not available';
-  const cardStatus = selectedWallet?.status || (Number(selectedWallet?.balance) > 0 ? 'Active' : 'Empty');
 
   const handleGoalStatusChange = async (goal, completed) => {
     if (goal.completed === completed) return;
-
     const updatedGoal = { ...goal, completed };
-
     setGoals((currentGoals) =>
-      currentGoals.map((item) => item.id === goal.id ? updatedGoal : item)
+      currentGoals.map((item) => (item.id === goal.id ? updatedGoal : item))
     );
-
     try {
       if (isGuest) {
         const result = guestStorage.goals.updateStatus(goal.id, completed);
         if (result) {
           setGoals((currentGoals) =>
-            currentGoals.map((item) => item.id === goal.id ? result : item)
+            currentGoals.map((item) => (item.id === goal.id ? result : item))
           );
         }
       } else {
         const res = await api.patch(`/goals/${goal.id}/status`, null, {
-          params: { completed }
+          params: { completed },
         });
-        if (res.data.success) {
+        if (res.data?.success) {
           setGoals((currentGoals) =>
-            currentGoals.map((item) => item.id === goal.id ? res.data.data : item)
+            currentGoals.map((item) => (item.id === goal.id ? res.data.data : item))
           );
         }
       }
     } catch (err) {
       console.error('Failed to update goal status', err);
-      setGoals((currentGoals) =>
-        currentGoals.map((item) => item.id === goal.id ? goal : item)
-      );
+      fetchData();
     }
-  };
-
-  const handleEditGoalClick = (goal) => {
-    setSelectedGoalToEdit(goal);
-    setIsEditGoalModalOpen(true);
-  };
-
-  const handleDeleteGoal = async (goalId) => {
-    if (!window.confirm("Are you sure you want to delete this target?")) return;
-    try {
-      if (isGuest) {
-        guestStorage.goals.remove(goalId);
-        fetchData();
-      } else {
-        const res = await api.delete(`/goals/${goalId}`);
-        if (res.data.success) {
-          fetchData();
-        }
-      }
-    } catch (err) {
-      console.error("Failed to delete goal", err);
-    }
-  };
-
-  const handleAddBalance = (amount) => {
-    (async () => {
-      try {
-        if (isGuest) {
-          guestStorage.wallets.addMoney(topUpWallet.id, amount);
-          setWallets(guestStorage.wallets.getAll());
-        } else {
-          await walletService.addMoney(topUpWallet.id, amount);
-          const w = await walletService.getAll();
-          setWallets(w || []);
-        }
-      } catch (err) {
-        console.error('Failed to top up wallet', err);
-      }
-    })();
   };
 
   if (loading) {
     return (
       <Layout>
-        <TopBar />
-        <div className="flex items-center justify-center h-64 text-primary">Loading dashboard...</div>
+        <div className="flex h-96 items-center justify-center">
+          <div className="flex flex-col items-center gap-3">
+            <div className="h-10 w-10 animate-spin rounded-full border-2 border-[#6936F5]/20 border-t-[#6936F5]" />
+            <p className="text-sm font-medium text-neutral-muted">Loading dashboard...</p>
+          </div>
+        </div>
       </Layout>
     );
   }
 
+  const username = user?.name ? user.name.split(' ')[0] : 'User';
+
   return (
     <Layout>
-      <TopBar />
-      
-      <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
-        <div className="flex min-w-0 flex-col gap-4">
-          <section className="grid min-w-0 grid-cols-1 items-center gap-3 overflow-hidden rounded-card border border-border bg-surface p-3 shadow-card sm:p-4 lg:grid-cols-[minmax(0,1.25fr)_minmax(220px,0.75fr)]">
+      {/* ── Top Header matching reference ── */}
+      <header className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-start md:mb-7">
+        <div className="min-w-0">
+          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#704FE6]">
+            PERSONAL FINANCE
+          </p>
+          <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-[#171329] sm:text-3xl">
+            Welcome back, <span className="text-[#6936F5]">{username}</span>
+          </h1>
+          <p className="mt-1 text-xs text-[#77728A] sm:text-sm">
+            A clearer view of your money, every day.
+          </p>
+        </div>
+
+        {/* Right side controls: Search, Notification, Avatar, and Date pill */}
+        <div className="flex flex-col items-start gap-2.5 sm:items-end">
+          <div className="flex items-center gap-2.5">
+            {/* Search Input */}
+            <div className="relative">
+              <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#9E97B3]" />
+              <input
+                type="text"
+                placeholder="Search transactions..."
+                onClick={() => navigate('/transactions')}
+                readOnly
+                className="h-10 w-44 cursor-pointer rounded-full border border-[#EBE8F3] bg-white pl-9 pr-4 text-xs font-medium text-[#1F1B2D] placeholder:text-[#9E97B3] shadow-sm transition hover:border-[#6936F5]/40 sm:w-52"
+              />
+            </div>
+
+            {/* Notification button */}
+            <button
+              type="button"
+              aria-label="Notifications"
+              className="relative flex h-10 w-10 items-center justify-center rounded-full border border-[#EBE8F3] bg-white text-[#1F1B2D] shadow-sm transition hover:bg-[#FAF8FD]"
+            >
+              <Bell size={17} />
+              <span className="absolute top-2.5 right-2.5 h-2 w-2 rounded-full bg-[#FF4757] ring-2 ring-white" />
+            </button>
+
+            {/* User Avatar */}
+            <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-[#6936F5] text-sm font-bold text-white shadow-sm ring-2 ring-[#6936F5]/20">
+              {user?.profilePicture ? (
+                <img src={apiAssetUrl(user.profilePicture)} alt="User" className="h-full w-full object-cover" />
+              ) : (
+                username.charAt(0).toLowerCase()
+              )}
+            </div>
+          </div>
+
+          {/* Date pill */}
+          <div className="flex items-center gap-1.5 rounded-full border border-[#EBE8F3] bg-white px-3.5 py-1.5 text-xs font-semibold text-[#1F1B2D] shadow-sm">
+            <Calendar size={13} className="text-[#6936F5]" />
+            <span>{dateLabel}</span>
+          </div>
+        </div>
+      </header>
+
+      {/* ── Main Dashboard Grid ── */}
+      <div className="flex flex-col gap-5">
+        
+        {/* ── Row 1: Wallet Carousel + Card Info + Expense Summary ── */}
+        <section aria-label="Wallet and expense overview" className="grid grid-cols-1 gap-5 lg:grid-cols-12 items-stretch">
+          
+          {/* 1. Wallet card carousel panel */}
+          <div className="lg:col-span-5 flex flex-col justify-center rounded-[1.75rem] border border-[#EBE8F3] bg-white p-4 shadow-[0_10px_30px_rgba(25,15,45,0.03)] sm:p-5">
             <CardCarousel
               wallets={wallets}
               onAddCard={() => navigate('/wallet')}
               onAddMoney={setTopUpWallet}
               onSelectionChange={setSelectedWallet}
             />
+          </div>
 
-            <div className="rounded-2xl border border-border bg-background/70 p-4 sm:p-5">
-              <div className="mb-4 flex items-center justify-between gap-2">
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-neutral-muted">Card information</p>
-                  <h2 className="mt-1 truncate text-base font-bold text-neutral-text">
-                    {selectedWallet?.bankName || selectedWallet?.cardType || 'Your card'}
-                  </h2>
+          {/* 2. Card Information panel */}
+          <div className="lg:col-span-3 flex flex-col justify-between rounded-[1.75rem] border border-[#EBE8F3] bg-white p-5 shadow-[0_10px_30px_rgba(25,15,45,0.03)]">
+            <div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#F1EBFB] text-[#6936F5]">
+                    <Wallet size={17} />
+                  </div>
+                  <span className="text-xs font-bold text-[#1F1B2D]">Card Information</span>
                 </div>
-                <CreditCard size={19} className="shrink-0 text-primary" />
+                <button
+                  type="button"
+                  onClick={() => navigate('/wallet')}
+                  aria-label="Card options"
+                  className="text-neutral-400 hover:text-neutral-700"
+                >
+                  <MoreVertical size={16} />
+                </button>
               </div>
-              <dl className="grid grid-cols-2 gap-x-3 gap-y-4">
+
+              <h2 className="mt-4 text-xl font-extrabold capitalize tracking-tight text-[#171329]">
+                {selectedWallet?.cardName || selectedWallet?.bankName || selectedWallet?.cardType || 'Payment Card'}
+              </h2>
+
+              <dl className="mt-4 grid grid-cols-2 gap-x-3 gap-y-4">
                 <div>
-                  <dt className="text-[10px] font-medium text-neutral-muted">Status</dt>
-                  <dd className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold ${cardStatus.toLowerCase() === 'active' ? 'bg-success/10 text-success' : 'bg-primary/10 text-primary'}`}>
-                    {cardStatus}
+                  <dt className="text-[10px] font-medium text-[#77728A]">Status</dt>
+                  <dd className="mt-1">
+                    <span className="inline-flex rounded-full bg-[#E6F8F3] px-2.5 py-0.5 text-[10px] font-bold text-[#00B074]">
+                      {cardStatus}
+                    </span>
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-[10px] font-medium text-neutral-muted">Card type</dt>
-                  <dd className="mt-1 truncate text-xs font-semibold capitalize text-neutral-text">
-                    {selectedWallet?.cardType || '—'}
+                  <dt className="text-[10px] font-medium text-[#77728A]">Card type</dt>
+                  <dd className="mt-1 truncate text-xs font-semibold capitalize text-[#1F1B2D]">
+                    {selectedWallet?.cardType || 'UPI'}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-[10px] font-medium text-neutral-muted">Card number</dt>
-                  <dd className="mt-1 truncate font-mono text-[11px] font-semibold text-neutral-text">{maskedCardNumber}</dd>
+                  <dt className="text-[10px] font-medium text-[#77728A]">Card number</dt>
+                  <dd className="mt-1 truncate font-mono text-[11px] font-semibold text-[#1F1B2D]">
+                    {maskedCardNumber}
+                  </dd>
                 </div>
                 <div>
-                  <dt className="text-[10px] font-medium text-neutral-muted">Currency · expiry</dt>
-                  <dd className="mt-1 truncate text-xs font-semibold text-neutral-text">
+                  <dt className="text-[10px] font-medium text-[#77728A]">Currency · expiry</dt>
+                  <dd className="mt-1 truncate text-xs font-semibold text-[#1F1B2D]">
                     {user?.currency || 'INR'} · {selectedWallet?.expiryDate || '—'}
                   </dd>
                 </div>
               </dl>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => navigate('/wallet')}
+              className="mt-5 inline-flex items-center gap-1 text-xs font-bold text-[#6936F5] transition hover:text-[#5225cb]"
+            >
+              Manage wallet <ArrowRight size={13} />
+            </button>
+          </div>
+
+          {/* 3. Expense summary panel */}
+          <div className="lg:col-span-4 flex flex-col justify-between rounded-[1.75rem] border border-[#EBE8F3] bg-white p-5 shadow-[0_10px_30px_rgba(25,15,45,0.03)]">
+            <div>
+              <div className="flex items-center justify-between">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#F1EBFB] text-[#6936F5]">
+                  <BarChart3 size={17} />
+                </div>
+                <div className="flex items-center gap-1 rounded-full border border-[#EBE8F3] bg-[#FAF8FD] px-3 py-1 text-[11px] font-semibold text-[#1F1B2D]">
+                  <span>This Month</span>
+                  <ChevronDown size={12} className="text-[#77728A]" />
+                </div>
+              </div>
+
+              <p className="mt-4 text-xs font-semibold text-[#77728A]">Expense summary</p>
+              <div className="mt-1 flex items-baseline justify-between gap-2">
+                <p className="text-2xl font-black tracking-tight tabular-nums text-[#171329]">
+                  {formatCurrency(monthlyExpenseTotal)}
+                </p>
+                <div className="text-right">
+                  <span className="text-xs font-bold tabular-nums text-[#171329]">
+                    {allTransactions.filter((tx) => tx.type === 'expense').length}
+                  </span>
+                  <p className="text-[10px] text-[#77728A]">Transactions</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-5">
+              <div className="flex items-center gap-3">
+                <div className="relative h-2.5 flex-1 overflow-hidden rounded-full bg-[#EAE6F5]">
+                  <div
+                    className="h-full rounded-full bg-[#6936F5] transition-all duration-700"
+                    style={{ width: `${Math.min(100, Math.max(0, expensePercentage))}%` }}
+                  />
+                </div>
+                <span className="text-xs font-bold tabular-nums text-[#1F1B2D]">
+                  {expensePercentage}%
+                </span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ── Row 2: 4 Financial Metric Cards ── */}
+        <section aria-label="Monthly financial metrics" className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          {/* 1. Monthly Income */}
+          <div className="flex min-w-0 flex-col justify-between rounded-[1.5rem] border border-[#EBE8F3] bg-white p-4 shadow-[0_8px_24px_rgba(25,15,45,0.03)] sm:p-5">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#E6F8F3] text-[#00B074]">
+              <ArrowDownLeft size={18} />
+            </span>
+            <div className="mt-3">
+              <p className="truncate text-[11px] font-semibold text-[#77728A]">Monthly Income</p>
+              <p className="mt-1 truncate text-lg font-black tracking-tight tabular-nums text-[#171329] sm:text-xl">
+                {formatCurrency(monthlyIncomeTotal)}
+              </p>
+            </div>
+          </div>
+
+          {/* 2. Expenses */}
+          <div className="flex min-w-0 flex-col justify-between rounded-[1.5rem] border border-[#EBE8F3] bg-white p-4 shadow-[0_8px_24px_rgba(25,15,45,0.03)] sm:p-5">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#FEECEB] text-[#FF5A5F]">
+              <ArrowUpRight size={18} />
+            </span>
+            <div className="mt-3">
+              <p className="truncate text-[11px] font-semibold text-[#77728A]">Expenses</p>
+              <p className="mt-1 truncate text-lg font-black tracking-tight tabular-nums text-[#171329] sm:text-xl">
+                {formatCurrency(monthlyExpenseTotal)}
+              </p>
+            </div>
+          </div>
+
+          {/* 3. Budget Limit */}
+          <div className="flex min-w-0 flex-col justify-between rounded-[1.5rem] border border-[#EBE8F3] bg-white p-4 shadow-[0_8px_24px_rgba(25,15,45,0.03)] sm:p-5">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#EBF0FF] text-[#4F6BFF]">
+              <ReceiptText size={18} />
+            </span>
+            <div className="mt-3">
+              <p className="truncate text-[11px] font-semibold text-[#77728A]">Budget Limit</p>
+              <p className="mt-1 truncate text-lg font-black tracking-tight tabular-nums text-[#171329] sm:text-xl">
+                {formatCurrency(budgetLimit)}
+              </p>
+            </div>
+          </div>
+
+          {/* 4. Budget Left */}
+          <div className="flex min-w-0 flex-col justify-between rounded-[1.5rem] border border-[#EBE8F3] bg-white p-4 shadow-[0_8px_24px_rgba(25,15,45,0.03)] sm:p-5">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#F1EBFB] text-[#6936F5]">
+              <Wallet size={18} />
+            </span>
+            <div className="mt-3">
+              <p className="truncate text-[11px] font-semibold text-[#77728A]">Budget Left</p>
+              <p className={`mt-1 truncate text-lg font-black tracking-tight tabular-nums sm:text-xl ${budgetLeft < 0 ? 'text-[#FF5A5F]' : 'text-[#171329]'}`}>
+                {budgetLeft < 0 ? `-${formatCurrency(Math.abs(budgetLeft))}` : formatCurrency(budgetLeft)}
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* ── Row 3: Recent Transactions (~2/3) + Savings Goal (~1/3) ── */}
+        <section aria-label="Transactions and savings" className="grid grid-cols-1 gap-5 lg:grid-cols-12 items-start">
+          
+          {/* Recent Transactions (~2/3 width) */}
+          <div className="lg:col-span-8 flex flex-col rounded-[1.75rem] border border-[#EBE8F3] bg-white p-5 shadow-[0_10px_30px_rgba(25,15,45,0.03)]">
+            <div className="flex items-center justify-between pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#F1EBFB] text-[#6936F5]">
+                  <ReceiptText size={17} />
+                </div>
+                <h2 className="text-sm font-extrabold text-[#171329]">Recent Transactions</h2>
+              </div>
               <button
                 type="button"
-                onClick={() => navigate('/wallet')}
-                className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-primary transition-colors hover:text-primary-light"
+                onClick={() => navigate('/transactions')}
+                className="inline-flex items-center gap-1 text-xs font-bold text-[#6936F5] transition hover:text-[#5225cb]"
               >
-                Manage wallet <ArrowUpRight size={14} />
+                View All <ArrowRight size={13} />
               </button>
             </div>
-          </section>
 
-          <section aria-label="Quick actions" className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-            {[
-              { label: 'Add transaction', icon: Plus, action: () => navigate('/transactions', { state: { openAddTransaction: true } }) },
-              { label: 'Wallet', icon: Wallet, action: () => navigate('/wallet') },
-              { label: 'Savings goal', icon: Target, action: () => setIsAddGoalModalOpen(true) },
-              { label: 'Edit budget', icon: Settings2, action: () => setIsBudgetModalOpen(true) },
-            ].map(({ label, icon: Icon, action }) => (
-              <button
-                key={label}
-                type="button"
-                onClick={action}
-                className="flex min-w-0 items-center gap-2.5 rounded-2xl border border-border bg-surface px-3 py-3 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-card sm:px-4"
-              >
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary-glow text-primary">
-                  <Icon size={17} />
-                </span>
-                <span className="text-[11px] font-semibold leading-tight text-neutral-text sm:text-xs">{label}</span>
-              </button>
-            ))}
-          </section>
-
-          <section aria-label="Monthly financial summary" className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {[
-              { label: 'Monthly income', value: monthlyIncomeTotal, icon: ArrowDownLeft, tone: 'text-success bg-success/10' },
-              { label: 'Expenses', value: Number(summary?.monthlySpent) || monthlyExpenseTotal, icon: ArrowUpRight, tone: 'text-danger bg-danger/10' },
-              { label: 'Budget limit', value: Number(summary?.monthlyBudgetLimit) || 0, icon: ReceiptText, tone: 'text-primary bg-primary/10' },
-              { label: 'Budget left', value: (Number(summary?.monthlyBudgetLimit) || 0) - (Number(summary?.monthlySpent) || monthlyExpenseTotal), icon: Wallet, tone: 'text-primary bg-primary/10' },
-            ].map(({ label, value, icon: Icon, tone }) => (
-              <div key={label} className="min-w-0 rounded-2xl border border-border bg-surface p-3.5 shadow-sm sm:p-4">
-                <span className={`mb-3 flex h-8 w-8 items-center justify-center rounded-xl ${tone}`}><Icon size={16} /></span>
-                <p className="truncate text-[10px] font-semibold uppercase tracking-wide text-neutral-muted">{label}</p>
-                <p className="mt-1 truncate text-sm font-bold tabular-nums text-neutral-text sm:text-base">{formatCurrency(value)}</p>
-              </div>
-            ))}
-          </section>
-
-          {configuredCreditCards.length > 0 && (
-            <section aria-label="Credit liabilities and repayments" className="rounded-2xl border border-border bg-surface p-4 shadow-card sm:p-5">
-              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-3">
-                <div>
-                  <h2 className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-muted">Credit Liabilities & Payments</h2>
-                  <p className="mt-0.5 text-xs text-neutral-muted">
-                    Credit limits represent debt liabilities, not bank cash. Repayments settle balances without duplicating expenses.
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  {overdueCount > 0 && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-danger/10 px-2.5 py-1 text-[11px] font-bold text-danger">
-                      <AlertTriangle size={12} /> {overdueCount} Overdue Bill{overdueCount > 1 ? 's' : ''}
-                    </span>
-                  )}
-                  {upcomingCount > 0 && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-bold text-primary">
-                      <Clock size={12} /> {upcomingCount} Due Soon
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                <div className="min-w-0 rounded-2xl border border-border bg-background/70 p-3.5">
-                  <span className="mb-3 flex h-8 w-8 items-center justify-center rounded-xl bg-danger/10 text-danger">
-                    <CreditCard size={16} />
-                  </span>
-                  <p className="truncate text-[10px] font-semibold uppercase tracking-wide text-neutral-muted">Total Debt Liability</p>
-                  <p className="mt-1 truncate text-sm font-bold tabular-nums text-danger">{formatCurrency(outstandingCreditTotal)}</p>
-                </div>
-
-                <div className="min-w-0 rounded-2xl border border-border bg-background/70 p-3.5">
-                  <span className="mb-3 flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                    <CreditCard size={16} />
-                  </span>
-                  <p className="truncate text-[10px] font-semibold uppercase tracking-wide text-neutral-muted">Available Credit</p>
-                  <p className="mt-1 truncate text-sm font-bold tabular-nums text-primary">{formatCurrency(availableCreditTotal)}</p>
-                </div>
-
-                <div className="min-w-0 rounded-2xl border border-border bg-background/70 p-3.5">
-                  <span className="mb-3 flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                    <Percent size={16} />
-                  </span>
-                  <p className="truncate text-[10px] font-semibold uppercase tracking-wide text-neutral-muted">Credit Utilization</p>
-                  <div className="mt-1 flex items-baseline gap-2">
-                    <p className={`text-sm font-bold tabular-nums ${overallUtilization > 70 ? 'text-danger' : overallUtilization > 30 ? 'text-amber-500' : 'text-neutral-text'}`}>
-                      {overallUtilization}%
-                    </p>
-                    <span className="text-[10px] text-neutral-muted">of {formatCurrency(totalCreditLimit)}</span>
-                  </div>
-                  <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-border">
-                    <div
-                      className={`h-full rounded-full transition-all duration-500 ${
-                        overallUtilization > 70 ? 'bg-danger' : overallUtilization > 30 ? 'bg-amber-500' : 'bg-primary'
-                      }`}
-                      style={{ width: `${overallUtilization}%` }}
-                    />
-                  </div>
-                </div>
-
-                <div className="min-w-0 rounded-2xl border border-border bg-background/70 p-3.5">
-                  <span className="mb-3 flex h-8 w-8 items-center justify-center rounded-xl bg-success/10 text-success">
-                    <ArrowUpRight size={16} />
-                  </span>
-                  <p className="truncate text-[10px] font-semibold uppercase tracking-wide text-neutral-muted">Paid This Month</p>
-                  <p className="mt-1 truncate text-sm font-bold tabular-nums text-success">{formatCurrency(paymentsThisMonth)}</p>
-                </div>
-              </div>
-
-              {/* Individual Card Due Dates and Quick Pay Action */}
-              <div className="mt-4 divide-y divide-border rounded-xl border border-border bg-background/50">
-                {creditCardBills.map((item) => {
-                  const cardLimit = Number(item.creditLimit || 0);
-                  const cardBalance = Number(item.outstandingBalance || 0);
-                  const cardAvail = Math.max(0, cardLimit - cardBalance);
-                  const cardUtil = cardLimit > 0 ? Math.min(100, Math.round((cardBalance / cardLimit) * 100)) : 0;
-                  const isOverdue = item.due?.status === 'overdue';
-                  const isDueToday = item.due?.status === 'due_today';
-
+            {/* Transactions List */}
+            <div className="mt-2 divide-y divide-[#F2EEFA]">
+              {transactions.length > 0 ? (
+                transactions.map((tx) => {
+                  const details = getCategoryIconDetails(tx.category, tx.type);
+                  const Icon = details.icon;
+                  const isExpense = tx.type === 'expense';
                   return (
-                    <div key={item.id} className="flex flex-col gap-3 p-3.5 sm:flex-row sm:items-center sm:justify-between">
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold text-neutral-text text-xs sm:text-sm">
-                            {item.cardName || item.bankName || 'Credit Card'}
-                          </span>
-                          {item.cardNumber && (
-                            <span className="font-mono text-[11px] text-neutral-muted">
-                              •••• {String(item.cardNumber).slice(-4)}
-                            </span>
-                          )}
-                          {item.hasBalance ? (
-                            isOverdue ? (
-                              <span className="rounded-full bg-danger/10 px-2 py-0.5 text-[10px] font-bold text-danger">
-                                Overdue by {Math.abs(item.due?.diffDays)}d
-                              </span>
-                            ) : isDueToday ? (
-                              <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-bold text-amber-500">
-                                Due Today
-                              </span>
-                            ) : (
-                              <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
-                                Due in {item.due?.diffDays}d ({item.due?.dateStr})
-                              </span>
-                            )
-                          ) : (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-[10px] font-bold text-success">
-                              <CheckCircle size={10} /> Fully Paid
-                            </span>
-                          )}
+                    <div key={tx.id || Math.random()} className="flex items-center justify-between py-3.5 group">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${details.bg} ${details.text}`}>
+                          <Icon size={18} />
                         </div>
-                        <div className="mt-1 flex flex-wrap items-center gap-3 text-[11px] text-neutral-muted">
-                          <span>Balance: <strong className="text-neutral-text font-semibold">{formatCurrency(cardBalance)}</strong></span>
-                          <span>Available: <strong className="text-primary font-semibold">{formatCurrency(cardAvail)}</strong></span>
-                          <span>Limit: <strong>{formatCurrency(cardLimit)}</strong></span>
-                          <span>Util: <strong className={cardUtil > 70 ? 'text-danger' : cardUtil > 30 ? 'text-amber-500' : 'text-neutral-text'}>{cardUtil}%</strong></span>
+                        <div className="min-w-0">
+                          <p className="truncate text-xs font-bold text-[#1F1B2D]">
+                            {tx.category || tx.description || 'Transaction'}
+                          </p>
+                          <p className="mt-0.5 text-[11px] text-[#77728A]">
+                            {formatTxDate(tx.date)}
+                          </p>
                         </div>
                       </div>
 
-                      <div className="flex shrink-0 items-center gap-2">
-                        {item.hasBalance ? (
-                          <button
-                            type="button"
-                            onClick={() => handleOpenPayModal(item)}
-                            className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-primary-light active:scale-95"
-                          >
-                            <CreditCard size={13} /> Pay Bill
-                          </button>
-                        ) : (
-                          <span className="text-[11px] font-medium text-neutral-muted italic">No payment due</span>
-                        )}
+                      <div className="flex items-center gap-3 shrink-0">
+                        <p className={`font-mono text-xs font-bold tabular-nums ${isExpense ? 'text-[#1F1B2D]' : 'text-[#00B074]'}`}>
+                          {isExpense ? `-${formatCurrency(tx.amount)}` : `+${formatCurrency(tx.amount)}`}
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => navigate('/transactions')}
+                          aria-label="Transaction options"
+                          className="text-neutral-400 opacity-60 hover:opacity-100"
+                        >
+                          <MoreVertical size={16} />
+                        </button>
                       </div>
                     </div>
                   );
-                })}
-              </div>
-
-              {creditActivityError && <p role="alert" className="mt-2 text-xs text-danger">{creditActivityError}</p>}
-            </section>
-          )}
-
-          <div className="grid min-w-0 grid-cols-1 gap-4 2xl:grid-cols-[minmax(0,1.5fr)_minmax(240px,0.8fr)]">
-            <div className="h-[300px] min-w-0 sm:h-[320px]">
-              <ExpenseStatsChart data={chartData} allTransactions={allTransactions} />
-            </div>
-            <div className="min-w-0 rounded-card border border-border bg-surface p-4 shadow-card sm:p-5">
-              <MonthlyExpenseGrid
-                categories={expenseCategories}
-                filterType={gridFilterType}
-                customRange={gridCustomRange}
-                onFilterChange={handleGridFilterChange}
-              />
+                })
+              ) : (
+                <div className="py-8 text-center text-xs text-neutral-muted">
+                  No recent transactions recorded.
+                </div>
+              )}
             </div>
           </div>
 
-          <section className="rounded-card border border-border bg-surface p-4 shadow-card sm:p-5">
-            <SavingsGoalsGrid
-              goals={goals}
-              onAddClick={() => setIsAddGoalModalOpen(true)}
-              onStatusChange={handleGoalStatusChange}
-              onEditClick={handleEditGoalClick}
-              onDeleteClick={handleDeleteGoal}
-            />
-          </section>
-        </div>
-
-        <aside className="flex min-w-0 flex-col gap-4">
-          <section className="rounded-card border border-border bg-surface p-5 shadow-card">
-            <div className="mb-4 flex items-center justify-between">
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-neutral-muted">This month</p>
-                <h2 className="mt-1 text-sm font-bold text-neutral-text">Expense summary</h2>
+          {/* Savings Goal (~1/3 width) */}
+          <div className="lg:col-span-4 flex flex-col justify-between rounded-[1.75rem] border border-[#EBE8F3] bg-white p-5 shadow-[0_10px_30px_rgba(25,15,45,0.03)]">
+            <div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#F1EBFB] text-[#6936F5]">
+                    <Target size={17} />
+                  </div>
+                  <h2 className="text-sm font-extrabold text-[#171329]">Savings goal</h2>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsAddGoalModalOpen(true)}
+                  aria-label="Open savings goal"
+                  className="flex h-8 w-8 items-center justify-center rounded-full bg-[#FAF8FD] text-[#6936F5] hover:bg-[#F1EBFB]"
+                >
+                  <ArrowRight size={15} />
+                </button>
               </div>
-              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary-glow text-primary"><ReceiptText size={17} /></span>
-            </div>
-            <p className="text-2xl font-extrabold tracking-tight text-neutral-text tabular-nums">{formatCurrency(monthlyExpenseTotal)}</p>
-            <div className="mt-4 flex items-center justify-between border-t border-border pt-3 text-xs">
-              <span className="text-neutral-muted">Expense transactions</span>
-              <span className="font-bold tabular-nums text-neutral-text">
-                {allTransactions.filter((transaction) => transaction.type === 'expense').length}
-              </span>
-            </div>
-          </section>
 
-          <section className="rounded-card border border-border bg-surface p-5 shadow-card">
-            <div className="mb-4 flex items-center justify-between">
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-neutral-muted">Savings</p>
-                <h2 className="mt-1 text-sm font-bold text-neutral-text">Completed goals</h2>
+              {/* Completion percentage */}
+              <div className="mt-4">
+                <p className="text-3xl font-black tracking-tight text-[#171329]">
+                  {savingsProgress}%
+                </p>
               </div>
-              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-success/10 text-success"><Target size={17} /></span>
+
+              {/* Progress bar */}
+              <div className="mt-3">
+                <div className="h-2 w-full overflow-hidden rounded-full bg-[#EAE6F5]">
+                  <div
+                    className="h-full rounded-full bg-[#6936F5] transition-all duration-700"
+                    style={{ width: `${savingsProgress}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* Goal stats */}
+              <div className="mt-3 flex items-center justify-between text-xs">
+                <div>
+                  <p className="text-[10px] text-[#77728A]">Goal target</p>
+                  <p className="font-bold tabular-nums text-[#171329]">
+                    {formatCurrency(savingsGoalTotal)}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[10px] text-[#77728A]">Completed</p>
+                  <p className="font-bold tabular-nums text-[#171329]">
+                    {formatCurrency(completedSavingsTotal)}
+                  </p>
+                </div>
+              </div>
             </div>
-            <p className="text-2xl font-extrabold tracking-tight text-neutral-text tabular-nums">{formatCurrency(completedSavingsTotal)}</p>
-            <div className="mt-4 flex items-center justify-between text-xs">
-              <span className="text-neutral-muted">Goal target</span>
-              <span className="font-semibold tabular-nums text-neutral-text">{formatCurrency(savingsGoalTotal)}</span>
-            </div>
-            <div className="mt-2 h-2 overflow-hidden rounded-full bg-primary/10" role="progressbar" aria-label="Completed savings goals" aria-valuenow={Math.round(savingsProgress)} aria-valuemin={0} aria-valuemax={100}>
-              <div className="h-full rounded-full bg-success transition-all duration-700" style={{ width: `${savingsProgress}%` }} />
-            </div>
-            <button type="button" onClick={() => setIsAddGoalModalOpen(true)} className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary-light">
-              Add savings goal <Plus size={14} />
+
+            {/* Bottom Add Savings Goal button */}
+            <button
+              type="button"
+              onClick={() => setIsAddGoalModalOpen(true)}
+              className="mt-6 flex w-full items-center justify-center gap-1.5 rounded-full bg-[#EFEAFF] py-2.5 text-xs font-bold text-[#6936F5] transition hover:bg-[#E4DDFF]"
+            >
+              <Plus size={15} /> Add savings goal
             </button>
-          </section>
-
-          <div className="relative">
-            <div className="absolute right-4 top-4 z-10">
-              <button
-                type="button"
-                onClick={() => setIsBudgetModalOpen(true)}
-                className="rounded-full bg-background p-2 text-neutral-muted transition-colors hover:text-primary"
-                aria-label="Edit monthly budget"
-              >
-                <Settings2 size={15} />
-              </button>
-            </div>
-            <div className="mb-4">
-              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-neutral-muted">Budget</p>
-              <p className="mt-1 text-sm font-bold text-neutral-text">Monthly progress</p>
-            </div>
-            <BudgetProgress
-              limit={summary?.monthlyBudgetLimit || 0}
-              spent={summary?.monthlySpent || monthlyExpenseTotal}
-              remaining={(Number(summary?.monthlyBudgetLimit) || 0) - (Number(summary?.monthlySpent) || monthlyExpenseTotal)}
-            />
           </div>
-        </aside>
+        </section>
+
+        {/* Optional Credit Due Alerts banner if bills are due */}
+        {configuredCreditCards.length > 0 && (
+          <div className="rounded-2xl border border-[#EBE8F3] bg-white p-4 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-violet-50 text-violet-600">
+                <CreditCard size={17} />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-[#1F1B2D]">Credit Card Management</p>
+                <p className="text-[11px] text-[#77728A]">
+                  Manage statements, payments, and balances for your {configuredCreditCards.length} configured card{configuredCreditCards.length > 1 ? 's' : ''}.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => navigate('/wallet')}
+              className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#6936F5] px-3.5 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-[#5b2ee0]"
+            >
+              View Credit Wallet <ArrowRight size={13} />
+            </button>
+          </div>
+        )}
       </div>
 
-      <EditBudgetModal 
+      {/* ── Modals ── */}
+      <EditBudgetModal
         isOpen={isBudgetModalOpen}
         onClose={() => setIsBudgetModalOpen(false)}
         currentBudgetLimit={summary?.monthlyBudgetLimit}
@@ -755,7 +720,7 @@ const DashboardPage = () => {
         isGuest={isGuest}
       />
 
-      <AddGoalModal 
+      <AddGoalModal
         isOpen={isAddGoalModalOpen}
         onClose={() => setIsAddGoalModalOpen(false)}
         onSaveSuccess={fetchData}
