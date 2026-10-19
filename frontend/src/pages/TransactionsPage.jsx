@@ -17,6 +17,11 @@ import guestStorage from '../services/guestStorage';
 
 const toDateInputValue = (date) => date.toISOString().slice(0, 10);
 
+const toDateTimeLocalValue = (date) => {
+  const pad = (value) => String(value).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+};
+
 const getWeekRange = (date) => {
   const current = new Date(date);
   const day = current.getDay();
@@ -45,7 +50,7 @@ const getEmptyTransactionForm = () => ({
   amount: '',
   category: '',
   description: '',
-  date: new Date().toISOString().slice(0,16),
+  date: toDateTimeLocalValue(new Date()),
   isRecurring: false,
   walletId: ''
 });
@@ -255,7 +260,7 @@ const TransactionsPage = () => {
       amount: transaction.amount ?? '',
       category: transaction.category || '',
       description: transaction.description || '',
-      date: transaction.date ? transaction.date.slice(0, 16) : new Date().toISOString().slice(0,16),
+      date: transaction.date ? transaction.date.slice(0, 16) : toDateTimeLocalValue(new Date()),
       isRecurring: Boolean(transaction.isRecurring),
       walletId: transaction.walletId || ''
     });
