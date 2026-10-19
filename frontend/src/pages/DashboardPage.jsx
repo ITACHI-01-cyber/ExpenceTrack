@@ -2,6 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/layout/Layout';
 import CardCarousel from '../components/dashboard/CardCarousel';
+import FinancialStatsChart from '../components/dashboard/FinancialStatsChart';
 import EditBudgetModal from '../components/ui/EditBudgetModal';
 import AddGoalModal from '../components/ui/AddGoalModal';
 import EditGoalModal from '../components/ui/EditGoalModal';
@@ -19,7 +20,6 @@ import {
   Calendar,
   Wallet,
   MoreVertical,
-  BarChart3,
   ArrowDownLeft,
   ArrowUpRight,
   ReceiptText,
@@ -31,10 +31,6 @@ import {
   ShoppingBag,
   Plus,
   CreditCard,
-  ChevronDown,
-  Clock,
-  AlertTriangle,
-  CheckCircle,
 } from 'lucide-react';
 
 const DashboardPage = () => {
@@ -163,16 +159,6 @@ const DashboardPage = () => {
   const budgetSpent = Number(summary?.monthlySpent) || monthlyExpenseTotal;
   const budgetLeft = budgetLimit - budgetSpent;
 
-  // Expense summary percentage (safe division)
-  const expensePercentage = useMemo(() => {
-    if (budgetLimit > 0) {
-      return Math.min(100, Math.round((monthlyExpenseTotal / budgetLimit) * 1000) / 10);
-    }
-    if (monthlyIncomeTotal > 0) {
-      return Math.min(100, Math.round((monthlyExpenseTotal / monthlyIncomeTotal) * 1000) / 10);
-    }
-    return monthlyExpenseTotal > 0 ? 100 : 0;
-  }, [monthlyExpenseTotal, budgetLimit, monthlyIncomeTotal]);
 
   // Savings goals calculation
   const savingsGoalTotal = useMemo(() => {
@@ -378,11 +364,11 @@ const DashboardPage = () => {
       {/* ── Main Dashboard Grid ── */}
       <div className="flex flex-col gap-5">
         
-        {/* ── Row 1: Wallet Carousel + Card Info + Expense Summary ── */}
-        <section aria-label="Wallet and expense overview" className="grid grid-cols-1 gap-5 lg:grid-cols-12 items-stretch">
+        {/* ── Row 1: Wallet Carousel + Card Info + Financial Statistics ── */}
+        <section aria-label="Wallet and financial overview" className="grid grid-cols-1 gap-5 lg:grid-cols-12 items-stretch">
           
           {/* 1. Wallet card carousel panel */}
-          <div className="lg:col-span-5 flex flex-col justify-center rounded-[1.75rem] border border-[#EBE8F3] bg-white p-4 shadow-[0_10px_30px_rgba(25,15,45,0.03)] sm:p-5">
+          <div className="lg:col-span-4 flex flex-col justify-center rounded-[1.75rem] border border-[#EBE8F3] bg-white p-4 shadow-[0_10px_30px_rgba(25,15,45,0.03)] sm:p-5">
             <CardCarousel
               wallets={wallets}
               onAddCard={() => navigate('/wallet')}
@@ -454,46 +440,9 @@ const DashboardPage = () => {
             </button>
           </div>
 
-          {/* 3. Expense summary panel */}
-          <div className="lg:col-span-4 flex flex-col justify-between rounded-[1.75rem] border border-[#EBE8F3] bg-white p-5 shadow-[0_10px_30px_rgba(25,15,45,0.03)]">
-            <div>
-              <div className="flex items-center justify-between">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#F1EBFB] text-[#6936F5]">
-                  <BarChart3 size={17} />
-                </div>
-                <div className="flex items-center gap-1 rounded-full border border-[#EBE8F3] bg-[#FAF8FD] px-3 py-1 text-[11px] font-semibold text-[#1F1B2D]">
-                  <span>This Month</span>
-                  <ChevronDown size={12} className="text-[#77728A]" />
-                </div>
-              </div>
-
-              <p className="mt-4 text-xs font-semibold text-[#77728A]">Expense summary</p>
-              <div className="mt-1 flex items-baseline justify-between gap-2">
-                <p className="text-2xl font-black tracking-tight tabular-nums text-[#171329]">
-                  {formatCurrency(monthlyExpenseTotal)}
-                </p>
-                <div className="text-right">
-                  <span className="text-xs font-bold tabular-nums text-[#171329]">
-                    {allTransactions.filter((tx) => tx.type === 'expense').length}
-                  </span>
-                  <p className="text-[10px] text-[#77728A]">Transactions</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-5">
-              <div className="flex items-center gap-3">
-                <div className="relative h-2.5 flex-1 overflow-hidden rounded-full bg-[#EAE6F5]">
-                  <div
-                    className="h-full rounded-full bg-[#6936F5] transition-all duration-700"
-                    style={{ width: `${Math.min(100, Math.max(0, expensePercentage))}%` }}
-                  />
-                </div>
-                <span className="text-xs font-bold tabular-nums text-[#1F1B2D]">
-                  {expensePercentage}%
-                </span>
-              </div>
-            </div>
+          {/* 3. Financial Statistics chart */}
+          <div className="lg:col-span-5">
+            <FinancialStatsChart allTransactions={allTransactions} />
           </div>
         </section>
 
