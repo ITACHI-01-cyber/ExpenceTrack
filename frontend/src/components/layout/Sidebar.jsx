@@ -79,7 +79,7 @@ const Sidebar = () => {
           className="group relative flex h-11 w-11 items-center justify-center rounded-2xl text-[#A19BB8] transition-all duration-200 hover:bg-white/10 hover:text-white"
         >
           <div className="transition-transform duration-200 group-hover:scale-110">
-            {isGuest ? <Eye size={22} /> : <LogOut size={22} />}
+            <LogOut size={22} />
           </div>
           <span className="sr-only">{isGuest ? 'Exit preview' : 'Logout'}</span>
         </button>

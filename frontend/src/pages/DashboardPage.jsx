@@ -31,6 +31,7 @@ import {
   ShoppingBag,
   Plus,
   CreditCard,
+  Pencil,
 } from 'lucide-react';
 
 const DashboardPage = () => {
@@ -318,41 +319,8 @@ const DashboardPage = () => {
           </p>
         </div>
 
-        {/* Right side controls: Search, Notification, Avatar, and Date pill */}
+        {/* Right side controls: Date pill */}
         <div className="flex flex-col items-start gap-2.5 sm:items-end">
-          <div className="flex items-center gap-2.5">
-            {/* Search Input */}
-            <div className="relative">
-              <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#9E97B3]" />
-              <input
-                type="text"
-                placeholder="Search transactions..."
-                onClick={() => navigate('/transactions')}
-                readOnly
-                className="h-10 w-44 cursor-pointer rounded-full border border-[#EBE8F3] bg-white pl-9 pr-4 text-xs font-medium text-[#1F1B2D] placeholder:text-[#9E97B3] shadow-sm transition hover:border-[#6936F5]/40 sm:w-52"
-              />
-            </div>
-
-            {/* Notification button */}
-            <button
-              type="button"
-              aria-label="Notifications"
-              className="relative flex h-10 w-10 items-center justify-center rounded-full border border-[#EBE8F3] bg-white text-[#1F1B2D] shadow-sm transition hover:bg-[#FAF8FD]"
-            >
-              <Bell size={17} />
-              <span className="absolute top-2.5 right-2.5 h-2 w-2 rounded-full bg-[#FF4757] ring-2 ring-white" />
-            </button>
-
-            {/* User Avatar */}
-            <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-[#6936F5] text-sm font-bold text-white shadow-sm ring-2 ring-[#6936F5]/20">
-              {user?.profilePicture ? (
-                <img src={apiAssetUrl(user.profilePicture)} alt="User" className="h-full w-full object-cover" />
-              ) : (
-                username.charAt(0).toLowerCase()
-              )}
-            </div>
-          </div>
-
           {/* Date pill */}
           <div className="flex items-center gap-1.5 rounded-full border border-[#EBE8F3] bg-white px-3.5 py-1.5 text-xs font-semibold text-[#1F1B2D] shadow-sm">
             <Calendar size={13} className="text-[#6936F5]" />
@@ -449,10 +417,21 @@ const DashboardPage = () => {
         {/* ── Row 2: 4 Financial Metric Cards ── */}
         <section aria-label="Monthly financial metrics" className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           {/* 1. Monthly Income */}
-          <div className="flex min-w-0 flex-col justify-between rounded-[1.5rem] border border-[#EBE8F3] bg-white p-4 shadow-[0_8px_24px_rgba(25,15,45,0.03)] sm:p-5">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#E6F8F3] text-[#00B074]">
-              <ArrowDownLeft size={18} />
-            </span>
+          <div className="group relative flex min-w-0 flex-col justify-between rounded-[1.5rem] border border-[#EBE8F3] bg-white p-4 shadow-[0_8px_24px_rgba(25,15,45,0.03)] sm:p-5">
+            <div className="flex items-center justify-between">
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#E6F8F3] text-[#00B074]">
+                <ArrowDownLeft size={18} />
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsBudgetModalOpen(true)}
+                title="Edit budget & income"
+                aria-label="Edit budget and income"
+                className="flex h-7 w-7 items-center justify-center rounded-lg text-[#77728A] transition-all hover:bg-[#F1EBFB] hover:text-[#6936F5]"
+              >
+                <Pencil size={14} />
+              </button>
+            </div>
             <div className="mt-3">
               <p className="truncate text-[11px] font-semibold text-[#77728A]">Monthly Income</p>
               <p className="mt-1 truncate text-lg font-black tracking-tight tabular-nums text-[#171329] sm:text-xl">
@@ -475,10 +454,21 @@ const DashboardPage = () => {
           </div>
 
           {/* 3. Budget Limit */}
-          <div className="flex min-w-0 flex-col justify-between rounded-[1.5rem] border border-[#EBE8F3] bg-white p-4 shadow-[0_8px_24px_rgba(25,15,45,0.03)] sm:p-5">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#EBF0FF] text-[#4F6BFF]">
-              <ReceiptText size={18} />
-            </span>
+          <div className="group relative flex min-w-0 flex-col justify-between rounded-[1.5rem] border border-[#EBE8F3] bg-white p-4 shadow-[0_8px_24px_rgba(25,15,45,0.03)] sm:p-5">
+            <div className="flex items-center justify-between">
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#EBF0FF] text-[#4F6BFF]">
+                <ReceiptText size={18} />
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsBudgetModalOpen(true)}
+                title="Edit budget & income"
+                aria-label="Edit budget and income"
+                className="flex h-7 w-7 items-center justify-center rounded-lg text-[#77728A] transition-all hover:bg-[#F1EBFB] hover:text-[#6936F5]"
+              >
+                <Pencil size={14} />
+              </button>
+            </div>
             <div className="mt-3">
               <p className="truncate text-[11px] font-semibold text-[#77728A]">Budget Limit</p>
               <p className="mt-1 truncate text-lg font-black tracking-tight tabular-nums text-[#171329] sm:text-xl">

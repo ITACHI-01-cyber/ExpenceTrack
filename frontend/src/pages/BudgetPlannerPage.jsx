@@ -1,436 +1,436 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Layout from '../components/layout/Layout';
 import TopBar from '../components/layout/TopBar';
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid } from 'recharts';
-import { Wallet, TrendingUp, Receipt } from 'lucide-react';
-import AnimatedNumber from '../components/ui/AnimatedNumber';
-import FintechChartTooltip from '../components/ui/FintechChartTooltip';
+import { 
+  ArrowUpRight, 
+  ArrowDownLeft, 
+  AlertTriangle, 
+  SlidersHorizontal, 
+  Calendar,
+  CheckCircle2,
+  TrendingDown,
+  Layers,
+  Sparkles
+} from 'lucide-react';
+import EditBudgetModal from '../components/ui/EditBudgetModal';
 import api from '../services/api';
 import useAuthStore from '../store/authStore';
 import guestStorage from '../services/guestStorage';
-import useReducedMotion from '../utils/useReducedMotion';
 import { formatCurrency } from '../utils/formatCurrency';
-
-const COLORS = ['#6D4BC3', '#4F2A8A', '#8A73D1', '#B3A4E8', '#C7B7F2'];
-
-const KPICard = ({ title, sub, value, icon, delay }) => (
-  <div 
-    className="bg-white rounded-xl shadow-sm border border-border p-4 flex items-center gap-4 animate-[fade-in_0.5s_ease-out_both]"
-    style={{ animationDelay: delay }}
-  >
-    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-      {icon}
-    </div>
-    <div>
-      <p className="font-bold text-neutral-text text-sm flex items-center gap-1">{title}</p>
-      <p className="text-xs text-neutral-muted">{sub}</p>
-      <h3 className="text-2xl font-bold mt-1 text-neutral-text tabular-nums"><AnimatedNumber value={value} /></h3>
-    </div>
-  </div>
-);
 
 const BudgetPlannerPage = () => {
   const { isGuest } = useAuthStore();
-  const prefersReducedMotion = useReducedMotion();
   const [transactions, setTransactions] = useState([]);
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false);
+  const [filterType, setFilterType] = useState('all'); // all, warning, normal
+
+  const now = new Date();
+  const currentMonthName = now.toLocaleString('default', { month: 'long' });
+  const currentYear = now.getFullYear();
+
+  const fetchData = async () => {
+    try {
+      const month = now.getMonth() + 1;
+      const year = now.getFullYear();
+
+      if (isGuest) {
+        const txs = guestStorage.transactions.getAll({ month, year });
+        setTransactions(txs);
+        const summaryData = guestStorage.budget.getSummary();
+        setSummary(summaryData);
+      } else {
+        const [txRes, sumRes] = await Promise.all([
+          api.get(`/transactions?month=${month}&year=${year}`),
+          api.get('/dashboard/summary')
+        ]);
+
+        if (txRes.data?.success) {
+          setTransactions(txRes.data.data);
+        }
+        if (sumRes.data?.success) {
+          setSummary(sumRes.data.data);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to fetch budget planner data", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const now = new Date();
-        const month = now.getMonth() + 1;
-        const year = now.getFullYear();
-
-        if (isGuest) {
-          const txs = guestStorage.transactions.getAll({ month, year });
-          setTransactions(txs);
-          const summaryData = guestStorage.budget.getSummary();
-          setSummary(summaryData);
-        } else {
-          const [txRes, sumRes] = await Promise.all([
-            api.get(`/transactions?month=${month}&year=${year}`),
-            api.get('/dashboard/summary')
-          ]);
-
-          if (txRes.data.success) {
-            setTransactions(txRes.data.data);
-          }
-          if (sumRes.data.success) {
-            setSummary(sumRes.data.data);
-          }
-        }
-      } catch (err) {
-        console.error("Failed to fetch budget data", err);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchData();
   }, []);
 
-  // Compute Real Data
+  // Compute Financial Model
   const {
     totalIncome,
     totalExpense,
-    totalBills,
-    expenseData,
-    billSummaryData,
-    incomeSourceData,
-    allocationData,
-    cashflowData,
-    actualVsBudgetData,
-    highestExpenses
+    budgetLimit,
+    remainingBudget,
+    percentUsed,
+    categoryBudgets,
+    overBudgetCategories,
+    recentBudgetTransactions
   } = useMemo(() => {
     let tIncome = 0;
     let tExpense = 0;
-    let tBills = 0;
-    
-    const catExp = {};
-    const catBills = {};
-    const catInc = {};
+    const catMap = {};
 
-    transactions.forEach(tx => {
-      const amt = tx.amount || 0;
-      const cat = tx.category || 'Other';
-      
+    transactions.forEach((tx) => {
+      const amt = Number(tx.amount) || 0;
+      const cat = tx.category || 'General';
+
       if (tx.type === 'income') {
         tIncome += amt;
-        catInc[cat] = (catInc[cat] || 0) + amt;
       } else if (tx.type === 'expense') {
         tExpense += amt;
-        catExp[cat] = (catExp[cat] || 0) + amt;
-        // Treat recurring expenses as Bills
-        if (tx.isRecurring) {
-          tBills += amt;
-          catBills[cat] = (catBills[cat] || 0) + amt;
+        if (!catMap[cat]) {
+          catMap[cat] = { spent: 0, count: 0, isRecurring: false };
         }
+        catMap[cat].spent += amt;
+        catMap[cat].count += 1;
+        if (tx.isRecurring) catMap[cat].isRecurring = true;
       }
     });
 
-    const expData = Object.entries(catExp)
-      .map(([name, value]) => ({ name, value }))
-      .sort((a, b) => b.value - a.value);
+    const bLimit = Number(summary?.monthlyBudgetLimit) || 0;
+    const remaining = bLimit - tExpense;
+    const pct = bLimit > 0 ? Math.min(Math.round((tExpense / bLimit) * 100), 999) : 0;
 
-    const billData = Object.entries(catBills)
-      .map(([name, value]) => ({ name, value }))
-      .sort((a, b) => b.value - a.value);
+    // Derived category budget caps (balanced proportional benchmark)
+    const categoryCount = Object.keys(catMap).length || 1;
+    const avgCap = bLimit > 0 ? bLimit / categoryCount : 0;
 
-    const incData = Object.entries(catInc)
-      .map(([name, actual]) => ({ name, actual, budget: actual })) // Mock budget for income source
-      .sort((a, b) => b.actual - a.actual);
+    const categories = Object.entries(catMap).map(([name, data]) => {
+      // Benchmark allocation per category
+      const allocated = Math.max(data.spent, avgCap);
+      const catPct = allocated > 0 ? Math.round((data.spent / allocated) * 100) : 0;
+      const isOver = data.spent > allocated;
+      const isWarning = catPct >= 80 && !isOver;
 
-    const savings = Math.max(tIncome - tExpense, 0);
-    const regularExpense = Math.max(tExpense - tBills, 0);
+      return {
+        name,
+        spent: data.spent,
+        allocated,
+        percent: catPct,
+        count: data.count,
+        isRecurring: data.isRecurring,
+        isOver,
+        isWarning
+      };
+    }).sort((a, b) => b.spent - a.spent);
 
-    const allocData = [
-      { name: 'Savings', value: savings },
-      { name: 'Bills', value: tBills },
-      { name: 'Expenses', value: regularExpense },
-    ].filter(d => d.value > 0);
+    const overList = categories.filter((c) => c.isOver || c.isWarning);
 
-    // Default mock alloc if no data
-    if (allocData.length === 0) allocData.push({ name: 'No Data', value: 1 });
-
-    const budgetLimit = summary?.monthlyBudgetLimit || 0;
-    const expectedIncome = summary?.monthlyIncome || 0;
-    
-    const cFlowData = [
-      { name: 'Savings', actual: savings, budget: Math.max(expectedIncome - budgetLimit, 0) },
-      { name: 'Bills', actual: tBills, budget: budgetLimit * 0.4 }, // arbitrary budget split
-      { name: 'Expenses', actual: regularExpense, budget: budgetLimit * 0.6 },
-      { name: 'Income', actual: tIncome, budget: expectedIncome },
-    ];
-
-    const avbData = expData.map(e => ({
-      name: e.name.substring(0, 8),
-      actual: e.value,
-      budget: Math.max(e.value, budgetLimit / (expData.length || 1)) // roughly estimate budget per category
-    }));
+    // Recent activity transactions
+    const recent = [...transactions]
+      .filter((t) => t.type === 'expense')
+      .slice(0, 8);
 
     return {
       totalIncome: tIncome,
       totalExpense: tExpense,
-      totalBills: tBills,
-      expenseData: expData.length ? expData : [{ name: 'No Expenses', value: 1 }],
-      billSummaryData: billData.length ? billData : [{ name: 'No Bills', value: 0 }],
-      incomeSourceData: incData.length ? incData : [{ name: 'No Income', actual: 0, budget: 0 }],
-      allocationData: allocData,
-      cashflowData: cFlowData,
-      actualVsBudgetData: avbData,
-      highestExpenses: expData.slice(0, 2)
+      budgetLimit: bLimit,
+      remainingBudget: remaining,
+      percentUsed: pct,
+      categoryBudgets: categories,
+      overBudgetCategories: overList,
+      recentBudgetTransactions: recent
     };
   }, [transactions, summary]);
 
-  const currentMonthName = new Date().toLocaleString('default', { month: 'long' });
+  const filteredCategories = useMemo(() => {
+    if (filterType === 'warning') {
+      return categoryBudgets.filter((c) => c.isOver || c.isWarning);
+    }
+    if (filterType === 'normal') {
+      return categoryBudgets.filter((c) => !c.isOver && !c.isWarning);
+    }
+    return categoryBudgets;
+  }, [categoryBudgets, filterType]);
 
   if (loading) {
     return (
       <Layout>
         <TopBar />
-        <div className="flex items-center justify-center h-64 text-primary">Loading Budget Data...</div>
+        <div className="flex h-64 items-center justify-center font-mono text-xs uppercase tracking-widest text-neutral-400">
+          Syncing Financial Data...
+        </div>
       </Layout>
     );
   }
 
   return (
     <Layout>
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-neutral-text uppercase tracking-wide">Budget Planner Dashboard</h1>
-          <p className="text-sm text-neutral-muted">Monthly Personal Budget Dashboard</p>
-        </div>
-        <div className="bg-primary text-white px-6 py-2 rounded-xl text-center shadow-md">
-          <p className="text-xs opacity-80">Month</p>
-          <p className="font-bold text-lg">{currentMonthName}</p>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-4 auto-rows-[minmax(180px,auto)]">
+      <div className="space-y-6 pb-12">
         
-        {/* ROW 1: KPIs + Donut + Balance */}
-        <div className="md:col-span-3 flex flex-col gap-4">
-          <KPICard title="Expenses" sub="The Actual Expense" value={totalExpense} icon={<Wallet />} delay="0ms" />
-          <KPICard title="Income" sub="The Actual Income" value={totalIncome} icon={<TrendingUp />} delay="100ms" />
-          <KPICard title="Bills" sub="Recurring Bills" value={totalBills} icon={<Receipt />} delay="200ms" />
+        {/* ── Page Header: Linear-style minimal toolbar ── */}
+        <div className="flex flex-col gap-4 border-b border-border/60 pb-5 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+              <p className="font-mono text-[11px] font-semibold uppercase tracking-wider text-neutral-400">
+                Finances / Monthly Budget
+              </p>
+            </div>
+            <h1 className="mt-1 text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
+              Budget & Allocations
+            </h1>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-1.5 text-xs font-medium text-neutral-600 dark:text-neutral-300">
+              <Calendar size={13} className="text-neutral-400" />
+              <span>{currentMonthName} {currentYear}</span>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setIsBudgetModalOpen(true)}
+              className="inline-flex items-center gap-2 rounded-lg bg-neutral-900 px-3.5 py-1.5 text-xs font-semibold text-white transition hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
+            >
+              <SlidersHorizontal size={13} />
+              <span>Configure Limits</span>
+            </button>
+          </div>
         </div>
 
-        <div className="md:col-span-6 min-w-0 rounded-card border border-border bg-surface p-4 shadow-card sm:p-5">
-          <h3 className="text-sm font-bold text-neutral-text">Allocation summary</h3>
-          <p className="mt-1 text-xs text-neutral-muted">Actual allocation of income</p>
-          <div className="grid h-48 min-w-0 grid-cols-[minmax(0,1fr)_minmax(115px,0.8fr)] items-center gap-2">
-            <div className="relative h-full min-w-0">
-              <ResponsiveContainer width="100%" height="100%" initialDimension={{ width: 200, height: 200 }}>
-              <PieChart>
-                <Tooltip content={<FintechChartTooltip />} />
-                <Pie
-                  data={allocationData}
-                  innerRadius="58%"
-                  outerRadius="82%"
-                  paddingAngle={4}
-                  cornerRadius={6}
-                  dataKey="value"
-                  stroke="var(--surface-color)"
-                  strokeWidth={3}
-                  animationDuration={prefersReducedMotion ? 0 : 700}
-                  isAnimationActive={!prefersReducedMotion}
+        {/* ── Warning Banner (Only displayed if categories exceed thresholds) ── */}
+        {overBudgetCategories.length > 0 && (
+          <div className="flex items-center gap-3 rounded-lg border border-amber-200 bg-amber-50/70 p-3.5 text-xs text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/20 dark:text-amber-200">
+            <AlertTriangle size={16} className="shrink-0 text-amber-600 dark:text-amber-400" />
+            <div className="flex-1">
+              <span className="font-semibold">{overBudgetCategories.length} categor{overBudgetCategories.length > 1 ? 'ies have' : 'y has'}</span> reached or exceeded 80% of projected allocation ({overBudgetCategories.map((c) => c.name).join(', ')}).
+            </div>
+          </div>
+        )}
+
+        {/* ── Hero Metric Grid: Stripe / Linear Monospace Hierarchy ── */}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          
+          {/* 1. Remaining Budget (Main Anchor) */}
+          <div className="rounded-xl border border-border bg-surface p-4 transition-colors hover:border-neutral-300 dark:hover:border-neutral-700">
+            <span className="font-mono text-[10px] font-semibold uppercase tracking-wider text-neutral-400">
+              Remaining Safe-To-Spend
+            </span>
+            <div className="mt-2 flex items-baseline justify-between">
+              <h2 className={`font-mono text-2xl font-bold tracking-tight tabular-nums ${remainingBudget < 0 ? 'text-red-500' : 'text-neutral-900 dark:text-white'}`}>
+                {remainingBudget < 0 ? `-${formatCurrency(Math.abs(remainingBudget))}` : formatCurrency(remainingBudget)}
+              </h2>
+              <span className={`font-mono text-xs font-semibold tabular-nums ${remainingBudget < 0 ? 'text-red-500' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                {100 - percentUsed}% left
+              </span>
+            </div>
+            {/* Minimal Progress Bar */}
+            <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-neutral-100 dark:bg-neutral-800">
+              <div 
+                className={`h-full transition-all duration-500 ${percentUsed > 100 ? 'bg-red-500' : percentUsed > 80 ? 'bg-amber-500' : 'bg-neutral-900 dark:bg-neutral-100'}`} 
+                style={{ width: `${Math.min(percentUsed, 100)}%` }}
+              />
+            </div>
+          </div>
+
+          {/* 2. Budget Limit */}
+          <div className="rounded-xl border border-border bg-surface p-4">
+            <span className="font-mono text-[10px] font-semibold uppercase tracking-wider text-neutral-400">
+              Monthly Limit
+            </span>
+            <div className="mt-2 flex items-baseline justify-between">
+              <h2 className="font-mono text-2xl font-bold tracking-tight tabular-nums text-neutral-900 dark:text-white">
+                {formatCurrency(budgetLimit)}
+              </h2>
+              <span className="text-[11px] text-neutral-400">Target Cap</span>
+            </div>
+            <p className="mt-3 text-xs text-neutral-500">
+              Configured threshold for {currentMonthName}
+            </p>
+          </div>
+
+          {/* 3. Actual Spent */}
+          <div className="rounded-xl border border-border bg-surface p-4">
+            <span className="font-mono text-[10px] font-semibold uppercase tracking-wider text-neutral-400">
+              Actual Outflow
+            </span>
+            <div className="mt-2 flex items-baseline justify-between">
+              <h2 className="font-mono text-2xl font-bold tracking-tight tabular-nums text-neutral-900 dark:text-white">
+                {formatCurrency(totalExpense)}
+              </h2>
+              <span className="font-mono text-xs font-semibold tabular-nums text-neutral-500">
+                {percentUsed}% spent
+              </span>
+            </div>
+            <p className="mt-3 text-xs text-neutral-500">
+              Across {transactions.filter((t) => t.type === 'expense').length} expense transactions
+            </p>
+          </div>
+
+          {/* 4. Total Inflow */}
+          <div className="rounded-xl border border-border bg-surface p-4">
+            <span className="font-mono text-[10px] font-semibold uppercase tracking-wider text-neutral-400">
+              Monthly Inflow
+            </span>
+            <div className="mt-2 flex items-baseline justify-between">
+              <h2 className="font-mono text-2xl font-bold tracking-tight tabular-nums text-emerald-600 dark:text-emerald-400">
+                +{formatCurrency(totalIncome)}
+              </h2>
+              <span className="inline-flex items-center text-xs text-emerald-600 dark:text-emerald-400">
+                <ArrowDownLeft size={14} />
+              </span>
+            </div>
+            <p className="mt-3 text-xs text-neutral-500">
+              Net balance: <span className="font-mono font-medium text-neutral-800 dark:text-neutral-200">{formatCurrency(totalIncome - totalExpense)}</span>
+            </p>
+          </div>
+
+        </div>
+
+        {/* ── Main Data Section: Category Breakdown + Recent Activity ── */}
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 items-start">
+          
+          {/* Category-wise spending table (8 cols) */}
+          <div className="rounded-xl border border-border bg-surface p-5 lg:col-span-8">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-border/50 pb-4">
+              <div>
+                <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
+                  Category Allocations & Velocity
+                </h3>
+                <p className="text-xs text-neutral-500">
+                  Track actual spending against projected category limits
+                </p>
+              </div>
+
+              {/* Segmented Filter */}
+              <div className="flex items-center rounded-lg border border-border p-0.5 text-xs font-medium">
+                <button
+                  type="button"
+                  onClick={() => setFilterType('all')}
+                  className={`rounded-md px-2.5 py-1 transition-colors ${filterType === 'all' ? 'bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900' : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-white'}`}
                 >
-                  {allocationData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-              </PieChart>
-              </ResponsiveContainer>
-              <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-[9px] font-semibold uppercase tracking-wide text-neutral-muted">Allocated</span>
-                <span className="max-w-[90%] truncate text-xs font-bold tabular-nums text-neutral-text">
-                  {formatCurrency(allocationData.reduce((sum, item) => sum + item.value, 0))}
-                </span>
+                  All ({categoryBudgets.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFilterType('warning')}
+                  className={`rounded-md px-2.5 py-1 transition-colors ${filterType === 'warning' ? 'bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900' : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-white'}`}
+                >
+                  Alerts ({overBudgetCategories.length})
+                </button>
               </div>
             </div>
-            <div className="space-y-3">
-              {allocationData.map((item, index) => (
-                <div key={item.name} className="flex min-w-0 items-center gap-2">
-                  <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
-                  <span className="truncate text-[10px] font-medium text-neutral-muted">{item.name}</span>
+
+            {/* Category Rows */}
+            <div className="mt-4 divide-y divide-border/40">
+              {filteredCategories.length > 0 ? (
+                filteredCategories.map((cat) => (
+                  <div key={cat.name} className="py-3.5 group">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <span className="text-xs font-semibold text-neutral-900 dark:text-neutral-100">
+                          {cat.name}
+                        </span>
+                        {cat.isRecurring && (
+                          <span className="rounded bg-neutral-100 dark:bg-neutral-800 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider text-neutral-500">
+                            Fixed Bill
+                          </span>
+                        )}
+                        {cat.isOver ? (
+                          <span className="rounded bg-red-50 dark:bg-red-950/40 px-1.5 py-0.5 text-[10px] font-semibold text-red-600 dark:text-red-400">
+                            Over limit
+                          </span>
+                        ) : cat.isWarning ? (
+                          <span className="rounded bg-amber-50 dark:bg-amber-950/40 px-1.5 py-0.5 text-[10px] font-semibold text-amber-600 dark:text-amber-400">
+                            80%+ spent
+                          </span>
+                        ) : null}
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        <span className="font-mono text-xs font-bold tabular-nums text-neutral-900 dark:text-white">
+                          {formatCurrency(cat.spent)}
+                        </span>
+                        <span className="font-mono text-xs text-neutral-400 tabular-nums">
+                          / {formatCurrency(cat.allocated)}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Progress Track */}
+                    <div className="mt-2 flex items-center gap-3">
+                      <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-neutral-100 dark:bg-neutral-800">
+                        <div
+                          className={`h-full transition-all duration-300 ${
+                            cat.isOver 
+                              ? 'bg-red-500' 
+                              : cat.isWarning 
+                              ? 'bg-amber-500' 
+                              : 'bg-neutral-900 dark:bg-neutral-200'
+                          }`}
+                          style={{ width: `${Math.min(cat.percent, 100)}%` }}
+                        />
+                      </div>
+                      <span className="font-mono text-[11px] font-medium tabular-nums text-neutral-400 w-10 text-right">
+                        {cat.percent}%
+                      </span>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="py-12 text-center text-xs text-neutral-400 font-mono">
+                  No categories matching filter
                 </div>
-              ))}
+              )}
             </div>
           </div>
-        </div>
 
-        <div className="md:col-span-3 bg-white rounded-xl shadow-sm border border-border p-4 flex flex-col items-center justify-center text-center">
-          <p className="font-bold text-sm">Available Balance</p>
-          <p className="text-xs text-neutral-muted mb-4">Total Across Wallets</p>
-          <h2 className="text-4xl font-bold text-neutral-text tabular-nums"><AnimatedNumber value={summary?.availableBalance || 0} /></h2>
-        </div>
+          {/* Recent Budget Activity (4 cols) */}
+          <div className="rounded-xl border border-border bg-surface p-5 lg:col-span-4">
+            <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
+              Budget Activity Feed
+            </h3>
+            <p className="text-xs text-neutral-500">
+              Recent recorded expense deductions
+            </p>
 
-        {/* ROW 2 */}
-        <div className="md:col-span-3 min-w-0 rounded-card border border-border bg-surface p-4 shadow-card">
-          <h3 className="text-sm font-bold text-neutral-text">Bill summary</h3>
-          <p className="mb-4 mt-1 text-xs text-neutral-muted">Actual bill payments</p>
-          <div className="h-48">
-            <ResponsiveContainer width="100%" height="100%" initialDimension={{ width: 320, height: 220 }}>
-              <BarChart data={billSummaryData} margin={{ top: 12, right: 4, left: -20, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="billBars" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#a98af1" />
-                    <stop offset="100%" stopColor="#563290" />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid vertical={false} stroke="var(--chart-grid)" strokeDasharray="3 6" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: 'var(--text-muted)', fontSize: 9 }} interval="preserveStartEnd" />
-                <YAxis hide domain={[0, 'dataMax + 10%']} />
-                <Tooltip content={<FintechChartTooltip seriesLabels={{ value: 'Bills' }} />} cursor={{ fill: 'rgba(109,75,195,0.08)' }} />
-                <Bar dataKey="value" fill="url(#billBars)" background={{ fill: 'var(--chart-grid)', radius: [7, 7, 0, 0] }} radius={[7, 7, 0, 0]} maxBarSize={28} animationDuration={prefersReducedMotion ? 0 : 700} isAnimationActive={!prefersReducedMotion} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        <div className="md:col-span-4 min-w-0 rounded-card bg-gradient-to-br from-[#211433] via-[#352052] to-[#4F2A8A] p-4 text-white shadow-card">
-          <div className="flex justify-between items-start mb-4">
-            <div>
-              <h3 className="font-bold text-sm mb-1 flex items-center gap-2"><span className="w-2 h-2 bg-white rounded-full"></span> Cashflow Summary</h3>
-              <p className="text-xs text-white/70">Actual Vs Budget</p>
-            </div>
-            <div className="text-[10px] flex flex-col gap-1">
-              <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-white"></span> Actual</span>
-              <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-[#B3A4E8]"></span> Budget</span>
-            </div>
-          </div>
-          <div className="h-48">
-            <ResponsiveContainer width="100%" height="100%" initialDimension={{ width: 320, height: 220 }}>
-              <BarChart data={cashflowData} layout="vertical" margin={{ top: 2, right: 8, left: 8, bottom: 0 }} barGap={3}>
-                <CartesianGrid horizontal={false} stroke="rgba(255,255,255,0.12)" strokeDasharray="3 6" />
-                <XAxis type="number" tick={{ fontSize: 9, fill: 'rgba(255,255,255,0.62)' }} axisLine={false} tickLine={false} />
-                <YAxis dataKey="name" type="category" width={58} tick={{ fontSize: 9, fill: '#fff' }} axisLine={false} tickLine={false} />
-                <Tooltip content={<FintechChartTooltip seriesLabels={{ actual: 'Actual', budget: 'Budget' }} />} cursor={{ fill: 'rgba(255,255,255,0.08)' }} />
-                <Bar dataKey="actual" fill="#FFFFFF" barSize={8} radius={[0, 5, 5, 0]} animationDuration={prefersReducedMotion ? 0 : 700} isAnimationActive={!prefersReducedMotion} />
-                <Bar dataKey="budget" fill="#B3A4E8" barSize={8} radius={[0, 5, 5, 0]} animationDuration={prefersReducedMotion ? 0 : 700} isAnimationActive={!prefersReducedMotion} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        <div className="md:col-span-3 min-w-0 rounded-card border border-border bg-surface p-4 shadow-card">
-          <h3 className="text-sm font-bold text-neutral-text">Expense summary</h3>
-          <p className="mb-3 mt-1 text-xs text-neutral-muted">Actual expenses by category</p>
-          <div className="flex h-48 min-w-0 items-center">
-            <div className="relative h-full w-1/2 min-w-0">
-              <ResponsiveContainer width="100%" height="100%" initialDimension={{ width: 160, height: 180 }}>
-                <PieChart>
-                  <Tooltip content={<FintechChartTooltip />} />
-                  <Pie
-                    data={expenseData}
-                    innerRadius="56%"
-                    outerRadius="82%"
-                    paddingAngle={3}
-                    cornerRadius={5}
-                    dataKey="value"
-                    stroke="var(--surface-color)"
-                    strokeWidth={2}
-                    animationDuration={prefersReducedMotion ? 0 : 700}
-                    isAnimationActive={!prefersReducedMotion}
-                  >
-                    {expenseData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-[8px] font-semibold uppercase tracking-wide text-neutral-muted">Expenses</span>
-                <span className="max-w-[90%] truncate text-[10px] font-bold tabular-nums text-neutral-text">{formatCurrency(totalExpense)}</span>
-              </div>
-            </div>
-            <div className="max-h-full min-w-0 flex-1 space-y-2 overflow-y-auto pl-2">
-              {expenseData.filter((item) => item.value > 0).map((item, index) => (
-                <div key={item.name} className="flex min-w-0 items-center gap-1.5" title={item.name}>
-                  <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
-                  <span className="truncate text-[9px] font-medium text-neutral-muted">{item.name}</span>
+            <div className="mt-4 divide-y divide-border/40">
+              {recentBudgetTransactions.length > 0 ? (
+                recentBudgetTransactions.map((tx) => (
+                  <div key={tx.id || Math.random()} className="py-2.5 flex items-center justify-between">
+                    <div className="min-w-0 pr-2">
+                      <p className="truncate text-xs font-semibold text-neutral-800 dark:text-neutral-200">
+                        {tx.description || tx.category || 'Expense'}
+                      </p>
+                      <p className="text-[10px] text-neutral-400 font-mono">
+                        {tx.date ? new Date(tx.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : 'Recent'} • {tx.category}
+                      </p>
+                    </div>
+                    <span className="font-mono text-xs font-bold tabular-nums text-neutral-900 dark:text-white shrink-0">
+                      -{formatCurrency(tx.amount)}
+                    </span>
+                  </div>
+                ))
+              ) : (
+                <div className="py-8 text-center text-xs text-neutral-400 font-mono">
+                  No recent deductions recorded
                 </div>
-              ))}
+              )}
             </div>
           </div>
-        </div>
 
-        <div className="md:col-span-2 bg-white rounded-xl shadow-sm border border-border p-4 flex flex-col justify-between">
-          <div>
-             <h3 className="font-bold text-sm mb-1 flex items-center gap-2"><span className="w-2 h-2 bg-neutral-muted rounded-full"></span> Budget vs. Actual</h3>
-             <p className="text-xs text-neutral-muted mb-4">Performance Metrics</p>
-          </div>
-          <div className="space-y-4 text-sm font-medium">
-             <div>
-               <p className="mb-2">Saving Rate</p>
-               <div className="flex justify-between items-center bg-primary/10 px-3 py-1.5 rounded-md mb-2">
-                 <span>Budget</span> <span className="bg-primary/20 text-primary px-2 rounded font-bold">20%</span>
-               </div>
-               <div className="flex justify-between items-center bg-primary/10 px-3 py-1.5 rounded-md">
-                 <span>Actual</span> <span className="bg-primary/20 text-primary px-2 rounded font-bold">
-                   {totalIncome > 0 ? Math.round(((totalIncome - totalExpense) / totalIncome) * 100) : 0}%
-                 </span>
-               </div>
-             </div>
-             <div>
-               <p className="mb-2">Recurring Bills</p>
-               <div className="flex justify-between items-center bg-primary/10 px-3 py-1.5 rounded-md mb-2">
-                 <span>Count</span> <span className="bg-primary/20 text-primary px-2 rounded font-bold">
-                   {transactions.filter(t => t.isRecurring).length}
-                 </span>
-               </div>
-             </div>
-          </div>
-        </div>
-
-        {/* ROW 3 */}
-        <div className="md:col-span-3 min-w-0 rounded-card border border-border bg-surface p-4 shadow-card">
-          <h3 className="text-sm font-bold text-neutral-text">Income source</h3>
-          <p className="mb-4 mt-1 text-xs text-neutral-muted">Actual income streams</p>
-          <div className="h-48">
-            <ResponsiveContainer width="100%" height="100%" initialDimension={{ width: 320, height: 220 }}>
-              <BarChart data={incomeSourceData} margin={{ top: 12, right: 4, left: -20, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="incomeBars" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#b9a3ff" />
-                    <stop offset="100%" stopColor="#6D4BC3" />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid vertical={false} stroke="var(--chart-grid)" strokeDasharray="3 6" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: 'var(--text-muted)', fontSize: 9 }} interval="preserveStartEnd" />
-                <YAxis hide domain={[0, 'dataMax + 10%']} />
-                <Tooltip content={<FintechChartTooltip seriesLabels={{ actual: 'Income' }} />} cursor={{ fill: 'rgba(109,75,195,0.08)' }} />
-                <Bar dataKey="actual" fill="url(#incomeBars)" background={{ fill: 'var(--chart-grid)', radius: [7, 7, 0, 0] }} radius={[7, 7, 0, 0]} maxBarSize={28} animationDuration={prefersReducedMotion ? 0 : 700} isAnimationActive={!prefersReducedMotion} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        <div className="md:col-span-7 min-w-0 rounded-card border border-border bg-surface p-4 shadow-card">
-          <div className="mb-3 flex items-start justify-between gap-2">
-            <div>
-              <h3 className="text-sm font-bold text-neutral-text">Actual vs budget</h3>
-              <p className="mt-1 text-xs text-neutral-muted">Expenses by category</p>
-            </div>
-            <div className="flex shrink-0 items-center gap-3 pt-1 text-[10px] font-medium text-neutral-muted">
-              <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-primary-light" />Actual</span>
-              <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-[#B3A4E8]" />Budget</span>
-            </div>
-          </div>
-          <div className="h-48 mt-2">
-            <ResponsiveContainer width="100%" height="100%" initialDimension={{ width: 320, height: 220 }}>
-              <LineChart data={actualVsBudgetData} margin={{ top: 10, right: 10, left: -18, bottom: 0 }}>
-                <CartesianGrid vertical={false} stroke="var(--chart-grid)" strokeDasharray="3 6" />
-                <XAxis dataKey="name" tick={{ fill: 'var(--text-muted)', fontSize: 9 }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
-                <YAxis hide />
-                <Tooltip content={<FintechChartTooltip seriesLabels={{ actual: 'Actual', budget: 'Budget' }} />} />
-                <Line type="monotone" dataKey="actual" stroke="#6D4BC3" strokeWidth={3} dot={{ r: 3, fill: '#6D4BC3', stroke: 'var(--surface-color)', strokeWidth: 2 }} activeDot={{ r: 6, fill: '#fff', stroke: '#6D4BC3', strokeWidth: 3 }} animationDuration={prefersReducedMotion ? 0 : 800} isAnimationActive={!prefersReducedMotion} />
-                <Line type="monotone" dataKey="budget" stroke="#A78BFA" strokeWidth={2} dot={false} activeDot={{ r: 5, fill: '#fff', stroke: '#A78BFA', strokeWidth: 3 }} strokeDasharray="5 5" animationDuration={prefersReducedMotion ? 0 : 800} isAnimationActive={!prefersReducedMotion} />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        <div className="md:col-span-2 bg-white rounded-xl shadow-sm border border-border p-4 flex flex-col">
-          <div>
-            <h3 className="font-bold text-sm mb-4 flex items-center gap-2"><span className="w-2 h-2 bg-neutral-muted rounded-full"></span> Highest Expenses</h3>
-          </div>
-          <div className="flex-1 flex flex-col justify-start gap-4 text-sm font-medium pt-4">
-            {highestExpenses.length > 0 ? highestExpenses.map((exp, i) => (
-              <div key={i} className="flex justify-between items-center">
-                <span className="truncate max-w-[80px]" title={exp.name}>{exp.name}</span> 
-                <span className="bg-primary/20 text-primary px-2 py-1 rounded font-bold tabular-nums">
-                  {Math.round(exp.value)}
-                </span>
-              </div>
-            )) : (
-              <div className="text-neutral-muted text-xs">No expenses yet</div>
-            )}
-          </div>
         </div>
 
       </div>
+
+      <EditBudgetModal
+        isOpen={isBudgetModalOpen}
+        onClose={() => setIsBudgetModalOpen(false)}
+        currentBudgetLimit={summary?.monthlyBudgetLimit}
+        currentIncome={summary?.monthlyIncome}
+        onSaveSuccess={fetchData}
+        isGuest={isGuest}
+      />
     </Layout>
   );
 };
