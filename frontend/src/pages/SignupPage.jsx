@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Mail, Lock, KeyRound, Eye, EyeOff, LoaderCircle } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, LoaderCircle } from 'lucide-react';
 import api from '../services/api';
 import useAuthStore from '../store/authStore';
 import AuthLayout from '../components/layout/AuthLayout';
@@ -114,155 +114,132 @@ const SignupPage = () => {
     }
   };
 
-  const heroTitle = step === 1 ? 'Create your account' : 'Verify your email';
-  const heroSubtitle = step === 1 ? 'Start managing your finances.' : 'A quick check to keep your account secure.';
-
   return (
     <AuthLayout
-      title={heroTitle}
-      subtitle={heroSubtitle}
-      heroImage="https://w.wallhaven.cc/full/qr/wallhaven-qrm855.jpg"
-      back={() => navigate('/login')}
+      title={step === 1 ? 'Create account' : 'Verify your email'}
+      subtitle={step === 1 ? 'Please enter your details to register.' : 'A quick check to keep your account secure.'}
+      back={() => (step === 2 ? setStep(1) : navigate('/login'))}
     >
-      <div className="space-y-5">
-
-
+      <div className="space-y-4">
         {error && (
-          <div role="alert" className="auth-error rounded-xl border px-4 py-3 text-xs font-medium">
+          <div role="alert" className="rounded-2xl border border-red-200 bg-red-50 px-4 py-2.5 text-xs font-medium text-red-600 text-center">
             {error}
           </div>
         )}
 
         {step === 1 ? (
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="auth-label mb-1.5 ml-1 block text-xs font-semibold uppercase tracking-wider">
-                  Name
-                </label>
-                <div className="auth-field-shell flex items-center gap-3 rounded-[14px] border px-4 py-3 transition">
-                  <User size={16} className="auth-field-icon shrink-0" />
-                  <input
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    placeholder="Your name"
-                    className="auth-field-input w-full bg-transparent text-sm outline-none"
-                    required
-                  />
-                </div>
-              </div>
+          <form onSubmit={handleSubmit} className="space-y-3">
+            <div>
+              <label className="mb-1 block text-xs font-medium text-neutral-400 md:hidden">Username</label>
+              <input
+                value={formData.username}
+                onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                placeholder="Username"
+                className="w-full rounded-full border border-neutral-700 bg-[#1E1E24] px-5 py-3 text-xs text-white placeholder:text-neutral-500 focus:border-[#F59E0B] focus:ring-1 focus:ring-[#F59E0B] outline-none transition md:border-gray-200 md:bg-white md:text-neutral-900 md:placeholder:text-neutral-400 md:focus:border-[#F59E0B] md:focus:ring-2 md:focus:ring-[#F59E0B]/20"
+                required
+              />
+            </div>
 
-              <div>
-                <label className="auth-label mb-1.5 ml-1 block text-xs font-semibold uppercase tracking-wider">
-                  Username
-                </label>
-                <div className="auth-field-shell flex items-center gap-3 rounded-[14px] border px-4 py-3 transition">
-                  <KeyRound size={16} className="auth-field-icon shrink-0" />
-                  <input
-                    value={formData.username}
-                    onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                    placeholder="Username"
-                    className="auth-field-input w-full bg-transparent text-sm outline-none"
-                    required
-                  />
-                </div>
-              </div>
+            <div className="hidden md:block">
+              <input
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                placeholder="Full name"
+                className="w-full rounded-full border border-gray-200 bg-white px-5 py-3 text-xs text-neutral-900 placeholder:text-neutral-400 focus:border-[#F59E0B] focus:ring-2 focus:ring-[#F59E0B]/20 outline-none transition"
+              />
             </div>
 
             <div>
-              <label className="auth-label mb-1.5 ml-1 block text-xs font-semibold uppercase tracking-wider">
-                Email Address
-              </label>
-              <div className="auth-field-shell flex items-center gap-3 rounded-[14px] border px-4 py-3 transition">
-                <Mail size={16} className="auth-field-icon shrink-0" />
+              <label className="mb-1 block text-xs font-medium text-neutral-400 md:hidden">Email</label>
+              <div className="relative">
                 <input
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  placeholder="you@example.com"
-                  className="auth-field-input w-full bg-transparent text-sm outline-none"
+                  placeholder="Email"
+                  className="w-full rounded-full border border-neutral-700 bg-[#1E1E24] px-5 py-3 pr-11 text-xs text-white placeholder:text-neutral-500 focus:border-[#F59E0B] focus:ring-1 focus:ring-[#F59E0B] outline-none transition md:border-gray-200 md:bg-white md:text-neutral-900 md:placeholder:text-neutral-400 md:focus:border-[#F59E0B] md:focus:ring-2 md:focus:ring-[#F59E0B]/20"
                   required
                 />
+                <Mail size={16} className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-neutral-400 md:text-neutral-300" />
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="auth-label mb-1.5 ml-1 block text-xs font-semibold uppercase tracking-wider">
-                  Password
-                </label>
-                <div className="auth-field-shell flex items-center gap-3 rounded-[14px] border px-4 py-3 transition">
-                  <Lock size={16} className="auth-field-icon shrink-0" />
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    placeholder="Password"
-                    className="auth-field-input w-full bg-transparent text-sm outline-none"
-                    required
-                  />
-                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="auth-password-toggle rounded-lg p-1.5 transition" aria-label={showPassword ? 'Hide password' : 'Show password'}>
-                    {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <label className="auth-label mb-1.5 ml-1 block text-xs font-semibold uppercase tracking-wider">
-                  Confirm Password
-                </label>
-                <div className="auth-field-shell flex items-center gap-3 rounded-[14px] border px-4 py-3 transition">
-                  <Lock size={16} className="auth-field-icon shrink-0" />
-                  <input
-                    type={showConfirmPassword ? 'text' : 'password'}
-                    value={formData.confirmPassword}
-                    onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                    placeholder="Confirm"
-                    className="auth-field-input w-full bg-transparent text-sm outline-none"
-                    required
-                  />
-                  <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="auth-password-toggle rounded-lg p-1.5 transition" aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}>
-                    {showConfirmPassword ? <EyeOff size={15} /> : <Eye size={15} />}
-                  </button>
-                </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-neutral-400 md:hidden">Password</label>
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  placeholder="Password"
+                  className="w-full rounded-full border border-neutral-700 bg-[#1E1E24] px-5 py-3 pr-11 text-xs text-white placeholder:text-neutral-500 focus:border-[#F59E0B] focus:ring-1 focus:ring-[#F59E0B] outline-none transition md:border-gray-200 md:bg-white md:text-neutral-900 md:placeholder:text-neutral-400 md:focus:border-[#F59E0B] md:focus:ring-2 md:focus:ring-[#F59E0B]/20"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white md:hover:text-neutral-700 transition"
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
               </div>
             </div>
 
-            <div className="py-1">
-              <label className="auth-policy flex cursor-pointer items-center gap-2 text-xs font-semibold">
+            <div>
+              <label className="mb-1 block text-xs font-medium text-neutral-400 md:hidden">Confirm password</label>
+              <div className="relative">
+                <input
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  value={formData.confirmPassword}
+                  onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                  placeholder="Confirm password"
+                  className="w-full rounded-full border border-neutral-700 bg-[#1E1E24] px-5 py-3 pr-11 text-xs text-white placeholder:text-neutral-500 focus:border-[#F59E0B] focus:ring-1 focus:ring-[#F59E0B] outline-none transition md:border-gray-200 md:bg-white md:text-neutral-900 md:placeholder:text-neutral-400 md:focus:border-[#F59E0B] md:focus:ring-2 md:focus:ring-[#F59E0B]/20"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white md:hover:text-neutral-700 transition"
+                >
+                  {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </div>
+
+            <div className="px-1 pt-1">
+              <label className="flex cursor-pointer items-center gap-2 text-[11px] text-neutral-400 md:text-neutral-500 font-medium select-none">
                 <input 
                   type="checkbox" 
                   required
-                  className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary/20 accent-primary" 
+                  className="h-3.5 w-3.5 rounded border-neutral-700 bg-transparent text-[#F59E0B] focus:ring-[#F59E0B] md:border-gray-300" 
                 />
-                <span>I agree terms of service and privacy policy</span>
+                <span>I agree to the Terms & Privacy Policy</span>
               </label>
             </div>
 
             <button 
               type="submit" 
               disabled={loading} 
-              className="auth-submit mt-1 flex min-h-[52px] w-full items-center justify-center gap-2 rounded-[14px] py-3 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-60"
+              className="mt-3 flex min-h-[46px] w-full items-center justify-center gap-2 rounded-full bg-[#F5EFEB] py-3 text-xs font-bold text-neutral-900 shadow-md hover:opacity-90 transition md:bg-gradient-to-r md:from-[#F59E0B] md:to-[#F97316] md:text-white md:shadow-[#F59E0B]/25 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {loading && <LoaderCircle size={17} className="animate-spin" />}
-              {loading ? 'Sending code…' : 'Sign up'}
+              {loading && <LoaderCircle size={16} className="animate-spin" />}
+              {loading ? 'Sending code…' : 'Sign Up'}
             </button>
 
-            <div className="auth-links border-t pt-4 text-center text-xs font-medium">
+            <div className="pt-2 text-center text-[11px] text-neutral-400 md:text-neutral-500">
               Already have an account?{' '}
-              <button type="button" onClick={() => navigate('/login')} className="auth-link font-bold hover:underline">
-                Log in
+              <button type="button" onClick={() => navigate('/login')} className="font-bold text-white md:text-neutral-900 hover:underline">
+                Log In
               </button>
             </div>
           </form>
         ) : (
-          <form onSubmit={handleVerify} className="space-y-5">
-            <div>
-              <p className="auth-label mb-1 ml-1 text-xs font-semibold uppercase tracking-wider">Verify Email</p>
-              <p className="auth-description text-xs font-medium">We sent a verification code to <span className="auth-emphasis font-semibold">{sentEmail}</span></p>
+          <form onSubmit={handleVerify} className="space-y-4">
+            <div className="text-center text-xs text-neutral-400 md:text-neutral-500">
+              We sent a verification code to <span className="font-semibold text-white md:text-neutral-800">{sentEmail}</span>
             </div>
 
-            <div className="grid grid-cols-6 gap-2">
+            <div className="grid grid-cols-6 gap-2 py-2">
               {otp.map((digit, index) => (
                 <input
                   key={index}
@@ -273,7 +250,7 @@ const SignupPage = () => {
                   value={digit}
                   onChange={(e) => handleOtpChange(index, e.target.value)}
                   onKeyDown={(e) => handleOtpKeyDown(index, e)}
-                  className="auth-otp-input h-12 rounded-xl border text-center text-lg font-semibold outline-none"
+                  className="h-11 w-full rounded-2xl border border-neutral-700 bg-[#1E1E24] text-center text-base font-bold text-white outline-none focus:border-[#F59E0B] transition md:border-gray-200 md:bg-white md:text-neutral-900"
                 />
               ))}
             </div>
@@ -281,15 +258,15 @@ const SignupPage = () => {
             <button 
               type="submit" 
               disabled={loading || otp.join('').length !== 6} 
-              className="auth-submit mt-1 flex min-h-[52px] w-full items-center justify-center gap-2 rounded-[14px] py-3 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex min-h-[46px] w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#F59E0B] to-[#F97316] py-3 text-xs font-bold text-white shadow-md hover:opacity-95 transition disabled:opacity-60"
             >
-              {loading && <LoaderCircle size={17} className="animate-spin" />}
-              {loading ? 'Verifying…' : 'Verify & continue'}
+              {loading && <LoaderCircle size={16} className="animate-spin" />}
+              {loading ? 'Verifying…' : 'Verify & Continue'}
             </button>
 
-            <div className="auth-links border-t pt-4 text-center text-xs font-medium">
+            <div className="pt-2 text-center text-[11px] text-neutral-400 md:text-neutral-500">
               Didn’t receive the code?{' '}
-              <button type="button" onClick={handleResend} className="auth-link font-semibold hover:underline">
+              <button type="button" onClick={handleResend} className="font-semibold text-white md:text-neutral-900 hover:underline">
                 Resend code
               </button>
             </div>

@@ -1,67 +1,128 @@
 import React from 'react';
 import { ArrowLeft } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import pandaAuth from '../../assets/panda_auth.jpg';
+import catLogo from '../../assets/cat-logo.png';
 
 const AuthLayout = ({
   title = 'Welcome back',
-  subtitle = 'Sign in to continue',
-  leftTitle = 'Take control of your money.',
-  leftSubtitle = 'Track. Plan. Save.',
-  heroImage,
+  subtitle = 'Please enter your details.',
   children,
   back,
 }) => {
-  const heroStyle = heroImage
-    ? { backgroundImage: `linear-gradient(145deg, rgba(42, 22, 76, 0.48), rgba(21, 13, 38, 0.72)), url(${heroImage})` }
-    : { backgroundImage: 'linear-gradient(145deg, #6d4bc3, #21123d)' };
+  const navigate = useNavigate();
+  const location = useLocation();
+  const isLoginPage = location.pathname.includes('/login');
+  const isSignupPage = location.pathname.includes('/signup');
+  const isForgotPage = location.pathname.includes('/forgot');
 
   return (
-    <main className="auth-shell relative flex min-h-screen items-center justify-center overflow-y-auto p-0 sm:p-5 lg:p-8">
-      <div className="auth-backdrop pointer-events-none absolute inset-0" />
-
-      <div className="auth-frame relative z-10 flex min-h-screen w-full flex-col overflow-hidden sm:min-h-0 sm:rounded-[30px] md:min-h-[min(760px,calc(100vh-40px))] md:max-w-[1160px] md:flex-row md:shadow-[0_30px_100px_rgba(31,18,57,0.2)]">
-        <section
-          className="auth-hero relative hidden shrink-0 bg-cover bg-center md:flex md:w-[43%] md:flex-col md:justify-between md:p-10 lg:p-12"
-          style={heroStyle}
-          aria-label="ExpenseTrack introduction"
-        >
-          <div className="relative z-10 max-w-sm pb-5 text-white">
-            <p className="mb-3 text-xs font-bold uppercase tracking-[0.2em] text-white/75">Personal finance, in focus</p>
-            <h2 className="text-3xl font-bold leading-tight tracking-tight lg:text-4xl">{leftTitle}</h2>
-            <p className="mt-3 text-sm font-medium tracking-wide text-white/75">{leftSubtitle}</p>
-          </div>
-          <div className="absolute inset-0 bg-gradient-to-t from-[#171024]/55 via-transparent to-[#24143f]/10" />
-        </section>
-
-        <div className="auth-divider pointer-events-none absolute bottom-0 left-[43%] top-0 z-10 hidden w-12 md:block" aria-hidden="true">
-          <svg className="h-full w-full" viewBox="0 0 48 100" preserveAspectRatio="none">
-            <path className="auth-divider-shape" d="M48,0 C16,17 3,31 26,48 C49,65 9,83 48,100 Z" />
-          </svg>
-        </div>
-
-        <section className="auth-form-panel relative flex min-h-screen w-full flex-1 flex-col justify-center overflow-y-auto px-5 py-8 sm:px-10 md:min-h-0 md:w-[57%] md:px-12 lg:px-16">
-          <div
-            className="auth-mobile-hero relative -mx-5 -mt-8 mb-7 h-[104px] shrink-0 bg-cover bg-center md:hidden"
-            style={heroStyle}
-          />
-
+    <main className="relative flex min-h-screen items-center justify-center bg-[#092215] p-3 sm:p-6 md:p-10 selection:bg-[#F59E0B]/30">
+      
+      {/* ── MOBILE VIEW (< md) ── */}
+      <div className="relative z-10 flex min-h-screen w-full flex-col bg-[#141416] md:hidden">
+        {/* Top Header Card with Brand Logo */}
+        <div className="relative flex min-h-[150px] w-full items-center justify-center rounded-b-[40px] bg-white px-6 pb-6 pt-8 shadow-sm">
           {back && (
             <button
               type="button"
               onClick={back}
-              className="auth-back-button mb-5 inline-flex w-fit items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-semibold transition-colors hover:text-primary md:absolute md:left-10 md:top-7 md:mb-0 lg:left-12"
+              aria-label="Go back"
+              className="absolute left-6 top-7 flex h-9 w-9 items-center justify-center rounded-full bg-neutral-100 text-neutral-800 transition hover:bg-neutral-200"
             >
-              <ArrowLeft size={14} /> Back
+              <ArrowLeft size={18} />
+            </button>
+          )}
+          <div className="flex flex-col items-center">
+            <img src={catLogo} alt="ExpenceTrack logo" className="h-12 w-auto object-contain" />
+            <span className="mt-1 text-xs font-black tracking-widest uppercase text-neutral-900">ExpenceTrack</span>
+          </div>
+        </div>
+
+        {/* Dark Body Panel */}
+        <div className="flex flex-1 flex-col px-6 pb-10 pt-6">
+          {(isLoginPage || isSignupPage) && (
+            <div className="mb-6 flex w-full rounded-full bg-[#26262B] p-1 shadow-inner">
+              <button
+                type="button"
+                onClick={() => navigate('/login')}
+                className={`flex-1 rounded-full py-2.5 text-xs font-bold transition-all ${
+                  isLoginPage
+                    ? 'bg-[#E5E5EB] text-[#141416] shadow-sm'
+                    : 'text-[#8E8E9A] hover:text-white'
+                }`}
+              >
+                Login
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate('/signup')}
+                className={`flex-1 rounded-full py-2.5 text-xs font-bold transition-all ${
+                  isSignupPage
+                    ? 'bg-[#E5E5EB] text-[#141416] shadow-sm'
+                    : 'text-[#8E8E9A] hover:text-white'
+                }`}
+              >
+                Sign up
+              </button>
+            </div>
+          )}
+
+          {isForgotPage && (
+            <div className="mb-6 text-center">
+              <h1 className="text-xl font-bold tracking-tight text-white">{title}</h1>
+              <p className="mt-1 text-xs text-neutral-400">{subtitle}</p>
+            </div>
+          )}
+
+          <div className="auth-mobile-container flex-1">{children}</div>
+        </div>
+      </div>
+
+      {/* ── DESKTOP VIEW (hidden md:flex) - Exactly like Reference 1 with Panda Image ── */}
+      <div className="relative z-10 hidden min-h-[580px] w-full max-w-[1060px] overflow-hidden rounded-[2.5rem] bg-white shadow-[0_25px_70px_rgba(0,0,0,0.4)] md:flex md:flex-row">
+        
+        {/* Left Form Panel */}
+        <section className="relative flex w-full flex-1 flex-col justify-center px-8 py-10 sm:px-12 md:w-[50%] lg:px-14 lg:py-12">
+          {back && (
+            <button
+              type="button"
+              onClick={back}
+              className="absolute left-8 top-8 inline-flex items-center gap-1.5 text-xs font-semibold text-neutral-500 hover:text-neutral-900 transition-colors"
+            >
+              <ArrowLeft size={16} /> Back
             </button>
           )}
 
-          <div className="mx-auto w-full max-w-[430px] py-2">
-            <div className="mb-7">
-              <h1 className="text-2xl font-bold leading-tight tracking-tight text-neutral-text sm:text-3xl">{title}</h1>
-              <p className="mt-2 text-sm font-medium text-neutral-muted">{subtitle}</p>
+          <div className="mx-auto w-full max-w-[370px]">
+            {/* Header */}
+            <div className="mb-6 text-left">
+              <h1 className="text-2xl font-bold tracking-tight text-neutral-900 sm:text-3xl">
+                {title}
+              </h1>
+              {subtitle && (
+                <p className="mt-2 text-xs font-medium text-neutral-500 sm:text-sm">
+                  {subtitle}
+                </p>
+              )}
             </div>
-            <div className="auth-content">{children}</div>
+
+            {/* Form Slot */}
+            <div className="auth-desktop-content">{children}</div>
           </div>
         </section>
+
+        {/* Right Artwork Panel (Orange Panda Image) */}
+        <section className="relative hidden w-[50%] p-4 md:flex items-center justify-center">
+          <div className="relative h-full w-full overflow-hidden rounded-[2.25rem] bg-[#F59E0B]/10 shadow-inner">
+            <img
+              src={pandaAuth}
+              alt="Kung Fu Panda Artwork"
+              className="h-full w-full object-cover object-center transition-transform duration-700 hover:scale-105"
+            />
+          </div>
+        </section>
+
       </div>
     </main>
   );
