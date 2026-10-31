@@ -9,7 +9,7 @@ import {
   CartesianGrid,
 } from 'recharts';
 import { TrendingUp, TrendingDown, Minus, BarChart3 } from 'lucide-react';
-import { formatCurrency } from '../../utils/formatCurrency';
+import useCurrency from '../../utils/useCurrency';
 import useReducedMotion from '../../utils/useReducedMotion';
 
 /* ── Metric definitions ── */
@@ -66,7 +66,7 @@ const StatsTooltip = ({ active, payload, label, metricLabel, metricColor }) => {
         />
         <span className="text-[11px] font-medium text-[#77728A]">{metricLabel}</span>
         <span className="ml-auto text-sm font-bold tabular-nums text-[#171329]">
-          {formatCurrency(val)}
+          {fmt(val)}
         </span>
       </div>
     </div>
@@ -75,6 +75,7 @@ const StatsTooltip = ({ active, payload, label, metricLabel, metricColor }) => {
 
 /* ── Main component ── */
 const FinancialStatsChart = ({ allTransactions = [] }) => {
+  const fmt = useCurrency();
   const [activeMetric, setActiveMetric] = useState(0); // 0=expenses, 1=income, 2=net
   const [activePeriod, setActivePeriod] = useState(1); // 0=week, 1=month, 2=year
   const prefersReducedMotion = useReducedMotion();
@@ -299,7 +300,7 @@ const FinancialStatsChart = ({ allTransactions = [] }) => {
       <div className="mt-4 flex items-baseline gap-2.5">
         <p className="text-2xl font-black tabular-nums tracking-tight text-[#171329]">
           {metric.key === 'net' && total < 0 ? '-' : ''}
-          {formatCurrency(Math.abs(total))}
+          {fmt(Math.abs(total))}
         </p>
         {percentChange !== null && (
           <span
