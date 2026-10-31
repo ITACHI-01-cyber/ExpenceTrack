@@ -330,70 +330,92 @@ const DashboardPage = () => {
       </header>
 
       {/* ── Main Dashboard Grid ── */}
-      <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-6">
         
-        {/* ── Row 1: Wallet Carousel + Card Info + Financial Statistics ── */}
-        <section aria-label="Wallet and financial overview" className="grid grid-cols-1 gap-5 lg:grid-cols-12 items-stretch">
+        {/* ── Row 1: Top Section (3 Equal-Height Columns: Wallet, Card Info, Financial Statistics) ── */}
+        <section aria-label="Wallet and financial overview" className="grid grid-cols-1 gap-6 lg:grid-cols-12 items-stretch">
           
           {/* 1. Wallet card carousel panel */}
-          <div className="lg:col-span-4 flex flex-col justify-center rounded-[1.75rem] border border-[#EBE8F3] bg-white p-4 shadow-[0_10px_30px_rgba(25,15,45,0.03)] sm:p-5">
-            <CardCarousel
-              wallets={wallets}
-              onAddCard={() => navigate('/wallet')}
-              onAddMoney={setTopUpWallet}
-              onSelectionChange={setSelectedWallet}
-            />
+          <div className="lg:col-span-4 flex flex-col justify-between rounded-2xl border border-border bg-surface p-5 shadow-sm min-h-[340px]">
+            <div className="flex items-center justify-between pb-2">
+              <div className="flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <CreditCard size={16} />
+                </div>
+                <span className="text-xs font-bold text-neutral-text">My Wallet</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => navigate('/wallet')}
+                className="text-[11px] font-semibold text-primary hover:underline"
+              >
+                + Add Card
+              </button>
+            </div>
+
+            <div className="my-auto flex w-full items-center justify-center py-2">
+              <CardCarousel
+                wallets={wallets}
+                onAddCard={() => navigate('/wallet')}
+                onAddMoney={setTopUpWallet}
+                onSelectionChange={setSelectedWallet}
+              />
+            </div>
+            
+            <div className="pt-2 text-center text-[10px] text-neutral-muted font-mono">
+              Slide to view other cards
+            </div>
           </div>
 
           {/* 2. Card Information panel */}
-          <div className="lg:col-span-3 flex flex-col justify-between rounded-[1.75rem] border border-[#EBE8F3] bg-white p-5 shadow-[0_10px_30px_rgba(25,15,45,0.03)]">
+          <div className="lg:col-span-3 flex flex-col justify-between rounded-2xl border border-border bg-surface p-5 shadow-sm min-h-[340px]">
             <div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#F1EBFB] text-[#6936F5]">
-                    <Wallet size={17} />
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                    <Wallet size={16} />
                   </div>
-                  <span className="text-xs font-bold text-[#1F1B2D]">Card Information</span>
+                  <span className="text-xs font-bold text-neutral-text">Card Information</span>
                 </div>
                 <button
                   type="button"
                   onClick={() => navigate('/wallet')}
                   aria-label="Card options"
-                  className="text-neutral-400 hover:text-neutral-700"
+                  className="text-neutral-muted hover:text-neutral-text transition-colors"
                 >
                   <MoreVertical size={16} />
                 </button>
               </div>
 
-              <h2 className="mt-4 text-xl font-extrabold capitalize tracking-tight text-[#171329]">
+              <h2 className="mt-4 truncate text-xl font-extrabold capitalize tracking-tight text-neutral-text">
                 {selectedWallet?.cardName || selectedWallet?.bankName || selectedWallet?.cardType || 'Payment Card'}
               </h2>
 
               <dl className="mt-4 grid grid-cols-2 gap-x-3 gap-y-4">
                 <div>
-                  <dt className="text-[10px] font-medium text-[#77728A]">Status</dt>
+                  <dt className="text-[10px] font-medium text-neutral-muted">Status</dt>
                   <dd className="mt-1">
-                    <span className="inline-flex rounded-full bg-[#E6F8F3] px-2.5 py-0.5 text-[10px] font-bold text-[#00B074]">
+                    <span className="inline-flex rounded-full bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
                       {cardStatus}
                     </span>
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-[10px] font-medium text-[#77728A]">Card type</dt>
-                  <dd className="mt-1 truncate text-xs font-semibold capitalize text-[#1F1B2D]">
-                    {selectedWallet?.cardType || 'UPI'}
+                  <dt className="text-[10px] font-medium text-neutral-muted">Card type</dt>
+                  <dd className="mt-1 truncate text-xs font-semibold capitalize text-neutral-text">
+                    {selectedWallet?.cardType || 'Debit'}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-[10px] font-medium text-[#77728A]">Card number</dt>
-                  <dd className="mt-1 truncate font-mono text-[11px] font-semibold text-[#1F1B2D]">
+                  <dt className="text-[10px] font-medium text-neutral-muted">Card number</dt>
+                  <dd className="mt-1 truncate font-mono text-[11px] font-semibold text-neutral-text">
                     {maskedCardNumber}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-[10px] font-medium text-[#77728A]">Currency · expiry</dt>
-                  <dd className="mt-1 truncate text-xs font-semibold text-[#1F1B2D]">
-                    {user?.currency || 'INR'} · {selectedWallet?.expiryDate || '—'}
+                  <dt className="text-[10px] font-medium text-neutral-muted">Currency · expiry</dt>
+                  <dd className="mt-1 truncate text-xs font-semibold text-neutral-text">
+                    {user?.currency || 'INR'} · {selectedWallet?.expiryDate || '12/28'}
                   </dd>
                 </div>
               </dl>
@@ -402,253 +424,241 @@ const DashboardPage = () => {
             <button
               type="button"
               onClick={() => navigate('/wallet')}
-              className="mt-5 inline-flex items-center gap-1 text-xs font-bold text-[#6936F5] transition hover:text-[#5225cb]"
+              className="mt-6 inline-flex items-center gap-1.5 text-xs font-bold text-primary transition hover:opacity-85"
             >
               Manage wallet <ArrowRight size={13} />
             </button>
           </div>
 
           {/* 3. Financial Statistics chart */}
-          <div className="lg:col-span-5">
+          <div className="lg:col-span-5 flex flex-col justify-between rounded-2xl border border-border bg-surface p-5 shadow-sm min-h-[340px]">
             <FinancialStatsChart allTransactions={allTransactions} />
           </div>
         </section>
 
-        {/* ── Row 2: 4 Financial Metric Cards ── */}
-        <section aria-label="Monthly financial metrics" className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        {/* ── Row 2: Summary Cards (4 Equal Width, Equal Height, Uniform Alignment) ── */}
+        <section aria-label="Monthly financial metrics" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
           {/* 1. Monthly Income */}
-          <div className="group relative flex min-w-0 flex-col justify-between rounded-[1.5rem] border border-[#EBE8F3] bg-white p-4 shadow-[0_8px_24px_rgba(25,15,45,0.03)] sm:p-5">
+          <div className="flex flex-col justify-between rounded-2xl border border-border bg-surface p-5 shadow-sm">
             <div className="flex items-center justify-between">
-              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#E6F8F3] text-[#00B074]">
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400">
                 <ArrowDownLeft size={18} />
               </span>
               <button
                 type="button"
                 onClick={() => setIsBudgetModalOpen(true)}
-                title="Edit budget & income"
+                title="Edit budget and income"
                 aria-label="Edit budget and income"
-                className="flex h-7 w-7 items-center justify-center rounded-lg text-[#77728A] transition-all hover:bg-[#F1EBFB] hover:text-[#6936F5]"
+                className="flex h-7 w-7 items-center justify-center rounded-lg text-neutral-muted transition-all hover:bg-primary/10 hover:text-primary"
               >
                 <Pencil size={14} />
               </button>
             </div>
-            <div className="mt-3">
-              <p className="truncate text-[11px] font-semibold text-[#77728A]">Monthly Income</p>
-              <p className="mt-1 truncate text-lg font-black tracking-tight tabular-nums text-[#171329] sm:text-xl">
+            <div className="mt-4">
+              <p className="truncate text-xs font-semibold text-neutral-muted">Monthly Income</p>
+              <p className="mt-1 truncate font-mono text-xl font-bold tracking-tight tabular-nums text-neutral-text">
                 {formatCurrency(monthlyIncomeTotal)}
               </p>
             </div>
           </div>
 
           {/* 2. Expenses */}
-          <div className="flex min-w-0 flex-col justify-between rounded-[1.5rem] border border-[#EBE8F3] bg-white p-4 shadow-[0_8px_24px_rgba(25,15,45,0.03)] sm:p-5">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#FEECEB] text-[#FF5A5F]">
-              <ArrowUpRight size={18} />
-            </span>
-            <div className="mt-3">
-              <p className="truncate text-[11px] font-semibold text-[#77728A]">Expenses</p>
-              <p className="mt-1 truncate text-lg font-black tracking-tight tabular-nums text-[#171329] sm:text-xl">
+          <div className="flex flex-col justify-between rounded-2xl border border-border bg-surface p-5 shadow-sm">
+            <div className="flex items-center justify-between">
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-500">
+                <ArrowUpRight size={18} />
+              </span>
+              <span className="text-[10px] font-medium text-neutral-muted">Total outflow</span>
+            </div>
+            <div className="mt-4">
+              <p className="truncate text-xs font-semibold text-neutral-muted">Expenses</p>
+              <p className="mt-1 truncate font-mono text-xl font-bold tracking-tight tabular-nums text-neutral-text">
                 {formatCurrency(monthlyExpenseTotal)}
               </p>
             </div>
           </div>
 
           {/* 3. Budget Limit */}
-          <div className="group relative flex min-w-0 flex-col justify-between rounded-[1.5rem] border border-[#EBE8F3] bg-white p-4 shadow-[0_8px_24px_rgba(25,15,45,0.03)] sm:p-5">
+          <div className="flex flex-col justify-between rounded-2xl border border-border bg-surface p-5 shadow-sm">
             <div className="flex items-center justify-between">
-              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#EBF0FF] text-[#4F6BFF]">
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-500">
                 <ReceiptText size={18} />
               </span>
               <button
                 type="button"
                 onClick={() => setIsBudgetModalOpen(true)}
-                title="Edit budget & income"
+                title="Edit budget and income"
                 aria-label="Edit budget and income"
-                className="flex h-7 w-7 items-center justify-center rounded-lg text-[#77728A] transition-all hover:bg-[#F1EBFB] hover:text-[#6936F5]"
+                className="flex h-7 w-7 items-center justify-center rounded-lg text-neutral-muted transition-all hover:bg-primary/10 hover:text-primary"
               >
                 <Pencil size={14} />
               </button>
             </div>
-            <div className="mt-3">
-              <p className="truncate text-[11px] font-semibold text-[#77728A]">Budget Limit</p>
-              <p className="mt-1 truncate text-lg font-black tracking-tight tabular-nums text-[#171329] sm:text-xl">
+            <div className="mt-4">
+              <p className="truncate text-xs font-semibold text-neutral-muted">Budget Limit</p>
+              <p className="mt-1 truncate font-mono text-xl font-bold tracking-tight tabular-nums text-neutral-text">
                 {formatCurrency(budgetLimit)}
               </p>
             </div>
           </div>
 
           {/* 4. Budget Left */}
-          <div className="flex min-w-0 flex-col justify-between rounded-[1.5rem] border border-[#EBE8F3] bg-white p-4 shadow-[0_8px_24px_rgba(25,15,45,0.03)] sm:p-5">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#F1EBFB] text-[#6936F5]">
-              <Wallet size={18} />
-            </span>
-            <div className="mt-3">
-              <p className="truncate text-[11px] font-semibold text-[#77728A]">Budget Left</p>
-              <p className={`mt-1 truncate text-lg font-black tracking-tight tabular-nums sm:text-xl ${budgetLeft < 0 ? 'text-[#FF5A5F]' : 'text-[#171329]'}`}>
+          <div className="flex flex-col justify-between rounded-2xl border border-border bg-surface p-5 shadow-sm">
+            <div className="flex items-center justify-between">
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                <Wallet size={18} />
+              </span>
+              <span className="text-[10px] font-medium text-neutral-muted">Safe balance</span>
+            </div>
+            <div className="mt-4">
+              <p className="truncate text-xs font-semibold text-neutral-muted">Budget Left</p>
+              <p className={`mt-1 truncate font-mono text-xl font-bold tracking-tight tabular-nums ${budgetLeft < 0 ? 'text-rose-500' : 'text-neutral-text'}`}>
                 {budgetLeft < 0 ? `-${formatCurrency(Math.abs(budgetLeft))}` : formatCurrency(budgetLeft)}
               </p>
             </div>
           </div>
         </section>
 
-        {/* ── Row 3: Recent Transactions (~2/3) + Savings Goal (~1/3) ── */}
-        <section aria-label="Transactions and savings" className="grid grid-cols-1 gap-5 lg:grid-cols-12 items-start">
+        {/* ── Row 3: Bottom Section (2:1 Ratio on Desktop, Aligned Tops and Heights) ── */}
+        <section aria-label="Transactions and savings" className="grid grid-cols-1 gap-6 lg:grid-cols-12 items-stretch">
           
-          {/* Recent Transactions (~2/3 width) */}
-          <div className="lg:col-span-8 flex flex-col rounded-[1.75rem] border border-[#EBE8F3] bg-white p-5 shadow-[0_10px_30px_rgba(25,15,45,0.03)]">
-            <div className="flex items-center justify-between pb-3">
-              <div className="flex items-center gap-2.5">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#F1EBFB] text-[#6936F5]">
-                  <ReceiptText size={17} />
+          {/* Recent Transactions (~2/3 width -> lg:col-span-8) */}
+          <div className="lg:col-span-8 flex flex-col justify-between rounded-2xl border border-border bg-surface p-5 shadow-sm min-h-[320px]">
+            <div>
+              <div className="flex items-center justify-between border-b border-border/60 pb-3">
+                <div className="flex items-center gap-2">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                    <ReceiptText size={16} />
+                  </div>
+                  <h2 className="text-sm font-bold text-neutral-text">Recent Transactions</h2>
                 </div>
-                <h2 className="text-sm font-extrabold text-[#171329]">Recent Transactions</h2>
+                <button
+                  type="button"
+                  onClick={() => navigate('/transactions')}
+                  className="inline-flex items-center gap-1 text-xs font-semibold text-primary transition hover:underline"
+                >
+                  View All <ArrowRight size={13} />
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => navigate('/transactions')}
-                className="inline-flex items-center gap-1 text-xs font-bold text-[#6936F5] transition hover:text-[#5225cb]"
-              >
-                View All <ArrowRight size={13} />
-              </button>
+
+              {/* Transactions List */}
+              <div className="mt-2 divide-y divide-border/40">
+                {transactions.length > 0 ? (
+                  transactions.slice(0, 5).map((tx) => {
+                    const details = getCategoryIconDetails(tx.category, tx.type);
+                    const Icon = details.icon;
+                    const isExpense = tx.type === 'expense';
+                    return (
+                      <div key={tx.id || Math.random()} className="flex items-center justify-between py-3 group">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${details.bg} ${details.text}`}>
+                            <Icon size={16} />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="truncate text-xs font-bold text-neutral-text">
+                              {tx.category || tx.description || 'Transaction'}
+                            </p>
+                            <p className="mt-0.5 text-[10px] text-neutral-muted font-mono">
+                              {formatTxDate(tx.date)}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-3 shrink-0">
+                          <p className={`font-mono text-xs font-bold tabular-nums ${isExpense ? 'text-neutral-text' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                            {isExpense ? `-${formatCurrency(tx.amount)}` : `+${formatCurrency(tx.amount)}`}
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => navigate('/transactions')}
+                            aria-label="Transaction options"
+                            className="text-neutral-muted hover:text-neutral-text"
+                          >
+                            <MoreVertical size={15} />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="py-8 text-center text-xs text-neutral-muted font-mono">
+                    No recent transactions recorded.
+                  </div>
+                )}
+              </div>
             </div>
-
-            {/* Transactions List */}
-            <div className="mt-2 divide-y divide-[#F2EEFA]">
-              {transactions.length > 0 ? (
-                transactions.map((tx) => {
-                  const details = getCategoryIconDetails(tx.category, tx.type);
-                  const Icon = details.icon;
-                  const isExpense = tx.type === 'expense';
-                  return (
-                    <div key={tx.id || Math.random()} className="flex items-center justify-between py-3.5 group">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${details.bg} ${details.text}`}>
-                          <Icon size={18} />
-                        </div>
-                        <div className="min-w-0">
-                          <p className="truncate text-xs font-bold text-[#1F1B2D]">
-                            {tx.category || tx.description || 'Transaction'}
-                          </p>
-                          <p className="mt-0.5 text-[11px] text-[#77728A]">
-                            {formatTxDate(tx.date)}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-3 shrink-0">
-                        <p className={`font-mono text-xs font-bold tabular-nums ${isExpense ? 'text-[#1F1B2D]' : 'text-[#00B074]'}`}>
-                          {isExpense ? `-${formatCurrency(tx.amount)}` : `+${formatCurrency(tx.amount)}`}
-                        </p>
-                        <button
-                          type="button"
-                          onClick={() => navigate('/transactions')}
-                          aria-label="Transaction options"
-                          className="text-neutral-400 opacity-60 hover:opacity-100"
-                        >
-                          <MoreVertical size={16} />
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })
-              ) : (
-                <div className="py-8 text-center text-xs text-neutral-muted">
-                  No recent transactions recorded.
-                </div>
-              )}
+            
+            <div className="pt-3 text-right">
+              <span className="text-[10px] text-neutral-muted font-mono">Showing latest activity</span>
             </div>
           </div>
 
-          {/* Savings Goal (~1/3 width) */}
-          <div className="lg:col-span-4 flex flex-col justify-between rounded-[1.75rem] border border-[#EBE8F3] bg-white p-5 shadow-[0_10px_30px_rgba(25,15,45,0.03)]">
+          {/* Savings Goal (~1/3 width -> lg:col-span-4) */}
+          <div className="lg:col-span-4 flex flex-col justify-between rounded-2xl border border-border bg-surface p-5 shadow-sm min-h-[320px]">
             <div>
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between border-b border-border/60 pb-3">
                 <div className="flex items-center gap-2">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#F1EBFB] text-[#6936F5]">
-                    <Target size={17} />
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                    <Target size={16} />
                   </div>
-                  <h2 className="text-sm font-extrabold text-[#171329]">Savings goal</h2>
+                  <h2 className="text-sm font-bold text-neutral-text">Savings goal</h2>
                 </div>
                 <button
                   type="button"
                   onClick={() => setIsAddGoalModalOpen(true)}
                   aria-label="Open savings goal"
-                  className="flex h-8 w-8 items-center justify-center rounded-full bg-[#FAF8FD] text-[#6936F5] hover:bg-[#F1EBFB]"
+                  className="flex h-7 w-7 items-center justify-center rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-muted hover:text-neutral-text"
                 >
-                  <ArrowRight size={15} />
+                  <ArrowRight size={14} />
                 </button>
               </div>
 
               {/* Completion percentage */}
               <div className="mt-4">
-                <p className="text-3xl font-black tracking-tight text-[#171329]">
+                <p className="font-mono text-3xl font-black tracking-tight text-neutral-text">
                   {savingsProgress}%
                 </p>
               </div>
 
               {/* Progress bar */}
               <div className="mt-3">
-                <div className="h-2 w-full overflow-hidden rounded-full bg-[#EAE6F5]">
+                <div className="h-2 w-full overflow-hidden rounded-full bg-neutral-100 dark:bg-neutral-800">
                   <div
-                    className="h-full rounded-full bg-[#6936F5] transition-all duration-700"
+                    className="h-full rounded-full bg-primary transition-all duration-700"
                     style={{ width: `${savingsProgress}%` }}
                   />
                 </div>
               </div>
 
               {/* Goal stats */}
-              <div className="mt-3 flex items-center justify-between text-xs">
+              <div className="mt-4 flex items-center justify-between text-xs">
                 <div>
-                  <p className="text-[10px] text-[#77728A]">Goal target</p>
-                  <p className="font-bold tabular-nums text-[#171329]">
+                  <p className="text-[10px] text-neutral-muted uppercase tracking-wider">Goal target</p>
+                  <p className="font-mono font-bold tabular-nums text-neutral-text">
                     {formatCurrency(savingsGoalTotal)}
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="text-[10px] text-[#77728A]">Completed</p>
-                  <p className="font-bold tabular-nums text-[#171329]">
-                    {formatCurrency(completedSavingsTotal)}
+                  <p className="text-[10px] text-neutral-muted uppercase tracking-wider">Completed</p>
+                  <p className="font-mono font-bold tabular-nums text-neutral-text">
+                    {formatCurrency(savingsGoalTotal * (savingsProgress / 100))}
                   </p>
                 </div>
               </div>
             </div>
 
-            {/* Bottom Add Savings Goal button */}
+            {/* Add goal action aligned at bottom */}
             <button
               type="button"
               onClick={() => setIsAddGoalModalOpen(true)}
-              className="mt-6 flex w-full items-center justify-center gap-1.5 rounded-full bg-[#EFEAFF] py-2.5 text-xs font-bold text-[#6936F5] transition hover:bg-[#E4DDFF]"
+              className="mt-6 flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-border py-2.5 text-xs font-semibold text-primary transition hover:border-primary/50 hover:bg-primary/5"
             >
-              <Plus size={15} /> Add savings goal
+              <Plus size={14} /> Add savings goal
             </button>
           </div>
         </section>
-
-        {/* Optional Credit Due Alerts banner if bills are due */}
-        {configuredCreditCards.length > 0 && (
-          <div className="rounded-2xl border border-[#EBE8F3] bg-white p-4 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-violet-50 text-violet-600">
-                <CreditCard size={17} />
-              </div>
-              <div>
-                <p className="text-xs font-bold text-[#1F1B2D]">Credit Card Management</p>
-                <p className="text-[11px] text-[#77728A]">
-                  Manage statements, payments, and balances for your {configuredCreditCards.length} configured card{configuredCreditCards.length > 1 ? 's' : ''}.
-                </p>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => navigate('/wallet')}
-              className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#6936F5] px-3.5 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-[#5b2ee0]"
-            >
-              View Credit Wallet <ArrowRight size={13} />
-            </button>
-          </div>
-        )}
       </div>
-
+      
       {/* ── Modals ── */}
       <EditBudgetModal
         isOpen={isBudgetModalOpen}
