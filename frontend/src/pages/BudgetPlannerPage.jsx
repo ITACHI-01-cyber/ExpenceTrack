@@ -17,6 +17,7 @@ import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGri
 import EditBudgetModal from '../components/ui/EditBudgetModal';
 import AddGoalModal from '../components/ui/AddGoalModal';
 import api from '../services/api';
+import walletService from '../services/walletService';
 import useAuthStore from '../store/authStore';
 import guestStorage from '../services/guestStorage';
 import useCurrency from '../utils/useCurrency';
@@ -50,7 +51,7 @@ const DonutRing = ({ segments, size = 180, strokeWidth = 18 }) => {
   let offset = 0;
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-      <circle cx={cx} cy={cy} r={r} fill="none" stroke="#EDE9FE" strokeWidth={strokeWidth} />
+      <circle cx={cx} cy={cy} r={r} fill="none" stroke="var(--chart-grid)" strokeWidth={strokeWidth} />
       {segments.map((seg, i) => {
         const length = (seg.pct / 100) * circumference;
         const el = (
@@ -113,7 +114,7 @@ const BudgetPlannerPage = () => {
           api.get('/transactions'),
           api.get('/dashboard/summary'),
           api.get('/goals'),
-          api.get('/wallets'),
+          walletService.getAll(),
           api.get(`/budget?month=${currentMonth}&year=${currentYear}`),
         ]);
         if (txRes.status === 'fulfilled' && txRes.value.data?.success)
@@ -122,8 +123,8 @@ const BudgetPlannerPage = () => {
           setSummary(sumRes.value.data.data);
         if (goalsRes.status === 'fulfilled' && goalsRes.value.data?.success)
           setGoals(goalsRes.value.data.data);
-        if (wRes.status === 'fulfilled' && wRes.value.data?.success)
-          setWallets(wRes.value.data.data);
+        if (wRes.status === 'fulfilled')
+          setWallets(wRes.value || []);
         if (budgetRes.status === 'fulfilled' && budgetRes.value.data?.success)
           setBudget(budgetRes.value.data.data);
       }
@@ -164,16 +165,20 @@ const BudgetPlannerPage = () => {
     const finalIncome = incomeFromSummary > 0 ? incomeFromSummary : income;
 
     // Total wallet balance from API (excludes credit cards)
-    const totalBalance = Number(summary?.availableBalance) ||
-      wallets
-        .filter((w) => w.cardType?.toLowerCase() !== 'credit')
-        .reduce((acc, w) => acc + (Number(w.balance) || 0), 0);
+    const summaryBalance = Number(summary?.availableBalance);
+    const totalBalance = Number.isFinite(summaryBalance)
+      ? summaryBalance
+      : wallets
+          .filter((w) => w.cardType?.toLowerCase() !== 'credit')
+          .reduce((acc, w) => acc + (Number(w.balance) || 0), 0);
 
     // Savings = completed goals only
     const totalSavings = goals.reduce((acc, g) => acc + (g.completed ? Number(g.amount) || 0 : 0), 0);
 
-    // Budget limit from configured budget document only — never inferred
-    const budgetLimit = Number(summary?.monthlyBudgetLimit) || Number(budget?.budgetLimit) || 0;
+    const summaryBudgetLimit = Number(summary?.monthlyBudgetLimit);
+    const budgetLimit = Number.isFinite(summaryBudgetLimit)
+      ? summaryBudgetLimit
+      : (Number.isFinite(Number(budget?.budgetLimit)) ? Number(budget.budgetLimit) : 0);
 
     // Category breakdown from actual budget categories OR real transactions
     const budgetCategories = (budget?.categories || []).filter((c) => Number(c.spentAmount) > 0);
@@ -429,18 +434,18 @@ const BudgetPlannerPage = () => {
               {barChartData.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%" minHeight={220}>
                   <BarChart data={barChartData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }} barGap={4}>
-                    <CartesianGrid vertical={false} stroke="#EBE8F3" strokeDasharray="4 6" />
+                    <CartesianGrid vertical={false} stroke="var(--chart-grid)" strokeDasharray="4 6" />
                     <XAxis
                       dataKey="month"
                       axisLine={false}
                       tickLine={false}
-                      tick={{ fill: '#9E97B3', fontSize: 11, fontWeight: 500 }}
+                      tick={{ fill: 'var(--chart-axis)', fontSize: 11, fontWeight: 500 }}
                     />
                     <YAxis
                       axisLine={false}
                       tickLine={false}
                       width={48}
-                      tick={{ fill: '#9E97B3', fontSize: 10 }}
+                      tick={{ fill: 'var(--chart-axis)', fontSize: 10 }}
                       tickFormatter={(v) =>
                         Math.abs(v) >= 100000
                           ? `${(v / 100000).toFixed(1)}L`

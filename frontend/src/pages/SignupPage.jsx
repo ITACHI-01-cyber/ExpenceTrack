@@ -135,7 +135,7 @@ const SignupPage = () => {
                 value={formData.username}
                 onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                 placeholder="Username"
-                className="w-full rounded-full border border-neutral-700 bg-[#1E1E24] px-5 py-3 text-xs text-white placeholder:text-neutral-500 focus:border-[#F59E0B] focus:ring-1 focus:ring-[#F59E0B] outline-none transition md:border-gray-200 md:bg-white md:text-neutral-900 md:placeholder:text-neutral-400 md:focus:border-[#F59E0B] md:focus:ring-2 md:focus:ring-[#F59E0B]/20"
+                className="w-full rounded-full border border-border bg-input-bg px-5 py-3 text-xs text-neutral-text placeholder:text-neutral-muted outline-none transition focus:border-primary focus:ring-1 focus:ring-primary"
                 required
               />
             </div>
@@ -145,7 +145,7 @@ const SignupPage = () => {
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 placeholder="Full name"
-                className="w-full rounded-full border border-gray-200 bg-white px-5 py-3 text-xs text-neutral-900 placeholder:text-neutral-400 focus:border-[#F59E0B] focus:ring-2 focus:ring-[#F59E0B]/20 outline-none transition"
+                className="w-full rounded-full border border-border bg-input-bg px-5 py-3 text-xs text-neutral-text placeholder:text-neutral-muted outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
               />
             </div>
 
@@ -157,7 +157,7 @@ const SignupPage = () => {
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   placeholder="Email"
-                  className="w-full rounded-full border border-neutral-700 bg-[#1E1E24] px-5 py-3 pr-11 text-xs text-white placeholder:text-neutral-500 focus:border-[#F59E0B] focus:ring-1 focus:ring-[#F59E0B] outline-none transition md:border-gray-200 md:bg-white md:text-neutral-900 md:placeholder:text-neutral-400 md:focus:border-[#F59E0B] md:focus:ring-2 md:focus:ring-[#F59E0B]/20"
+                  className="w-full rounded-full border border-border bg-input-bg px-5 py-3 pr-11 text-xs text-neutral-text placeholder:text-neutral-muted outline-none transition focus:border-primary focus:ring-1 focus:ring-primary"
                   required
                 />
                 <Mail size={16} className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-neutral-400 md:text-neutral-300" />
@@ -172,13 +172,13 @@ const SignupPage = () => {
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                   placeholder="Password"
-                  className="w-full rounded-full border border-neutral-700 bg-[#1E1E24] px-5 py-3 pr-11 text-xs text-white placeholder:text-neutral-500 focus:border-[#F59E0B] focus:ring-1 focus:ring-[#F59E0B] outline-none transition md:border-gray-200 md:bg-white md:text-neutral-900 md:placeholder:text-neutral-400 md:focus:border-[#F59E0B] md:focus:ring-2 md:focus:ring-[#F59E0B]/20"
+                  className="w-full rounded-full border border-border bg-input-bg px-5 py-3 pr-11 text-xs text-neutral-text placeholder:text-neutral-muted outline-none transition focus:border-primary focus:ring-1 focus:ring-primary"
                   required
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white md:hover:text-neutral-700 transition"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-muted hover:text-neutral-text transition"
                 >
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
@@ -193,13 +193,13 @@ const SignupPage = () => {
                   value={formData.confirmPassword}
                   onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                   placeholder="Confirm password"
-                  className="w-full rounded-full border border-neutral-700 bg-[#1E1E24] px-5 py-3 pr-11 text-xs text-white placeholder:text-neutral-500 focus:border-[#F59E0B] focus:ring-1 focus:ring-[#F59E0B] outline-none transition md:border-gray-200 md:bg-white md:text-neutral-900 md:placeholder:text-neutral-400 md:focus:border-[#F59E0B] md:focus:ring-2 md:focus:ring-[#F59E0B]/20"
+                  className="w-full rounded-full border border-border bg-input-bg px-5 py-3 pr-11 text-xs text-neutral-text placeholder:text-neutral-muted outline-none transition focus:border-primary focus:ring-1 focus:ring-primary"
                   required
                 />
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white md:hover:text-neutral-700 transition"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-muted hover:text-neutral-text transition"
                 >
                   {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
@@ -211,7 +211,7 @@ const SignupPage = () => {
                 <input 
                   type="checkbox" 
                   required
-                  className="h-3.5 w-3.5 rounded border-neutral-700 bg-transparent text-[#F59E0B] focus:ring-[#F59E0B] md:border-gray-300" 
+                  className="h-3.5 w-3.5 rounded border-border bg-input-bg text-primary focus:ring-primary"
                 />
                 <span>I agree to the Terms & Privacy Policy</span>
               </label>
@@ -220,7 +220,7 @@ const SignupPage = () => {
             <button 
               type="submit" 
               disabled={loading} 
-              className="mt-3 flex min-h-[46px] w-full items-center justify-center gap-2 rounded-full bg-[#F5EFEB] py-3 text-xs font-bold text-neutral-900 shadow-md hover:opacity-90 transition md:bg-gradient-to-r md:from-[#F59E0B] md:to-[#F97316] md:text-white md:shadow-[#F59E0B]/25 disabled:cursor-not-allowed disabled:opacity-60"
+              className="mt-3 flex min-h-[46px] w-full items-center justify-center gap-2 rounded-full bg-primary py-3 text-xs font-bold text-primary-contrast shadow-md transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {loading && <LoaderCircle size={16} className="animate-spin" />}
               {loading ? 'Sending code…' : 'Sign Up'}
@@ -228,7 +228,7 @@ const SignupPage = () => {
 
             <div className="pt-2 text-center text-[11px] text-neutral-400 md:text-neutral-500">
               Already have an account?{' '}
-              <button type="button" onClick={() => navigate('/login')} className="font-bold text-white md:text-neutral-900 hover:underline">
+              <button type="button" onClick={() => navigate('/login')} className="font-bold text-neutral-text hover:underline">
                 Log In
               </button>
             </div>
@@ -236,7 +236,7 @@ const SignupPage = () => {
         ) : (
           <form onSubmit={handleVerify} className="space-y-4">
             <div className="text-center text-xs text-neutral-400 md:text-neutral-500">
-              We sent a verification code to <span className="font-semibold text-white md:text-neutral-800">{sentEmail}</span>
+              We sent a verification code to <span className="font-semibold text-neutral-text">{sentEmail}</span>
             </div>
 
             <div className="grid grid-cols-6 gap-2 py-2">
@@ -250,7 +250,7 @@ const SignupPage = () => {
                   value={digit}
                   onChange={(e) => handleOtpChange(index, e.target.value)}
                   onKeyDown={(e) => handleOtpKeyDown(index, e)}
-                  className="h-11 w-full rounded-2xl border border-neutral-700 bg-[#1E1E24] text-center text-base font-bold text-white outline-none focus:border-[#F59E0B] transition md:border-gray-200 md:bg-white md:text-neutral-900"
+                  className="h-11 w-full rounded-2xl border border-border bg-input-bg text-center text-base font-bold text-neutral-text outline-none transition focus:border-primary"
                 />
               ))}
             </div>
@@ -258,7 +258,7 @@ const SignupPage = () => {
             <button 
               type="submit" 
               disabled={loading || otp.join('').length !== 6} 
-              className="flex min-h-[46px] w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#F59E0B] to-[#F97316] py-3 text-xs font-bold text-white shadow-md hover:opacity-95 transition disabled:opacity-60"
+              className="flex min-h-[46px] w-full items-center justify-center gap-2 rounded-full bg-primary py-3 text-xs font-bold text-primary-contrast shadow-md transition hover:opacity-95 disabled:opacity-60"
             >
               {loading && <LoaderCircle size={16} className="animate-spin" />}
               {loading ? 'Verifying…' : 'Verify & Continue'}
@@ -266,7 +266,7 @@ const SignupPage = () => {
 
             <div className="pt-2 text-center text-[11px] text-neutral-400 md:text-neutral-500">
               Didn’t receive the code?{' '}
-              <button type="button" onClick={handleResend} className="font-semibold text-white md:text-neutral-900 hover:underline">
+              <button type="button" onClick={handleResend} className="font-semibold text-neutral-text hover:underline">
                 Resend code
               </button>
             </div>

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   AreaChart,
   Area,
@@ -14,9 +14,9 @@ import useReducedMotion from '../../utils/useReducedMotion';
 
 /* ── Metric definitions ── */
 const METRICS = [
-  { key: 'expenses', label: 'Expenses', color: '#8B5CF6', gradientFrom: '#C4B5FD', gradientTo: '#8B5CF6' },
-  { key: 'income', label: 'Income', color: '#10B981', gradientFrom: '#6EE7B7', gradientTo: '#10B981' },
-  { key: 'net', label: 'Net Cash Flow', color: '#6366F1', gradientFrom: '#A5B4FC', gradientTo: '#6366F1' },
+  { key: 'expenses', label: 'Expenses', color: '#FF786D', gradientFrom: '#FFC0B8', gradientTo: '#FF786D' },
+  { key: 'income', label: 'Income', color: '#C5F542', gradientFrom: '#E8FF9A', gradientTo: '#C5F542' },
+  { key: 'net', label: 'Net Cash Flow', color: '#7CC7B4', gradientFrom: '#B3E8D9', gradientTo: '#7CC7B4' },
 ];
 
 /* ── Period definitions ── */
@@ -33,30 +33,17 @@ const startOfDay = (d) => {
   return r;
 };
 
-const isSameDay = (a, b) =>
-  a.getFullYear() === b.getFullYear() &&
-  a.getMonth() === b.getMonth() &&
-  a.getDate() === b.getDate();
-
 const dayLabel = (d) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 const monthLabel = (d) => d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
 
-/* ── ISO week helper ── */
-const getISOWeek = (d) => {
-  const date = new Date(d.getTime());
-  date.setHours(0, 0, 0, 0);
-  date.setDate(date.getDate() + 3 - ((date.getDay() + 6) % 7));
-  const week1 = new Date(date.getFullYear(), 0, 4);
-  return 1 + Math.round(((date - week1) / 86400000 - 3 + ((week1.getDay() + 6) % 7)) / 7);
-};
-
 /* ── Custom Tooltip ── */
 const StatsTooltip = ({ active, payload, label, metricLabel, metricColor }) => {
+  const fmt = useCurrency();
   if (!active || !payload?.length) return null;
   const val = payload[0]?.value ?? 0;
   return (
-    <div className="rounded-2xl border border-[#EBE8F3] bg-white px-4 py-3 shadow-[0_8px_24px_rgba(25,15,45,0.12)]">
-      <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-[#77728A]">
+    <div className="rounded-xl border border-[#3A3F2B] bg-[#15180F] px-4 py-3 shadow-xl">
+      <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-[#929684]">
         {label}
       </p>
       <div className="flex items-center gap-2">
@@ -64,8 +51,8 @@ const StatsTooltip = ({ active, payload, label, metricLabel, metricColor }) => {
           className="h-2.5 w-2.5 rounded-full"
           style={{ backgroundColor: metricColor }}
         />
-        <span className="text-[11px] font-medium text-[#77728A]">{metricLabel}</span>
-        <span className="ml-auto text-sm font-bold tabular-nums text-[#171329]">
+        <span className="text-[11px] font-medium text-[#929684]">{metricLabel}</span>
+        <span className="ml-auto text-sm font-bold tabular-nums text-[#F4F5ED]">
           {fmt(val)}
         </span>
       </div>
@@ -74,14 +61,13 @@ const StatsTooltip = ({ active, payload, label, metricLabel, metricColor }) => {
 };
 
 /* ── Main component ── */
-const FinancialStatsChart = ({ allTransactions = [] }) => {
+const FinancialStatsChart = ({ allTransactions = [], selectedPeriod = 'month' }) => {
   const fmt = useCurrency();
   const [activeMetric, setActiveMetric] = useState(0); // 0=expenses, 1=income, 2=net
-  const [activePeriod, setActivePeriod] = useState(1); // 0=week, 1=month, 2=year
   const prefersReducedMotion = useReducedMotion();
 
   const metric = METRICS[activeMetric];
-  const period = PERIODS[activePeriod];
+  const period = PERIODS.find((item) => item.key === selectedPeriod) || PERIODS[1];
 
   /* ── Build aggregated chart data ── */
   const { chartData, prevChartData } = useMemo(() => {
@@ -207,7 +193,7 @@ const FinancialStatsChart = ({ allTransactions = [] }) => {
       chartData: mapBuckets(currentBuckets),
       prevChartData: mapBuckets(prevBuckets),
     };
-  }, [allTransactions, activeMetric, activePeriod, metric.key, period.key]);
+  }, [allTransactions, activeMetric, metric.key, period.key]);
 
   /* ── Summary stats ── */
   const { total, prevTotal, percentChange, trend } = useMemo(() => {
@@ -245,33 +231,16 @@ const FinancialStatsChart = ({ allTransactions = [] }) => {
   }, [chartData, metric.key]);
 
   return (
-    <div className="flex h-full flex-col rounded-[1.75rem] border border-[#EBE8F3] bg-white p-5 shadow-[0_10px_30px_rgba(25,15,45,0.03)]">
+    <div className="flex h-full flex-col rounded-2xl border border-[#292D20] bg-[#15180F] p-5 sm:p-6">
       {/* ── Header ── */}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex items-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#F1EBFB] text-[#6936F5]">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#C5F542]/10 text-[#C5F542]">
             <BarChart3 size={17} />
           </div>
-          <h2 className="text-sm font-extrabold text-[#171329]">Financial Statistics</h2>
+          <h2 className="text-sm font-extrabold text-[#F4F5ED]">Financial Statistics</h2>
         </div>
-
-        {/* Period selector */}
-        <div className="flex rounded-full border border-[#EBE8F3] bg-[#FAF8FD] p-0.5">
-          {PERIODS.map((p, idx) => (
-            <button
-              key={p.key}
-              type="button"
-              onClick={() => setActivePeriod(idx)}
-              className={`rounded-full px-3.5 py-1 text-[11px] font-semibold transition-all duration-200 ${
-                activePeriod === idx
-                  ? 'bg-white text-[#171329] shadow-sm'
-                  : 'text-[#77728A] hover:text-[#171329]'
-              }`}
-            >
-              {p.label}
-            </button>
-          ))}
-        </div>
+        <span className="font-mono text-[10px] uppercase tracking-wider text-[#929684]">{period.label} view</span>
       </div>
 
       {/* ── Metric tabs ── */}
@@ -283,8 +252,8 @@ const FinancialStatsChart = ({ allTransactions = [] }) => {
             onClick={() => setActiveMetric(idx)}
             className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold transition-all duration-200 ${
               activeMetric === idx
-                ? 'bg-[#171329] text-white shadow-sm'
-                : 'bg-[#F5F3FA] text-[#77728A] hover:bg-[#EBE8F3] hover:text-[#171329]'
+                ? 'bg-[#C5F542] text-[#0B0D09]'
+                : 'bg-[#10120C] text-[#929684] hover:bg-[#292D20] hover:text-[#F4F5ED]'
             }`}
           >
             <span
@@ -298,7 +267,7 @@ const FinancialStatsChart = ({ allTransactions = [] }) => {
 
       {/* ── Total + Comparison ── */}
       <div className="mt-4 flex items-baseline gap-2.5">
-        <p className="text-2xl font-black tabular-nums tracking-tight text-[#171329]">
+        <p className="text-2xl font-black tabular-nums tracking-tight text-[#F4F5ED]">
           {metric.key === 'net' && total < 0 ? '-' : ''}
           {fmt(Math.abs(total))}
         </p>
@@ -307,13 +276,13 @@ const FinancialStatsChart = ({ allTransactions = [] }) => {
             className={`flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[11px] font-bold ${
               trend === 'up'
                 ? metric.key === 'expenses'
-                  ? 'bg-[#FEF2F2] text-[#EF4444]'
-                  : 'bg-[#ECFDF5] text-[#10B981]'
+                  ? 'bg-[#351F1C] text-[#FF786D]'
+                  : 'bg-[#253019] text-[#C5F542]'
                 : trend === 'down'
                   ? metric.key === 'expenses'
-                    ? 'bg-[#ECFDF5] text-[#10B981]'
-                    : 'bg-[#FEF2F2] text-[#EF4444]'
-                  : 'bg-[#F5F3FA] text-[#77728A]'
+                    ? 'bg-[#253019] text-[#C5F542]'
+                    : 'bg-[#351F1C] text-[#FF786D]'
+                  : 'bg-[#292D20] text-[#929684]'
             }`}
           >
             {trend === 'up' ? (
@@ -328,7 +297,7 @@ const FinancialStatsChart = ({ allTransactions = [] }) => {
         )}
       </div>
       {percentChange !== null && (
-        <p className="mt-0.5 text-[10px] text-[#9E97B3]">
+        <p className="mt-0.5 text-[10px] text-[#929684]">
           vs previous {period.label.toLowerCase()}
         </p>
       )}
@@ -347,14 +316,14 @@ const FinancialStatsChart = ({ allTransactions = [] }) => {
               </defs>
               <CartesianGrid
                 vertical={false}
-                stroke="#EBE8F3"
+                stroke="var(--chart-grid)"
                 strokeDasharray="4 6"
               />
               <YAxis
                 axisLine={false}
                 tickLine={false}
                 width={44}
-                tick={{ fill: '#9E97B3', fontSize: 10, fontWeight: 500 }}
+                tick={{ fill: 'var(--chart-axis)', fontSize: 10, fontWeight: 500 }}
                 tickFormatter={(v) =>
                   Math.abs(v) >= 100000
                     ? `${(v / 100000).toFixed(1)}L`
@@ -368,7 +337,7 @@ const FinancialStatsChart = ({ allTransactions = [] }) => {
                 dataKey="label"
                 axisLine={false}
                 tickLine={false}
-                tick={{ fill: '#9E97B3', fontSize: 10, fontWeight: 500 }}
+                tick={{ fill: 'var(--chart-axis)', fontSize: 10, fontWeight: 500 }}
                 dy={8}
                 interval="preserveStartEnd"
                 minTickGap={32}
@@ -377,7 +346,7 @@ const FinancialStatsChart = ({ allTransactions = [] }) => {
                 content={
                   <StatsTooltip metricLabel={metric.label} metricColor={metric.color} />
                 }
-                cursor={{ stroke: '#D6D0E5', strokeDasharray: '4 4' }}
+                cursor={{ stroke: 'var(--chart-axis)', strokeDasharray: '4 4' }}
               />
               <Area
                 type="monotone"
@@ -389,7 +358,7 @@ const FinancialStatsChart = ({ allTransactions = [] }) => {
                 dot={false}
                 activeDot={{
                   r: 6,
-                  fill: '#ffffff',
+                  fill: 'var(--card-bg)',
                   stroke: metric.color,
                   strokeWidth: 3,
                   style: {
@@ -404,11 +373,11 @@ const FinancialStatsChart = ({ allTransactions = [] }) => {
           </ResponsiveContainer>
         ) : (
           <div className="flex h-full min-h-[150px] flex-col items-center justify-center gap-2">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#F5F3FA]">
-              <BarChart3 size={22} className="text-[#B8B2C8]" />
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#10120C]">
+              <BarChart3 size={22} className="text-[#929684]" />
             </div>
-            <p className="text-xs font-semibold text-[#9E97B3]">No {metric.label.toLowerCase()} data</p>
-            <p className="text-[10px] text-[#B8B2C8]">
+            <p className="text-xs font-semibold text-[#F4F5ED]">No {metric.label.toLowerCase()} data</p>
+            <p className="text-[10px] text-[#929684]">
               Transactions will appear here once recorded.
             </p>
           </div>

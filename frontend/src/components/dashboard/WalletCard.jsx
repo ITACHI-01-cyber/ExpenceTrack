@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { Eye, EyeOff, Pencil, Plus, Trash2, Wifi, Zap, RotateCcw, CreditCard } from 'lucide-react';
-import { formatCurrency } from '../../utils/formatCurrency';
+import useCurrency from '../../utils/useCurrency';
 import { getCardBackground } from '../../utils/cardDesigns';
 import { CardIconRenderer } from '../../utils/cardIcons';
 
@@ -114,6 +114,7 @@ const WalletCard = ({
   removing = false,
   compact = false
 }) => {
+  const fmt = useCurrency();
   const [showDetails, setShowDetails] = useState(false);
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
   const [isHovered, setIsHovered] = useState(false);
@@ -352,7 +353,7 @@ const WalletCard = ({
                   )}
                   {isCash && (
                     <p className="text-2xl font-black tracking-tight drop-shadow">
-                      {formatCurrency(balance)}
+                      {fmt(balance)}
                     </p>
                   )}
                 </div>
@@ -380,7 +381,7 @@ const WalletCard = ({
                         {isCredit && !isConfiguredCredit
                           ? 'Not configured'
                           : detailsVisible
-                            ? formatCurrency(cardCreditBalance > 0 ? cardCreditBalance : shownBalance || 0)
+                            ? fmt(cardCreditBalance > 0 ? cardCreditBalance : shownBalance || 0)
                             : '₹ ••••'}
                       </p>
                     </div>
@@ -512,7 +513,7 @@ const WalletCard = ({
                   )}
                   {isCash && (
                     <p className="text-lg font-black tracking-tight drop-shadow">
-                      {formatCurrency(balance)}
+                      {fmt(balance)}
                     </p>
                   )}
 

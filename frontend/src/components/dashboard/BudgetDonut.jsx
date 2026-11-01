@@ -1,197 +1,137 @@
-/**
- * BudgetDonut.jsx — fixed: useCurrency hook only in main BudgetDonut component
- */
-import React, { useState } from 'react';
+import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Target } from 'lucide-react';
+import { ArrowRight, ChartNoAxesCombined } from 'lucide-react';
 import useCurrency from '../../utils/useCurrency';
 
-const CATEGORY_COLORS = [
-  '#7C3AED',
-  '#A78BFA',
-  '#C4B5FD',
-  '#374151',
-  '#6B7280',
-  '#9CA3AF',
-  '#4F46E5',
-  '#818CF8',
-];
+const CATEGORY_COLORS = ['#C5F542', '#7CC7B4', '#E3B95C', '#FF786D', '#82965A', '#8CA6A0'];
 
-/* ── SVG Donut ring component — pure, no hooks ── */
-const DonutRing = ({ segments, size = 160, strokeWidth = 22 }) => {
-  const r = (size - strokeWidth) / 2;
-  const cx = size / 2;
-  const cy = size / 2;
-  const circumference = 2 * Math.PI * r;
-
+const DonutRing = ({ segments, size = 148, strokeWidth = 19 }) => {
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
   let offset = 0;
+
   return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-      {/* Track */}
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden="true">
       <circle
-        cx={cx}
-        cy={cy}
-        r={r}
+        cx={size / 2}
+        cy={size / 2}
+        r={radius}
         fill="none"
-        stroke="#EDE9FE"
+        stroke="#292D20"
         strokeWidth={strokeWidth}
       />
-      {segments.map((seg, i) => {
-        const length = (seg.pct / 100) * circumference;
-        const element = (
+      {segments.map((segment) => {
+        const length = (segment.percentage / 100) * circumference;
+        const circle = (
           <circle
-            key={i}
-            cx={cx}
-            cy={cy}
-            r={r}
+            key={segment.name}
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
             fill="none"
-            stroke={seg.color}
+            stroke={segment.color}
             strokeWidth={strokeWidth}
             strokeDasharray={`${length} ${circumference - length}`}
             strokeDashoffset={-(offset * circumference) / 100 + circumference * 0.25}
             strokeLinecap="butt"
-            style={{ transition: 'stroke-dasharray 0.5s ease' }}
           />
         );
-        offset += seg.pct;
-        return element;
+        offset += segment.percentage;
+        return circle;
       })}
     </svg>
   );
 };
 
-/* ── Main Component ── */
-const BudgetDonut = ({ budget, monthlySpent, monthlyBudgetLimit }) => {
+const BudgetDonut = ({ transactions = [], monthlySpent = 0, monthlyBudgetLimit }) => {
   const navigate = useNavigate();
-  const [hoveredIdx, setHoveredIdx] = useState(null);
   const fmt = useCurrency();
+  const expenseTransactions = useMemo(
+    () => transactions.filter((transaction) => transaction.type === 'expense' && Number(transaction.amount) > 0),
+    [transactions]
+  );
+  const spentByCategory = useMemo(() => {
+    const categoryTotals = new Map();
+    expenseTransactions.forEach((transaction) => {
+      const name = transaction.category?.trim() || 'Uncategorized';
+      categoryTotals.set(name, (categoryTotals.get(name) || 0) + Number(transaction.amount));
+    });
+    return [...categoryTotals.entries()].sort((a, b) => b[1] - a[1]);
+  }, [expenseTransactions]);
 
-  const categories = budget?.categories || [];
-  const hasCategories = categories.length > 0;
-
-  const totalSpent = hasCategories
-    ? categories.reduce((s, c) => s + (Number(c.spentAmount) || 0), 0)
-    : monthlySpent || 0;
-
-  const segments = hasCategories
-    ? categories
-        .filter((c) => Number(c.spentAmount) > 0)
-        .map((c, i) => ({
-          name: c.name,
-          spent: Number(c.spentAmount) || 0,
-          budget: Number(c.budgetAmount) || 0,
-          pct: totalSpent > 0 ? Math.round((Number(c.spentAmount) / totalSpent) * 100) : 0,
-          color: CATEGORY_COLORS[i % CATEGORY_COLORS.length],
-        }))
-    : [];
-
-  const budgetLimit = monthlyBudgetLimit || budget?.budgetLimit || 0;
-  const utilizationPct = budgetLimit > 0 ? Math.min(100, Math.round((totalSpent / budgetLimit) * 100)) : 0;
-
-  const displaySegments =
-    segments.length > 0
-      ? segments
-      : budgetLimit > 0
-        ? [
-            { name: 'Spent', spent: totalSpent, pct: utilizationPct, color: '#7C3AED' },
-            { name: 'Remaining', spent: budgetLimit - totalSpent, pct: 100 - utilizationPct, color: '#EDE9FE' },
-          ]
-        : [];
+  const totalSpent = expenseTransactions.length
+    ? expenseTransactions.reduce((sum, transaction) => sum + Number(transaction.amount), 0)
+    : Number(monthlySpent) || 0;
+  const limit = Number(monthlyBudgetLimit);
+  const hasBudget = monthlyBudgetLimit !== null
+    && monthlyBudgetLimit !== undefined
+    && Number.isFinite(limit);
+  const usedPercent = hasBudget && limit > 0
+    ? Math.min(100, Math.round((totalSpent / limit) * 100))
+    : null;
+  const segments = spentByCategory.map(([name, amount], index) => ({
+    name,
+    amount,
+    percentage: totalSpent > 0 ? (amount / totalSpent) * 100 : 0,
+    color: CATEGORY_COLORS[index % CATEGORY_COLORS.length],
+  }));
 
   return (
-    <div className="flex h-full flex-col rounded-2xl border border-border bg-surface p-5 shadow-sm">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
-            <Target size={16} />
-          </div>
+    <section className="flex h-full flex-col rounded-2xl border border-[#292D20] bg-[#15180F] p-5 sm:p-6">
+      <header className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5">
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#C5F542]/10 text-[#C5F542]">
+            <ChartNoAxesCombined size={17} />
+          </span>
           <div>
-            <h2 className="text-sm font-bold text-neutral-text">Budget</h2>
-            <p className="text-[10px] text-neutral-muted">This month</p>
+            <h2 className="text-sm font-bold text-[#F4F5ED]">Budget & spending</h2>
+            <p className="mt-0.5 text-[10px] text-[#929684]">This month · expense transactions</p>
           </div>
         </div>
         <button
           type="button"
           onClick={() => navigate('/budget')}
-          className="text-[11px] font-semibold text-primary hover:underline"
+          className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#C5F542] hover:underline"
         >
-          View all →
+          View budget <ArrowRight size={12} />
         </button>
-      </div>
+      </header>
 
-      {/* Donut + center text */}
-      <div className="my-4 flex flex-col items-center justify-center">
+      <div className="my-5 flex items-center justify-center">
         <div className="relative flex items-center justify-center">
-          <DonutRing
-            segments={displaySegments.length > 0 ? displaySegments : [{ pct: 100, color: '#EDE9FE' }]}
-            size={150}
-            strokeWidth={20}
-          />
-          <div className="absolute flex flex-col items-center text-center">
-            <span className="text-[10px] font-semibold text-neutral-muted">
-              {utilizationPct}%
+          <DonutRing segments={segments} />
+          <div className="absolute flex max-w-[110px] flex-col items-center text-center">
+            <span className="font-mono text-lg font-bold text-[#F4F5ED]" data-financial="true">{fmt(totalSpent)}</span>
+            <span className="mt-1 text-[9px] uppercase tracking-wider text-[#929684]">
+              {usedPercent === null ? 'spent' : `${usedPercent}% of limit`}
             </span>
-            <span className="font-mono text-base font-black tracking-tight text-neutral-text">
-              {fmt(totalSpent)}
-            </span>
-            <span className="text-[9px] text-neutral-muted">of {fmt(budgetLimit || totalSpent)}</span>
           </div>
         </div>
       </div>
 
-      {/* Category list */}
-      <div className="flex-1 space-y-2 overflow-y-auto">
-        {segments.length > 0 ? (
-          segments.slice(0, 6).map((seg, i) => (
-            <button
-              key={seg.name}
-              type="button"
-              onClick={() => navigate('/budget')}
-              onMouseEnter={() => setHoveredIdx(i)}
-              onMouseLeave={() => setHoveredIdx(null)}
-              className={`flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left transition hover:bg-neutral-50 dark:hover:bg-neutral-800 ${
-                hoveredIdx === i ? 'bg-neutral-50 dark:bg-neutral-800' : ''
-              }`}
-            >
-              <span
-                className="h-2.5 w-2.5 shrink-0 rounded-full"
-                style={{ backgroundColor: seg.color }}
-              />
-              <span className="flex-1 truncate text-[11px] font-medium text-neutral-text">
-                {seg.name}
-              </span>
-              <span className="shrink-0 font-mono text-[11px] font-semibold tabular-nums text-neutral-text">
-                {fmt(seg.spent)}
-              </span>
-            </button>
-          ))
-        ) : (
-          <div className="flex flex-col items-center justify-center gap-2 py-4 text-center">
-            <p className="text-xs font-semibold text-neutral-muted">No budget set</p>
-            <button
-              type="button"
-              onClick={() => navigate('/budget')}
-              className="text-[11px] font-semibold text-primary hover:underline"
-            >
-              Configure budget →
-            </button>
+      <div className="flex-1 space-y-2">
+        {segments.length ? segments.slice(0, 5).map((segment) => (
+          <div key={segment.name} className="flex items-center gap-2.5 text-xs">
+            <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: segment.color }} />
+            <span className="min-w-0 flex-1 truncate text-[#929684]">{segment.name}</span>
+            <span className="font-mono text-[11px] font-semibold text-[#F4F5ED]">{fmt(segment.amount)}</span>
           </div>
+        )) : (
+          <p className="py-2 text-center text-xs text-[#929684]">
+            No expense transactions recorded this month.
+          </p>
         )}
       </div>
 
-      {/* Footer */}
-      {budgetLimit > 0 && (
-        <div className="mt-3 border-t border-border/60 pt-3">
-          <div className="flex items-center justify-between text-[11px]">
-            <span className="font-medium text-neutral-muted">Total for month</span>
-            <span className="font-mono font-bold tabular-nums text-neutral-text">
-              {fmt(budgetLimit)}
-            </span>
-          </div>
+      <footer className="mt-4 border-t border-[#292D20] pt-3">
+        <div className="flex items-center justify-between gap-3 text-xs">
+          <span className="text-[#929684]">Monthly budget limit</span>
+          <span className="font-mono font-semibold text-[#F4F5ED]">
+            {hasBudget ? fmt(limit) : 'Not set'}
+          </span>
         </div>
-      )}
-    </div>
+      </footer>
+    </section>
   );
 };
 

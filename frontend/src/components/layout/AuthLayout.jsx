@@ -17,12 +17,12 @@ const AuthLayout = ({
   const isForgotPage = location.pathname.includes('/forgot');
 
   return (
-    <main className="relative flex min-h-screen items-center justify-center bg-[#092215] p-3 sm:p-6 md:p-10 selection:bg-[#F59E0B]/30">
+    <main className="relative flex min-h-screen items-center justify-center bg-background p-3 sm:p-6 md:p-10 selection:bg-primary/20">
       
       {/* ── MOBILE VIEW (< md) ── */}
-      <div className="relative z-10 flex min-h-screen w-full flex-col bg-[#141416] md:hidden">
+      <div className="relative z-10 flex min-h-screen w-full flex-col bg-background md:hidden">
         {/* Top Header Card with Brand Logo */}
-        <div className="relative flex min-h-[150px] w-full items-center justify-center rounded-b-[40px] bg-white px-6 pb-6 pt-8 shadow-sm">
+        <div className="relative flex min-h-[150px] w-full items-center justify-center rounded-b-[40px] bg-surface px-6 pb-6 pt-8 shadow-sm">
           {back && (
             <button
               type="button"
@@ -40,16 +40,16 @@ const AuthLayout = ({
         </div>
 
         {/* Dark Body Panel */}
-        <div className="flex flex-1 flex-col px-6 pb-10 pt-6">
+        <div className="flex flex-1 flex-col bg-background px-6 pb-10 pt-6">
           {(isLoginPage || isSignupPage) && (
-            <div className="mb-6 flex w-full rounded-full bg-[#26262B] p-1 shadow-inner">
+            <div className="mb-6 flex w-full rounded-full bg-surface p-1 shadow-inner">
               <button
                 type="button"
                 onClick={() => navigate('/login')}
                 className={`flex-1 rounded-full py-2.5 text-xs font-bold transition-all ${
                   isLoginPage
-                    ? 'bg-[#E5E5EB] text-[#141416] shadow-sm'
-                    : 'text-[#8E8E9A] hover:text-white'
+                    ? 'bg-primary text-primary-contrast shadow-sm'
+                    : 'text-neutral-muted hover:text-neutral-text'
                 }`}
               >
                 Login
@@ -59,8 +59,8 @@ const AuthLayout = ({
                 onClick={() => navigate('/signup')}
                 className={`flex-1 rounded-full py-2.5 text-xs font-bold transition-all ${
                   isSignupPage
-                    ? 'bg-[#E5E5EB] text-[#141416] shadow-sm'
-                    : 'text-[#8E8E9A] hover:text-white'
+                    ? 'bg-primary text-primary-contrast shadow-sm'
+                    : 'text-neutral-muted hover:text-neutral-text'
                 }`}
               >
                 Sign up
@@ -70,8 +70,8 @@ const AuthLayout = ({
 
           {isForgotPage && (
             <div className="mb-6 text-center">
-              <h1 className="text-xl font-bold tracking-tight text-white">{title}</h1>
-              <p className="mt-1 text-xs text-neutral-400">{subtitle}</p>
+              <h1 className="text-xl font-bold tracking-tight text-neutral-text">{title}</h1>
+              <p className="mt-1 text-xs text-neutral-muted">{subtitle}</p>
             </div>
           )}
 
@@ -80,7 +80,7 @@ const AuthLayout = ({
       </div>
 
       {/* ── DESKTOP VIEW (hidden md:flex) - Exactly like Reference 1 with Panda Image ── */}
-      <div className="relative z-10 hidden min-h-[580px] w-full max-w-[1060px] overflow-hidden rounded-[2.5rem] bg-white shadow-[0_25px_70px_rgba(0,0,0,0.4)] md:flex md:flex-row">
+      <div className="relative z-10 hidden min-h-[580px] w-full max-w-[1060px] overflow-hidden rounded-[2.5rem] bg-card shadow-[0_25px_70px_rgba(0,0,0,0.4)] md:flex md:flex-row">
         
         {/* Left Form Panel */}
         <section className="relative flex w-full flex-1 flex-col justify-center px-8 py-10 sm:px-12 md:w-[50%] lg:px-14 lg:py-12">

@@ -3,8 +3,10 @@ import Button from './Button';
 import Modal from './Modal';
 import api from '../../services/api';
 import guestStorage from '../../services/guestStorage';
+import useAuthStore from '../../store/authStore';
 
 const AddGoalModal = ({ isOpen, onClose, onSaveSuccess, isGuest }) => {
+  const currency = useAuthStore((state) => state.user?.currency);
   const [formData, setFormData] = useState({
     title: '',
     amount: '',
@@ -67,7 +69,9 @@ const AddGoalModal = ({ isOpen, onClose, onSaveSuccess, isGuest }) => {
         </div>
 
         <div>
-          <label className="block text-sm mb-1 text-neutral-muted">Amount (₹)</label>
+          <label className="block text-sm mb-1 text-neutral-muted">
+            Amount{currency ? ` (${currency})` : ''}
+          </label>
           <input 
             type="number" 
             step="0.01"

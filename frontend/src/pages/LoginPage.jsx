@@ -85,7 +85,7 @@ const LoginPage = () => {
                   value={formData.email} 
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })} 
                   placeholder="Email" 
-                  className="w-full rounded-full border border-neutral-700 bg-[#1E1E24] px-5 py-3.5 pr-11 text-xs text-white placeholder:text-neutral-500 focus:border-[#F59E0B] focus:ring-1 focus:ring-[#F59E0B] outline-none transition md:border-gray-200 md:bg-white md:text-neutral-900 md:placeholder:text-neutral-400 md:focus:border-[#F59E0B] md:focus:ring-2 md:focus:ring-[#F59E0B]/20"
+                  className="w-full rounded-full border border-border bg-input-bg px-5 py-3.5 pr-11 text-xs text-neutral-text placeholder:text-neutral-muted outline-none transition focus:border-primary focus:ring-1 focus:ring-primary"
                   required 
                 />
                 <Mail size={16} className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-neutral-400 md:text-neutral-300" />
@@ -101,13 +101,13 @@ const LoginPage = () => {
                   value={formData.password} 
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })} 
                   placeholder="Password" 
-                  className="w-full rounded-full border border-neutral-700 bg-[#1E1E24] px-5 py-3.5 pr-11 text-xs text-white placeholder:text-neutral-500 focus:border-[#F59E0B] focus:ring-1 focus:ring-[#F59E0B] outline-none transition md:border-gray-200 md:bg-white md:text-neutral-900 md:placeholder:text-neutral-400 md:focus:border-[#F59E0B] md:focus:ring-2 md:focus:ring-[#F59E0B]/20"
+                  className="w-full rounded-full border border-border bg-input-bg px-5 py-3.5 pr-11 text-xs text-neutral-text placeholder:text-neutral-muted outline-none transition focus:border-primary focus:ring-1 focus:ring-primary"
                   required 
                 />
                 <button 
                   type="button" 
                   onClick={() => setShowPassword(!showPassword)} 
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white md:hover:text-neutral-700 transition" 
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-muted hover:text-neutral-text transition"
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
                 >
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -117,19 +117,19 @@ const LoginPage = () => {
 
             {/* Remember & Forgot Row */}
             <div className="flex items-center justify-between px-1 text-[11px] text-neutral-400 md:text-neutral-500 font-medium">
-              <label className="flex items-center gap-1.5 cursor-pointer hover:text-white md:hover:text-neutral-700 select-none">
+              <label className="flex items-center gap-1.5 cursor-pointer hover:text-neutral-text select-none">
                 <input 
                   type="checkbox" 
                   checked={formData.rememberMe}
                   onChange={(e) => setFormData({ ...formData, rememberMe: e.target.checked })}
-                  className="h-3.5 w-3.5 rounded border-neutral-700 bg-transparent text-[#F59E0B] focus:ring-[#F59E0B] md:border-gray-300" 
+                  className="h-3.5 w-3.5 rounded border-border bg-input-bg text-primary focus:ring-primary"
                 />
                 Remember for 30 days
               </label>
               <button 
                 type="button" 
                 onClick={() => navigate('/forgot-password')} 
-                className="hover:text-white md:hover:text-neutral-800 transition"
+                className="hover:text-neutral-text transition"
               >
                 Forgot password?
               </button>
@@ -139,7 +139,7 @@ const LoginPage = () => {
             <button 
               type="submit" 
               disabled={loading} 
-              className="mt-3 flex min-h-[46px] w-full items-center justify-center gap-2 rounded-full bg-[#F5EFEB] py-3 text-xs font-bold text-neutral-900 shadow-md hover:opacity-90 transition md:bg-gradient-to-r md:from-[#F59E0B] md:to-[#F97316] md:text-white md:shadow-[#F59E0B]/25 disabled:cursor-not-allowed disabled:opacity-60"
+              className="mt-3 flex min-h-[46px] w-full items-center justify-center gap-2 rounded-full bg-primary py-3 text-xs font-bold text-primary-contrast shadow-md transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {loading && <LoaderCircle size={16} className="animate-spin" />}
               {loading ? 'Logging in…' : 'Log In'}
@@ -148,7 +148,7 @@ const LoginPage = () => {
         ) : (
           <form onSubmit={handleOtpSubmit} className="space-y-4">
             <div className="text-center text-xs text-neutral-400 md:text-neutral-500">
-              Enter the 6-digit code sent to <span className="font-semibold text-white md:text-neutral-800">{formData.email}</span>
+              Enter the 6-digit code sent to <span className="font-semibold text-neutral-text">{formData.email}</span>
             </div>
             <div className="py-2">
               <OtpInput 
@@ -161,9 +161,9 @@ const LoginPage = () => {
                   width: '100%',
                   height: '46px',
                   borderRadius: '14px',
-                  border: '1px solid #3F3F46',
-                  background: '#1E1E24',
-                  color: '#FFFFFF',
+                  border: '1px solid var(--border-color)',
+                  background: 'var(--input-bg)',
+                  color: 'var(--text-main)',
                   fontSize: '16px',
                   fontWeight: 700,
                   outline: 'none',
@@ -174,7 +174,7 @@ const LoginPage = () => {
             <button 
               type="submit" 
               disabled={loading || otp.length !== 6} 
-              className="flex min-h-[46px] w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#F59E0B] to-[#F97316] py-3 text-xs font-bold text-white shadow-md hover:opacity-95 transition disabled:opacity-60"
+              className="flex min-h-[46px] w-full items-center justify-center gap-2 rounded-full bg-primary py-3 text-xs font-bold text-primary-contrast shadow-md transition hover:opacity-95 disabled:opacity-60"
             >
               {loading && <LoaderCircle size={16} className="animate-spin" />}
               {loading ? 'Verifying…' : 'Verify & Continue'}
@@ -188,7 +188,7 @@ const LoginPage = () => {
           <button 
             type="button" 
             onClick={() => navigate('/signup')} 
-            className="font-bold text-white md:text-neutral-900 hover:underline"
+            className="font-bold text-neutral-text hover:underline"
           >
             Sign Up
           </button>
@@ -197,14 +197,14 @@ const LoginPage = () => {
         {/* Divider */}
         <div className="relative flex items-center justify-center py-1">
           <span className="absolute inset-x-0 top-1/2 h-px bg-neutral-800 md:bg-gray-100" />
-          <span className="relative bg-[#141416] px-3 text-[10px] font-semibold uppercase tracking-widest text-neutral-500 md:bg-white md:text-neutral-400">or</span>
+          <span className="relative bg-surface px-3 text-[10px] font-semibold uppercase tracking-widest text-neutral-muted">or</span>
         </div>
 
         {/* Continue as Guest */}
         <button
           type="button"
           onClick={handleGuestLogin}
-          className="flex min-h-[42px] w-full items-center justify-center gap-2 rounded-full border border-neutral-700 bg-transparent px-4 py-2 text-xs font-semibold text-neutral-300 hover:bg-neutral-800 transition md:border-gray-200 md:bg-white md:text-neutral-700 md:hover:bg-gray-50"
+          className="flex min-h-[42px] w-full items-center justify-center gap-2 rounded-full border border-border bg-surface px-4 py-2 text-xs font-semibold text-neutral-text transition hover:bg-surface-hover"
         >
           <Eye size={15} />
           Continue as Guest

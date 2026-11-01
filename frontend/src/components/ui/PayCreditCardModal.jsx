@@ -14,7 +14,8 @@ import {
   RotateCcw
 } from 'lucide-react';
 import Button from './Button';
-import { formatCurrency } from '../../utils/formatCurrency';
+import useCurrency from '../../utils/useCurrency';
+import useAuthStore from '../../store/authStore';
 
 const PayCreditCardModal = ({
   isOpen,
@@ -25,6 +26,8 @@ const PayCreditCardModal = ({
   onPay,
   isGuest = false
 }) => {
+  const fmt = useCurrency();
+  const currency = useAuthStore((state) => state.user?.currency);
   const [amount, setAmount] = useState('');
   const [sourceWalletId, setSourceWalletId] = useState('');
   const [statementId, setStatementId] = useState('');
@@ -86,11 +89,11 @@ const PayCreditCardModal = ({
       return false;
     }
     if (numAmount > outstanding) {
-      setError(`Repayment cannot exceed your outstanding balance of ${formatCurrency(outstanding)}.`);
+      setError(`Repayment cannot exceed your outstanding balance of ${fmt(outstanding)}.`);
       return false;
     }
     if (numAmount > sourceBalance) {
-      setError(`Insufficient funds in ${selectedSource.bankName || selectedSource.cardType}. Available balance: ${formatCurrency(sourceBalance)}.`);
+      setError(`Insufficient funds in ${selectedSource.bankName || selectedSource.cardType}. Available balance: ${fmt(sourceBalance)}.`);
       return false;
     }
     return true;
@@ -185,21 +188,21 @@ const PayCreditCardModal = ({
               </div>
               <h3 className="text-xl font-bold text-neutral-text">Payment Completed!</h3>
               <p className="mt-1 text-sm text-neutral-muted">
-                {formatCurrency(successResult.amount)} has been paid from {successResult.sourceName} to {successResult.cardName}.
+                {fmt(successResult.amount)} has been paid from {successResult.sourceName} to {successResult.cardName}.
               </p>
 
               <div className="mx-auto mt-6 max-w-md rounded-2xl border border-border bg-background/50 p-4 text-left space-y-2.5 text-xs">
                 <div className="flex justify-between">
                   <span className="text-neutral-muted">New Outstanding Balance:</span>
-                  <span className="font-bold text-neutral-text">{formatCurrency(successResult.remainingOutstanding)}</span>
+                  <span className="font-bold text-neutral-text">{fmt(successResult.remainingOutstanding)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-neutral-muted">Restored Available Credit:</span>
-                  <span className="font-bold text-emerald-600 dark:text-emerald-400">{formatCurrency(successResult.newAvailableCredit)}</span>
+                  <span className="font-bold text-emerald-600 dark:text-emerald-400">{fmt(successResult.newAvailableCredit)}</span>
                 </div>
                 <div className="flex justify-between border-t border-border pt-2">
                   <span className="text-neutral-muted">{successResult.sourceName} Balance:</span>
-                  <span className="font-bold text-neutral-text">{formatCurrency(successResult.remainingSourceBalance)}</span>
+                  <span className="font-bold text-neutral-text">{fmt(successResult.remainingSourceBalance)}</span>
                 </div>
               </div>
 
@@ -220,7 +223,7 @@ const PayCreditCardModal = ({
                       Total Outstanding
                     </span>
                     <p className="text-lg font-black tracking-tight text-danger">
-                      {formatCurrency(outstanding)}
+                      {fmt(outstanding)}
                     </p>
                   </div>
                   <div>
@@ -228,7 +231,7 @@ const PayCreditCardModal = ({
                       Available Credit
                     </span>
                     <p className="text-lg font-black tracking-tight text-emerald-600 dark:text-emerald-400">
-                      {formatCurrency(currentAvailable)}
+                      {fmt(currentAvailable)}
                     </p>
                   </div>
                 </div>
@@ -236,7 +239,7 @@ const PayCreditCardModal = ({
                 {minimumDue != null && minimumDue > 0 && (
                   <div className="mt-3 flex items-center justify-between border-t border-primary/10 pt-2 text-xs">
                     <span className="text-neutral-muted">Minimum Due:</span>
-                    <span className="font-bold text-neutral-text">{formatCurrency(minimumDue)}</span>
+                    <span className="font-bold text-neutral-text">{fmt(minimumDue)}</span>
                   </div>
                 )}
               </div>
@@ -259,7 +262,7 @@ const PayCreditCardModal = ({
                         : 'border border-border bg-background hover:border-primary/40 text-neutral-text'
                     }`}
                   >
-                    Full Balance ({formatCurrency(outstanding)})
+                    Full Balance ({fmt(outstanding)})
                   </button>
 
                   {minimumDue != null && minimumDue > 0 && minimumDue < outstanding && (
@@ -275,7 +278,7 @@ const PayCreditCardModal = ({
                           : 'border border-border bg-background hover:border-primary/40 text-neutral-text'
                       }`}
                     >
-                      Minimum Due ({formatCurrency(minimumDue)})
+                      Minimum Due ({fmt(minimumDue)})
                     </button>
                   )}
 
@@ -303,7 +306,7 @@ const PayCreditCardModal = ({
                 </label>
                 <div className="relative">
                   <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-neutral-muted">
-                    ₹
+                    {currency || '—'}
                   </span>
                   <input
                     type="number"
@@ -344,7 +347,7 @@ const PayCreditCardModal = ({
                       <option value="">Select funding account...</option>
                       {eligibleSources.map((s) => (
                         <option key={s.id} value={s.id}>
-                          {s.cardName || s.bankName || s.cardType?.toUpperCase()} · (•••• {String(s.cardNumber || '').slice(-4) || '—'}) — Available: {formatCurrency(s.balance || 0)}
+                          {s.cardName || s.bankName || s.cardType?.toUpperCase()} · (•••• {String(s.cardNumber || '').slice(-4) || '—'}) — Available: {fmt(s.balance || 0)}
                         </option>
                       ))}
                     </select>
@@ -353,7 +356,7 @@ const PayCreditCardModal = ({
                       <div className="flex items-center justify-between rounded-xl bg-background/60 px-3.5 py-2 text-xs border border-border/50">
                         <span className="text-neutral-muted">Source Available Balance:</span>
                         <span className={`font-bold tabular-nums ${sourceBalance >= numAmount ? 'text-emerald-600 dark:text-emerald-400' : 'text-danger'}`}>
-                          {formatCurrency(sourceBalance)}
+                          {fmt(sourceBalance)}
                         </span>
                       </div>
                     )}
@@ -375,7 +378,7 @@ const PayCreditCardModal = ({
                     <option value="">Auto / Current Outstanding Liability</option>
                     {statements.map((st) => (
                       <option key={st.id} value={st.id}>
-                        {st.periodStart} – {st.periodEnd} · Due {st.dueDate} ({formatCurrency(st.statementBalance)})
+                        {st.periodStart} – {st.periodEnd} · Due {st.dueDate} ({fmt(st.statementBalance)})
                       </option>
                     ))}
                   </select>
@@ -415,20 +418,20 @@ const PayCreditCardModal = ({
                   <div className="flex items-center justify-between">
                     <span className="text-neutral-muted">Card Liability After Payment:</span>
                     <span className="font-bold tabular-nums text-neutral-text">
-                      {formatCurrency(remainingOutstanding)}
+                      {fmt(remainingOutstanding)}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-neutral-muted">Available Credit After Payment:</span>
                     <span className="font-bold tabular-nums text-emerald-600 dark:text-emerald-400">
-                      {formatCurrency(newAvailableCredit)}
+                      {fmt(newAvailableCredit)}
                     </span>
                   </div>
                   {selectedSource && (
                     <div className="flex items-center justify-between border-t border-border pt-1.5">
                       <span className="text-neutral-muted">Source Remaining Balance:</span>
                       <span className={`font-bold tabular-nums ${remainingSourceBalance >= 0 ? 'text-neutral-text' : 'text-danger'}`}>
-                        {formatCurrency(remainingSourceBalance)}
+                        {fmt(remainingSourceBalance)}
                       </span>
                     </div>
                   )}
@@ -463,7 +466,7 @@ const PayCreditCardModal = ({
                   You are settling
                 </p>
                 <p className="mt-1 text-2xl font-black text-primary tabular-nums">
-                  {formatCurrency(numAmount)}
+                  {fmt(numAmount)}
                 </p>
                 <p className="mt-1 text-xs text-neutral-muted">
                   from {selectedSource?.bankName || selectedSource?.cardType} to {card.cardName || card.bankName || 'Credit Card'}
@@ -484,12 +487,12 @@ const PayCreditCardModal = ({
 
                 <div className="flex justify-between">
                   <span className="text-neutral-muted">Source Deduction:</span>
-                  <span className="font-semibold text-danger">−{formatCurrency(numAmount)}</span>
+                  <span className="font-semibold text-danger">−{fmt(numAmount)}</span>
                 </div>
 
                 <div className="flex justify-between">
                   <span className="text-neutral-muted">Source Balance Afterwards:</span>
-                  <span className="font-bold text-neutral-text">{formatCurrency(remainingSourceBalance)}</span>
+                  <span className="font-bold text-neutral-text">{fmt(remainingSourceBalance)}</span>
                 </div>
 
                 <div className="border-t border-border pt-2 flex justify-between">
@@ -499,17 +502,17 @@ const PayCreditCardModal = ({
 
                 <div className="flex justify-between">
                   <span className="text-neutral-muted">Liability Reduction:</span>
-                  <span className="font-semibold text-emerald-600 dark:text-emerald-400">−{formatCurrency(numAmount)}</span>
+                  <span className="font-semibold text-emerald-600 dark:text-emerald-400">−{fmt(numAmount)}</span>
                 </div>
 
                 <div className="flex justify-between">
                   <span className="text-neutral-muted">New Outstanding Balance:</span>
-                  <span className="font-bold text-neutral-text">{formatCurrency(remainingOutstanding)}</span>
+                  <span className="font-bold text-neutral-text">{fmt(remainingOutstanding)}</span>
                 </div>
 
                 <div className="flex justify-between">
                   <span className="text-neutral-muted">New Available Credit:</span>
-                  <span className="font-bold text-emerald-600 dark:text-emerald-400">{formatCurrency(newAvailableCredit)}</span>
+                  <span className="font-bold text-emerald-600 dark:text-emerald-400">{fmt(newAvailableCredit)}</span>
                 </div>
 
                 <div className="border-t border-border pt-2 flex justify-between">
@@ -561,7 +564,7 @@ const PayCreditCardModal = ({
                     </>
                   ) : (
                     <>
-                      <CheckCircle2 size={16} /> Confirm & Pay {formatCurrency(numAmount)}
+                      <CheckCircle2 size={16} /> Confirm & Pay {fmt(numAmount)}
                     </>
                   )}
                 </Button>

@@ -67,6 +67,7 @@ const TransactionsPage = () => {
   const [transactions, setTransactions] = useState([]);
   const [wallets, setWallets] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState(null);
   const [categoryHistory, setCategoryHistory] = useState([]);
@@ -166,6 +167,7 @@ const TransactionsPage = () => {
       }
     } catch (err) {
       console.error('Failed to fetch wallets', err);
+      setError(err.response?.data?.message || err.message || 'Unable to load wallets.');
     }
 
     try {
@@ -188,7 +190,6 @@ const TransactionsPage = () => {
         }
       }
 
-      // Convert repayments into displayable transaction items (type: 'transfer')
       const repaymentTxs = (repayments || []).map((r) => {
         const targetCard = loadedWallets.find((w) => w.id === r.walletId);
         const sourceWallet = loadedWallets.find((w) => w.id === r.sourceWalletId);
@@ -209,8 +210,10 @@ const TransactionsPage = () => {
       const combined = [...txList, ...repaymentTxs].sort((a, b) => new Date(b.date) - new Date(a.date));
       setTransactions(combined);
       setCategoryHistory(rememberMany(txList.map((transaction) => transaction.category)));
+      setError('');
     } catch (err) {
       console.error(err);
+      setError(err.response?.data?.message || err.message || 'Unable to load transactions.');
     } finally {
       setLoading(false);
     }
@@ -584,6 +587,12 @@ const TransactionsPage = () => {
           </div>
         </div>
       </section>
+
+      {error && (
+        <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+          {error}
+        </div>
+      )}
 
       <div className="rounded-card border border-border bg-surface p-3 shadow-card md:hidden">
         {loading ? (

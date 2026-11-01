@@ -1,193 +1,157 @@
-/**
- * SavingsGoals.jsx
- * Displays individual savings goals with progress bars.
- * Connected to real goals API data.
- * Supports: add, edit, delete, toggle completion.
- */
 import React from 'react';
-import { Target, Plus, Pencil, Check, Trash2 } from 'lucide-react';
+import { Check, Pencil, Plus, Target } from 'lucide-react';
 import useCurrency from '../../utils/useCurrency';
 
-/* ── Individual goal row ── */
-const GoalRow = ({ goal, onEdit, onToggle, onDelete }) => {
-  const fmt = useCurrency();
+const getGoalProgress = (goal) => {
   const target = Number(goal.amount) || 0;
   const saved = Number(goal.savedAmount) || (goal.completed ? target : 0);
-  const pct = target > 0 ? Math.min(100, Math.round((saved / target) * 100)) : 0;
-  const isCompleted = goal.completed || pct >= 100;
+  return {
+    target,
+    saved,
+    remaining: Math.max(0, target - saved),
+    percentage: target > 0 ? Math.min(100, Math.round((saved / target) * 100)) : 0,
+  };
+};
 
-  // Pick a color based on goal name hash
-  const colors = ['#7C3AED', '#10B981', '#F59E0B', '#EF4444', '#3B82F6', '#EC4899'];
-  const colorIdx = goal.name
-    ? goal.name.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0) % colors.length
-    : 0;
-  const barColor = colors[colorIdx];
+const GoalRow = ({ goal, onEdit, onToggle }) => {
+  const fmt = useCurrency();
+  const { target, saved, remaining, percentage } = getGoalProgress(goal);
+  const title = goal.title || goal.name || 'Savings goal';
 
   return (
-    <div className="group relative flex flex-col gap-1.5 rounded-xl border border-border/60 bg-neutral-50/60 dark:bg-neutral-800/40 p-3 transition hover:border-border">
-      {/* Name + amount + actions */}
-      <div className="flex items-center justify-between gap-2">
-        <p className="truncate text-xs font-bold text-neutral-text">{goal.name}</p>
-        <div className="flex items-center gap-1.5 shrink-0">
-          <span className="font-mono text-xs font-semibold tabular-nums text-neutral-text">
-            {fmt(target)}
-          </span>
-          {/* Action buttons — visible on hover */}
-          <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-            <button
-              type="button"
-              onClick={() => onToggle?.(goal, !goal.completed)}
-              title={isCompleted ? 'Mark incomplete' : 'Mark complete'}
-              className={`flex h-6 w-6 items-center justify-center rounded-md transition ${
-                isCompleted
-                  ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400'
-                  : 'bg-neutral-100 text-neutral-muted hover:bg-emerald-100 hover:text-emerald-600 dark:bg-neutral-700'
-              }`}
-            >
-              <Check size={11} />
-            </button>
-            <button
-              type="button"
-              onClick={() => onEdit?.(goal)}
-              title="Edit goal"
-              className="flex h-6 w-6 items-center justify-center rounded-md bg-neutral-100 text-neutral-muted transition hover:bg-primary/10 hover:text-primary dark:bg-neutral-700"
-            >
-              <Pencil size={11} />
-            </button>
-          </div>
+    <article className="rounded-xl border border-[#292D20] bg-[#10120C] p-3.5">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h3 className="truncate text-xs font-semibold text-[#F4F5ED]">{title}</h3>
+          <p className="mt-1 text-[10px] text-[#929684]">{goal.medium || 'Goal progress from saved account data'}</p>
+        </div>
+        <div className="flex shrink-0 items-center gap-1">
+          <button
+            type="button"
+            onClick={() => onToggle?.(goal, !goal.completed)}
+            aria-label={goal.completed ? `Mark ${title} incomplete` : `Mark ${title} complete`}
+            title={goal.completed ? 'Mark incomplete' : 'Mark complete'}
+            className="rounded-md p-1.5 text-[#929684] transition hover:bg-[#292D20] hover:text-[#C5F542]"
+          >
+            <Check size={13} />
+          </button>
+          <button
+            type="button"
+            onClick={() => onEdit?.(goal)}
+            aria-label={`Edit ${title}`}
+            title="Edit goal"
+            className="rounded-md p-1.5 text-[#929684] transition hover:bg-[#292D20] hover:text-[#C5F542]"
+          >
+            <Pencil size={12} />
+          </button>
         </div>
       </div>
-
-      {/* Progress bar */}
-      <div className="h-1.5 w-full overflow-hidden rounded-full bg-neutral-200 dark:bg-neutral-700">
-        <div
-          className="h-full rounded-full transition-all duration-700"
-          style={{ width: `${pct}%`, backgroundColor: barColor }}
-        />
+      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-[#292D20]">
+        <div className="h-full rounded-full bg-[#C5F542] transition-all" style={{ width: `${percentage}%` }} />
       </div>
-
-      {/* Progress label */}
-      <div className="flex items-center justify-between">
-        <span
-          className="inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-bold"
-          style={{ backgroundColor: `${barColor}1A`, color: barColor }}
-        >
-          {pct}%
-        </span>
-        {isCompleted && (
-          <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
-            ✓ Completed
-          </span>
-        )}
-        {!isCompleted && saved > 0 && (
-          <span className="font-mono text-[10px] text-neutral-muted">
-            {fmt(saved)} saved
-          </span>
-        )}
+      <div className="mt-2 flex flex-wrap justify-between gap-x-3 gap-y-1 text-[10px]">
+        <span className="font-mono text-[#C5F542]">{fmt(saved)} saved</span>
+        <span className="text-[#929684]">{fmt(remaining)} remaining · target {fmt(target)}</span>
       </div>
-    </div>
+    </article>
   );
 };
 
-/* ── Main Component ── */
-const SavingsGoals = ({
-  goals = [],
-  loading = false,
-  onAddGoal,
-  onEditGoal,
-  onToggleGoal,
-}) => {
-  const totalTarget = goals.reduce((s, g) => s + (Number(g.amount) || 0), 0);
-  const totalSaved = goals.reduce((s, g) => {
-    const saved = Number(g.savedAmount) || (g.completed ? Number(g.amount) || 0 : 0);
-    return s + saved;
-  }, 0);
-  const overallPct = totalTarget > 0 ? Math.min(100, Math.round((totalSaved / totalTarget) * 100)) : 0;
+const SavingsGoals = ({ goals = [], loading = false, onAddGoal, onEditGoal, onToggleGoal }) => {
+  const fmt = useCurrency();
+  const totalTarget = goals.reduce((sum, goal) => sum + getGoalProgress(goal).target, 0);
+  const totalSaved = goals.reduce((sum, goal) => sum + getGoalProgress(goal).saved, 0);
+  const totalRemaining = Math.max(0, totalTarget - totalSaved);
+  const overallPercentage = totalTarget > 0
+    ? Math.min(100, Math.round((totalSaved / totalTarget) * 100))
+    : 0;
+  const circumference = 2 * Math.PI * 38;
 
   return (
-    <div className="flex h-full flex-col rounded-2xl border border-border bg-surface p-5 shadow-sm">
-      {/* Header */}
-      <div className="flex items-center justify-between border-b border-border/60 pb-3">
-        <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
-            <Target size={16} />
+    <section className="flex h-full flex-col rounded-2xl border border-[#292D20] bg-[#15180F] p-5 sm:p-6">
+      <header className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5">
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#C5F542]/10 text-[#C5F542]">
+            <Target size={17} />
+          </span>
+          <div>
+            <h2 className="text-sm font-bold text-[#F4F5ED]">Savings goals</h2>
+            <p className="mt-0.5 text-[10px] text-[#929684]">{goals.length} active {goals.length === 1 ? 'goal' : 'goals'}</p>
           </div>
-          <h2 className="text-sm font-bold text-neutral-text">Saving Goals</h2>
         </div>
         <button
           type="button"
           onClick={onAddGoal}
           aria-label="Add savings goal"
-          className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary transition hover:bg-primary/20"
+          className="rounded-full border border-[#292D20] p-2 text-[#C5F542] transition hover:border-[#C5F542]/50 hover:bg-[#C5F542]/10"
         >
-          <Plus size={14} />
+          <Plus size={15} />
         </button>
-      </div>
+      </header>
 
-      {/* Overall progress summary */}
-      {goals.length > 0 && (
-        <div className="mt-4">
-          <p className="font-mono text-3xl font-black tracking-tight text-neutral-text">
-            {overallPct}%
-          </p>
-          <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-neutral-100 dark:bg-neutral-800">
-            <div
-              className="h-full rounded-full bg-primary transition-all duration-700"
-              style={{ width: `${overallPct}%` }}
-            />
-          </div>
-          <div className="mt-3 flex items-center justify-between text-xs">
-            <div>
-              <p className="text-[10px] uppercase tracking-wider text-neutral-muted">Goal target</p>
-              <p className="font-mono font-bold tabular-nums text-neutral-text">
-                {fmt(totalTarget)}
-              </p>
+      {goals.length > 0 && !loading && (
+        <div className="mt-4 flex items-center gap-4 rounded-xl border border-[#292D20] bg-[#10120C] p-3">
+          <div className="relative h-[92px] w-[92px] shrink-0">
+            <svg className="-rotate-90" width="92" height="92" viewBox="0 0 92 92" aria-label={`${overallPercentage}% of savings goal amount completed`}>
+              <circle cx="46" cy="46" r="38" fill="none" stroke="#292D20" strokeWidth="8" />
+              <circle
+                cx="46"
+                cy="46"
+                r="38"
+                fill="none"
+                stroke="#C5F542"
+                strokeWidth="8"
+                strokeLinecap="round"
+                strokeDasharray={circumference}
+                strokeDashoffset={circumference * (1 - overallPercentage / 100)}
+              />
+            </svg>
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
+              <span className="font-mono text-lg font-bold text-[#F4F5ED]">{overallPercentage}%</span>
+              <span className="text-[8px] uppercase tracking-wider text-[#929684]">complete</span>
             </div>
-            <div className="text-right">
-              <p className="text-[10px] uppercase tracking-wider text-neutral-muted">Saved</p>
-              <p className="font-mono font-bold tabular-nums text-neutral-text">
-                {fmt(totalSaved)}
-              </p>
+          </div>
+          <div className="grid min-w-0 flex-1 grid-cols-2 gap-3">
+            <div className="min-w-0">
+              <p className="text-[9px] uppercase tracking-wider text-[#929684]">Goal target</p>
+              <p className="mt-1 truncate font-mono text-xs font-bold text-[#F4F5ED]">{fmt(totalTarget)}</p>
+            </div>
+            <div className="min-w-0">
+              <p className="text-[9px] uppercase tracking-wider text-[#929684]">Completed</p>
+              <p className="mt-1 truncate font-mono text-xs font-bold text-[#C5F542]">{fmt(totalSaved)}</p>
+            </div>
+            <div className="col-span-2 min-w-0">
+              <p className="text-[9px] uppercase tracking-wider text-[#929684]">Remaining</p>
+              <p className="mt-1 truncate font-mono text-xs font-bold text-[#F4F5ED]">{fmt(totalRemaining)}</p>
             </div>
           </div>
         </div>
       )}
 
-      {/* Goal list */}
       <div className="mt-4 flex-1 space-y-2.5 overflow-y-auto">
         {loading ? (
-          Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="h-16 animate-pulse rounded-xl bg-neutral-100 dark:bg-neutral-800" />
-          ))
-        ) : goals.length > 0 ? (
+          <p className="py-6 text-center text-xs text-[#929684]">Loading savings goals…</p>
+        ) : goals.length ? (
           goals.map((goal) => (
-            <GoalRow
-              key={goal.id}
-              goal={goal}
-              onEdit={onEditGoal}
-              onToggle={onToggleGoal}
-            />
+            <GoalRow key={goal.id} goal={goal} onEdit={onEditGoal} onToggle={onToggleGoal} />
           ))
         ) : (
-          <div className="flex flex-col items-center justify-center gap-2 py-6 text-center">
-            <Target size={28} className="text-neutral-muted opacity-40" />
-            <p className="text-xs font-semibold text-neutral-muted">No savings goals yet</p>
-            <p className="text-[10px] text-neutral-muted">
-              Create your first goal to track progress.
-            </p>
+          <div className="flex min-h-40 flex-col items-center justify-center gap-2 text-center">
+            <Target size={25} className="text-[#929684]" />
+            <p className="text-xs font-semibold text-[#F4F5ED]">No savings goals yet</p>
+            <p className="max-w-56 text-[10px] text-[#929684]">Create a goal to track progress using your saved goal records.</p>
           </div>
         )}
       </div>
 
-      {/* Add goal CTA */}
       <button
         type="button"
         onClick={onAddGoal}
-        className="mt-4 flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-border py-2.5 text-xs font-semibold text-primary transition hover:border-primary/50 hover:bg-primary/5"
+        className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-[#C5F542] px-4 py-2.5 text-xs font-bold text-[#0B0D09] transition hover:bg-[#D5FF59]"
       >
-        <Plus size={14} /> Add savings goal
+        <Plus size={14} /> Add goal
       </button>
-    </div>
+    </section>
   );
 };
 
