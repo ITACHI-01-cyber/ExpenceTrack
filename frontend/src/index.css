@@ -8,6 +8,7 @@
   --color-primary-hover: var(--primary-hover);
   --color-primary-light: var(--primary-light);
   --color-primary-glow: var(--primary-glow);
+  --color-primary-contrast: var(--primary-contrast);
   
   --color-success: var(--success-color);
   --color-danger: var(--danger-color);
@@ -39,70 +40,130 @@
    MIDNIGHT VIOLET DESIGN SYSTEM TOKENS (LIGHT DEFAULT)
    ═════════════════════════════════════════════════════════════════ */
 :root {
-  /* Brand Core Palette */
-  --bg-color: #F6F5F8;
-  --sidebar-bg: #191426;
+  --bg-color: #F6F5FA;
+  --sidebar-bg: #FFFFFF;
   --card-bg: #FFFFFF;
   --surface-color: #FFFFFF;
-  --surface-hover: #FAF9FB;
+  --surface-hover: #F6F5FA;
   --input-bg: #FFFFFF;
   
-  --primary-main: #7046B8;
-  --primary-hover: #5D369F;
-  --primary-light: #A78BDB;
-  --primary-glow: rgba(112, 70, 184, 0.12);
+  --primary-main: #7545D6;
+  --primary-hover: #6238BC;
+  --primary-light: #9B78E7;
+  --primary-glow: rgba(117, 69, 214, 0.14);
+  --primary-contrast: #FFFFFF;
   
-  --text-main: #24212D;
-  --text-muted: #817B8D;
-  --border-color: #E9E4EF;
-  --divider-color: #ECE8F2;
+  --text-main: #191725;
+  --text-muted: #77738A;
+  --border-color: #E8E4EF;
+  --divider-color: #E8E4EF;
   
   /* Semantic Financial Colors (Strictly Reserved) */
   --success-color: #258653;
   --danger-color: #D65360;
   --warning-color: #D69A36;
   
-  --chart-grid: rgba(129, 123, 141, 0.12);
-  --chart-axis: #817B8D;
-  --chart-panel: linear-gradient(145deg, #FAF9FC, #F3F0F8);
+  --chart-grid: rgba(119, 115, 138, 0.18);
+  --chart-axis: #77738A;
+  --chart-panel: linear-gradient(145deg, #FFFFFF, #F6F5FA);
   
-  --shadow-card: 0 2px 12px rgba(36, 33, 45, 0.04);
-  --shadow-hover: 0 6px 20px rgba(36, 33, 45, 0.07);
+  --shadow-card: 0 2px 12px rgba(25, 23, 37, 0.04);
+  --shadow-hover: 0 6px 20px rgba(25, 23, 37, 0.07);
+
+  --color-background: var(--bg-color);
+  --color-card: var(--card-bg);
+  --color-primary: var(--primary-main);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-light: var(--primary-light);
+  --color-primary-glow: var(--primary-glow);
+  --color-primary-contrast: var(--primary-contrast);
+  --color-neutral-text: var(--text-main);
+  --color-neutral-muted: var(--text-muted);
+  --color-border: var(--border-color);
+  --color-sidebar: var(--sidebar-bg);
+  --color-surface: var(--surface-color);
+  --color-surface-hover: var(--surface-hover);
+  --color-input-bg: var(--input-bg);
 }
 
 /* ═════════════════════════════════════════════════════════════════
-   MIDNIGHT VIOLET DARK THEME
+   GLOBAL DARK THEME
    ═════════════════════════════════════════════════════════════════ */
 body.dark,
 body[data-theme="midnight-dark"] {
   color-scheme: dark;
-  --bg-color: #120E1C;
-  --sidebar-bg: #0C0A13;
-  --card-bg: #1B1627;
-  --surface-color: #1B1627;
-  --surface-hover: #241D34;
-  --input-bg: #241D34;
-  
-  --primary-main: #8A64D4;
-  --primary-hover: #9E7CE2;
-  --primary-light: #BFA8EC;
-  --primary-glow: rgba(138, 100, 212, 0.2);
-  
-  --text-main: #F4F1F9;
-  --text-muted: #9E97AA;
-  --border-color: rgba(233, 228, 239, 0.1);
-  --divider-color: rgba(233, 228, 239, 0.08);
-  
-  --success-color: #34A86C;
-  --danger-color: #E66A77;
+  --bg-color: #0B0D09;
+  --sidebar-bg: #10120C;
+  --card-bg: #15180F;
+  --surface-color: #15180F;
+  --surface-hover: #191D12;
+  --input-bg: #191D12;
+
+  --primary-main: #C2F542;
+  --primary-hover: #D4FF61;
+  --primary-light: #D4FF61;
+  --primary-glow: rgba(194, 245, 66, 0.2);
+  --primary-contrast: #0B0D09;
+
+  --text-main: #F5F5EE;
+  --text-muted: #A5A58F;
+  --border-color: #292D20;
+  --divider-color: #292D20;
+
+  --success-color: #C2F542;
+  --danger-color: #FF786D;
   --warning-color: #E2AB4E;
   
-  --chart-grid: rgba(158, 151, 170, 0.12);
-  --chart-axis: #9E97AA;
-  --chart-panel: linear-gradient(145deg, #1D172A, #271E39);
+  --chart-grid: rgba(165, 165, 143, 0.18);
+  --chart-axis: #A5A58F;
+  --chart-panel: linear-gradient(145deg, #15180F, #191D12);
   
   --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.35);
   --shadow-hover: 0 8px 30px rgba(0, 0, 0, 0.5);
+}
+
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --bg-color: #0B0D09;
+  --sidebar-bg: #10120C;
+  --card-bg: #15180F;
+  --surface-color: #15180F;
+  --surface-hover: #191D12;
+  --input-bg: #191D12;
+  --primary-main: #C2F542;
+  --primary-hover: #D4FF61;
+  --primary-light: #D4FF61;
+  --primary-glow: rgba(194, 245, 66, 0.2);
+  --primary-contrast: #0B0D09;
+  --text-main: #F5F5EE;
+  --text-muted: #A5A58F;
+  --border-color: #292D20;
+  --divider-color: #292D20;
+  --success-color: #C2F542;
+  --danger-color: #FF786D;
+  --warning-color: #E2AB4E;
+  --chart-grid: rgba(165, 165, 143, 0.18);
+  --chart-axis: #A5A58F;
+  --chart-panel: linear-gradient(145deg, #15180F, #191D12);
+  --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.35);
+  --shadow-hover: 0 8px 30px rgba(0, 0, 0, 0.5);
+  --color-background: var(--bg-color);
+  --color-card: var(--card-bg);
+  --color-primary: var(--primary-main);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-light: var(--primary-light);
+  --color-primary-glow: var(--primary-glow);
+  --color-primary-contrast: var(--primary-contrast);
+  --color-success: var(--success-color);
+  --color-danger: var(--danger-color);
+  --color-warning: var(--warning-color);
+  --color-neutral-text: var(--text-main);
+  --color-neutral-muted: var(--text-muted);
+  --color-border: var(--border-color);
+  --color-sidebar: var(--sidebar-bg);
+  --color-surface: var(--surface-color);
+  --color-surface-hover: var(--surface-hover);
+  --color-input-bg: var(--input-bg);
 }
 
 /* ═════════════════════════════════════════════════════════════════
@@ -193,16 +254,16 @@ body[data-theme="slate"].dark {
 body {
   background-color: var(--bg-color);
   color: var(--text-main);
+  transition: none !important;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   font-family: var(--font-sans);
-  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 /* Sidebar styling tokenization */
 .app-sidebar {
   background-color: var(--sidebar-bg) !important;
-  border-color: rgba(255, 255, 255, 0.08) !important;
+  border-color: var(--border-color) !important;
 }
 
 /* Tabular figures for financial numbers */
@@ -235,3 +296,79 @@ textarea:focus {
 .text-financial-income { color: var(--success-color) !important; }
 .text-financial-expense { color: var(--danger-color) !important; }
 .text-financial-warning { color: var(--warning-color) !important; }
+
+/* Preserve the selected palette in older components that still use fixed utility colors. */
+html[data-theme="dark"] .bg-white { background-color: var(--card-bg) !important; }
+html[data-theme="dark"] .bg-gray-50,
+html[data-theme="dark"] .bg-neutral-50,
+html[data-theme="dark"] .bg-slate-50 { background-color: var(--surface-color) !important; }
+html[data-theme="dark"] .bg-gray-100,
+html[data-theme="dark"] .bg-neutral-100,
+html[data-theme="dark"] .bg-slate-100 { background-color: var(--surface-hover) !important; }
+html[data-theme="dark"] .text-black,
+html[data-theme="dark"] .text-gray-900,
+html[data-theme="dark"] .text-neutral-900,
+html[data-theme="dark"] .text-slate-900 { color: var(--text-main) !important; }
+html[data-theme="dark"] .text-gray-800,
+html[data-theme="dark"] .text-gray-700,
+html[data-theme="dark"] .text-neutral-800,
+html[data-theme="dark"] .text-neutral-700,
+html[data-theme="dark"] .text-slate-800,
+html[data-theme="dark"] .text-slate-700 { color: var(--text-main) !important; }
+html[data-theme="dark"] .text-gray-600,
+html[data-theme="dark"] .text-gray-500,
+html[data-theme="dark"] .text-neutral-600,
+html[data-theme="dark"] .text-neutral-500,
+html[data-theme="dark"] .text-slate-600,
+html[data-theme="dark"] .text-slate-500 { color: var(--text-muted) !important; }
+html[data-theme="dark"] .border-gray-100,
+html[data-theme="dark"] .border-gray-200,
+html[data-theme="dark"] .border-neutral-100,
+html[data-theme="dark"] .border-neutral-200,
+html[data-theme="dark"] .border-slate-100,
+html[data-theme="dark"] .border-slate-200 { border-color: var(--border-color) !important; }
+html[data-theme="dark"] .bg-red-50 { background-color: #351F1C !important; }
+html[data-theme="dark"] .text-red-600 { color: #FF786D !important; }
+html[data-theme="dark"] .border-red-200 { border-color: #70483F !important; }
+html[data-theme="dark"] .bg-emerald-50 { background-color: #1B2A17 !important; }
+html[data-theme="dark"] .text-emerald-600 { color: var(--success-color) !important; }
+html[data-theme="dark"] .border-emerald-200 { border-color: color-mix(in srgb, var(--success-color) 35%, var(--border-color)) !important; }
+html[data-theme="dark"] [class*="bg-[#f5ebe6]"] { background-color: var(--input-bg) !important; }
+html[data-theme="dark"] [class*="hover:bg-[#ebdcd4]"]:hover { background-color: var(--surface-hover) !important; }
+html[data-theme="dark"] .text-slate-800,
+html[data-theme="dark"] .text-slate-700,
+html[data-theme="dark"] .text-slate-600 { color: var(--text-main) !important; }
+html[data-theme="dark"] .text-slate-500,
+html[data-theme="dark"] .text-slate-400 { color: var(--text-muted) !important; }
+html[data-theme="dark"] .border-slate-200 { border-color: var(--border-color) !important; }
+
+html[data-theme="light"] .dashboard-page { color: var(--text-main); }
+html[data-theme="light"] .dashboard-page [class*="bg-[#0B0D09]"] { background-color: var(--bg-color) !important; }
+html[data-theme="light"] .dashboard-page [class*="bg-[#10120C]"],
+html[data-theme="light"] .dashboard-page [class*="bg-[#15180F]"] { background-color: var(--card-bg) !important; }
+html[data-theme="light"] .dashboard-page [class*="text-[#F4F5ED]"] { color: var(--text-main) !important; }
+html[data-theme="light"] .dashboard-page [class*="text-[#929684]"] { color: var(--text-muted) !important; }
+html[data-theme="light"] .dashboard-page [class*="border-[#292D20]"],
+html[data-theme="light"] .dashboard-page [class*="border-[#3A3F2B]"] { border-color: var(--border-color) !important; }
+html[data-theme="light"] .dashboard-page [class*="bg-[#C5F542]"] { background-color: var(--primary-main) !important; }
+html[data-theme="light"] .dashboard-page [class*="bg-[#C5F542]/10"] { background-color: color-mix(in srgb, var(--primary-main) 10%, transparent) !important; }
+html[data-theme="light"] .dashboard-page [class*="text-[#C5F542]"] { color: var(--primary-main) !important; }
+html[data-theme="light"] .dashboard-page [class*="text-[#0B0D09]"] { color: var(--primary-contrast) !important; }
+
+html[data-theme="dark"] .dashboard-page [class*="text-[#F4F5ED]"] { color: var(--text-main) !important; }
+html[data-theme="dark"] .dashboard-page [class*="text-[#929684]"] { color: var(--text-muted) !important; }
+html[data-theme="dark"] .dashboard-page [class*="bg-[#C5F542]"] { background-color: var(--primary-main) !important; }
+html[data-theme="dark"] .dashboard-page [class*="bg-[#C5F542]/10"] { background-color: color-mix(in srgb, var(--primary-main) 10%, transparent) !important; }
+html[data-theme="dark"] .dashboard-page [class*="text-[#C5F542]"] { color: var(--primary-main) !important; }
+
+html[data-theme="dark"] .recharts-cartesian-grid line { stroke: var(--chart-grid); }
+html[data-theme="dark"] .recharts-cartesian-axis-tick-value { fill: var(--chart-axis); }
+html[data-theme="dark"] .guest-banner {
+  color: var(--text-main) !important;
+  background-image: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--primary-main) 10%, transparent),
+    var(--card-bg),
+    color-mix(in srgb, var(--primary-main) 10%, transparent)
+  ) !important;
+}

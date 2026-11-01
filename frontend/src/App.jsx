@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useLayoutEffect } from 'react';
 import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import useAuthStore from './store/authStore';
 import useAppearanceStore from './store/appearanceStore';
@@ -22,15 +22,19 @@ const App = () => {
   const { user, isAuthenticated, isGuest } = useAuthStore();
   const { theme, glass, setTheme, setGlass } = useAppearanceStore();
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     // The server wins over a previous browser user's cached appearance.
     if (isAuthenticated && !isGuest && user) {
-      setTheme(user.theme || 'light');
+      setTheme(user.theme === 'dark' || user.theme === 'midnight-dark' ? 'dark' : 'light');
       setGlass(Boolean(user.glass));
     }
   }, [isAuthenticated, isGuest, user?.theme, user?.glass, setTheme, setGlass]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
+    const root = document.documentElement;
+    root.dataset.theme = theme;
+    root.classList.toggle('dark', theme === 'dark');
+    root.style.colorScheme = theme;
     document.body.dataset.theme = theme;
     document.body.dataset.glass = String(glass);
     document.body.classList.toggle('dark', theme === 'dark');

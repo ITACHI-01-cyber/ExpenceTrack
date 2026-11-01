@@ -6,6 +6,22 @@
     <meta name="theme-color" content="#f5f2ed" />
     <title>ExpenceTrack | Personal Finance</title>
     <link rel="icon" type="image/png" href="/cat-logo.png" />
+    <script>
+      try {
+        const appearance = JSON.parse(localStorage.getItem('expense-rack-appearance') || '{}');
+        const auth = JSON.parse(localStorage.getItem('expense-rack-auth') || '{}');
+        const accountTheme = auth.state?.isAuthenticated && !auth.state?.isGuest
+          ? auth.state?.user?.theme
+          : null;
+        const savedTheme = accountTheme ?? appearance.state?.theme ?? auth.state?.user?.theme;
+        const theme = savedTheme === 'dark' || savedTheme === 'midnight-dark' ? 'dark' : 'light';
+        document.documentElement.dataset.theme = theme;
+        document.documentElement.classList.toggle('dark', theme === 'dark');
+        document.documentElement.style.colorScheme = theme;
+      } catch {
+        document.documentElement.dataset.theme = 'light';
+      }
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
